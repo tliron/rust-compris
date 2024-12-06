@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+HERE=$(dirname "$(readlink --canonicalize "$BASH_SOURCE")")
+. "$HERE/_env"
+
+cd "$ROOT"
+
+if [ "$TARGET" == release ]; then
+	cargo install --path="$ROOT/crates/cpsq" --release
+else
+	cargo install --path="$ROOT/crates/cpsq"
+fi

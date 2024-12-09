@@ -1,5 +1,5 @@
-Composite Primitive Schema
-==========================
+The Composite Primitive Schema
+==============================
 
 ### Agnostic
 

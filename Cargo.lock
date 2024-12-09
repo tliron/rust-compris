@@ -264,21 +264,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b63caa9aa9397e2d9480a9b13673856c78d8ac123288526c37d7839f2a86990"
 
 [[package]]
-name = "common-cli"
-version = "0.0.1"
+name = "compris"
+version = "0.0.2"
 dependencies = [
  "anstream",
- "anstyle",
- "clap",
- "owo-colors",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "compris"
-version = "0.0.1"
-dependencies = [
  "base64",
  "borc",
  "num-traits",
@@ -292,6 +281,20 @@ dependencies = [
  "serde-xml-rs",
  "serde_yml",
  "struson",
+ "thiserror 2.0.5",
+ "tracing",
+]
+
+[[package]]
+name = "compris-cli"
+version = "0.0.2"
+dependencies = [
+ "anstream",
+ "clap",
+ "clap_complete_command",
+ "compris",
+ "kutil-cli",
+ "read-url",
  "thiserror 2.0.5",
  "tracing",
 ]
@@ -311,20 +314,6 @@ name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
-
-[[package]]
-name = "cpsq"
-version = "0.0.1"
-dependencies = [
- "anstream",
- "clap",
- "clap_complete_command",
- "common-cli",
- "compris",
- "read-url",
- "thiserror 2.0.5",
- "tracing",
-]
 
 [[package]]
 name = "crunchy"
@@ -833,6 +822,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "kutil-cli"
+version = "0.0.2"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "clap",
+ "owo-colors",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1141,7 +1142,7 @@ dependencies = [
 
 [[package]]
 name = "read-url"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "path-absolutize",
  "reqwest",

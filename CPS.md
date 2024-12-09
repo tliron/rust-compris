@@ -1,107 +1,164 @@
-Composite Primitive Schema
-==========================
+The Composite Primitive Schema (CPS)
+====================================
 
-### Agnostic
+We'll define CPS to contain these primitive data types:
 
-CPS comprises data types that are "agnostic", meaning that they can be trivially used by
-practically any programming language, stored in practically any database, and can also be
-transmitted in a wide variety of broadly-supported formats.
+* **null** (a singleton)
+* **signed integer** (up to 64 bits)
+* **unsigned integer** (up to 64 bits)
+* **float** (up to 64 bits)
+* **boolean** (single bit)
+* **string** (any encoding)
+* **byte array**
 
-The following data types are supported:
+As well as two collection types:
 
-* strings (of Unicode)
-* byte arrays
-* signed integers
-* unsigned integers
-* floats
-* booleans
-* nulls
+* **list** (elements of any type, including collections)
+* **map** (list of key-value pairs in an undefined order; keys and values of any type, including
+  collections)
 
-As well as two nestable structures:
+The power of CPS is its universality. The above primitives and basic collection types can be
+easily consumed by practically any programming language, stored in practically any database, and
+can also be transmitted in a wide variety of broadly-supported formats.
 
-* lists
-* maps (unordered)
 
-Note that map keys *do not have to be strings* and indeed can be arbitrarily complex. Such keys
-might be impossible to use in hashtable implementations in some programming languages. In such
-cases maps can be stored as lists of key/value tuples.
+Representation Formats and Limitations
+--------------------------------------
 
-### Raw
-
-Data validation is out of scope for CPS. There's no schema. The idea is to support *arbitrary*
-data of any structure and size. Once the CPS is made available other layers can validate its
-structure and otherwise process the values.
-
-This library does support such schema validation via conversion to Go structs using a
-[reflector](reflection.go).
-
-### Data
-
-This is about *data* as opposed to the *representation of data*: its format, how it's encoded,
-etc. What's the difference? CPS does not define *how* the data is stored or transmitted. Thus
-CPS in itself is not concerned with the endiannes or precision of integers and floats, and also
-not concerned with character encodings. Compare the Unicode standard for data vs. the UTF-8
-standard for encoding that data.
-
-CPS and Representation Formats
-------------------------------
+Not all formats can do it all, so be sure to pick the right ones for your use case, and be
+aware of necessary workarounds for others.
 
 ### CBOR and MessagePack
 
-[CBOR](https://cbor.io/) and [MessagePack](https://msgpack.org/) support everything! Though note
-that they are not human-readable.
+Both [CBOR](https://cbor.io/) and [MessagePack](https://msgpack.org/) support all of CPS
+(and more). They are not human-readable, but have the advantage of using less RAM, bandwidth,
+and compute power to parse and serialize than the textual formats.
 
 ### YAML
 
-YAML supports a rich set of primitive types (when it includes the common
-[JSON schema](https://yaml.org/spec/1.2/spec.html#id2803231)), so most CPS will survive a round
-trip to YAML.
+YAML 1.2, when including the common [JSON schema](https://yaml.org/spec/1.2/spec.html#id2803231)),
+supports *most* of CPS.
 
-YAML, however, does not distinguish between signed and unsigned integers.
+It does lack a distinction between signed and unsigned integers. If you need full 64-bit
+unsigned integers, which cannot be guaranteed casting to signed integers, then it might be
+best to encode them as string representations, e.g. in decimal or hex.
 
-Byte arrays can also be problematic. Some parsers support the optional
-[`!!binary`](https://yaml.org/type/binary.html) type, but others may not. Encoded strings (e.g.
-using Base64) can be used instead to ensure portability.
-
-Also note that some YAML 1.1 implementations support ordered maps
-([`!!omap`](https://yaml.org/type/omap.html) vs. `!!map`). These will lose their order when
-converted to CPS, so it's best to standardize on arbitrary order (`!!map`). YAML 1.2 does not
-support `!!omap` by default, so this use case may become less and less common.
+It also does not support byte arrays, though note that YAML 1.1 did draft a
+[`!!binary`](https://yaml.org/type/binary.html) type. Compris can be configured to support
+it, but other implementations may not. A common workaround is to encode byte arrays as Base64
+strings, which is Compris's default serialization mode for YAML.
 
 ### JSON
 
-JSON can be read into CPS. However, because JSON has fewer types and more limitations than YAML
-(no signed and unsigned integers, only floats; map keys can only be strings), CPS will lose quite a
-bit of type information when translated into JSON.
+Though it's the most popular format, it's also the most limited.
 
-We overcome this challenge by extending JSON with some conventions for encoding extra types.
-See [our conventions here](cjson.go) or
-[in the Python CPS library](https://github.com/tliron/python-ard/blob/main/ard/cjson.py).
+First, it does not distinguish between any number type. Parsers handle this challenge in
+a variety of ways, from just assuming they are all floats (bad!) to always encoding them as
+decimal strings. Compris gives you some control over how numbers are parsed.
+
+Second, JSON map keys must be strings. By default Compris will stringify all JSON keys into
+a JSON representation, which can then be parse. JSON in JSON! However, Compris also has
+a serialization mode for serializing maps as lists of key-value lists, and can even do so
+only when a map has a non-string key.
+
+Finally, there is not support for byte arrays. By default Compris will serialize them as Base64
+strings.
+
+### XJSON
+
+JSON can be retrofitted to support all of CPS by introducing simple conventions. Though there
+have been a few attempts to do so in the past, we find them all lacking. So here we introduce
+"XJSON" (eXtended JSON).
+
+The idea is to wrap values in a single-key map where the key is a "hint" for readers on how
+to interpret the value. This results in 100% JSON. The "hint" can be handled by a low-level
+parser that knows how to handle XJSON, or in high-level application code after the parser has
+parsed these single-key maps.
+
+We'll introduce the four hints via examples. Integers and unsigned integers are decimal
+strings. Here's an array of two of them:
+
+```json
+[
+    {"$hint.int": "-123456"},
+    {"$hint.uint": "123456"}
+]
+```
+
+Byte arrays are Base64-encoded strings. Here it's used as a value in a map:
+
+```json
+{"binary content": {"$hint.bytes": "SGVsbG8sIHdvcmxk"}}
+```
+
+Maps are arrays where each element is a map entry, an array of the key and value (always
+length 2). Here we combine it with other hints:
+
+```json
+"$hint.map": [
+    ["simple key", "simple value"],
+    [{"complex key1": "complex value1", "complex key2": "complex value2"}, {"$hint.int": "3"}],
+]
+```
+
+For the edge case in which you actually have single-key maps with these hints as keys, double
+the `$` sign to escape:
+
+```json
+{"$$hint.int": ["anything", null, 1, 2, 3]}
+```
+
+The above should be understood as the following, raw:
+
+```json
+{"$hint.int": ["anything", null, 1, 2, 3]}
+```
 
 ### XML
 
-XML does not have a type system. Arbitrary XML cannot be parsed into CPS. 
+We just need a CPS schema for XML. TODO!
 
-However, we support [certain conventions](xml.go) that enforce such compatibility.
 
 CPS and Programming Languages
 -----------------------------
 
+We must highlight our controversial decision to allow CPS map keys to be *collections*, which
+indeed can can be arbitrarily nested. However, the built-in or standard hashmaps in many
+programming languages do not always allow for this, at least not trivially.
+
+### Rust
+
+Compris's normal value types all support
+[`std::hash::Hash`](https://doc.rust-lang.org/beta/std/hash/trait.Hash.html) as well as other
+trait requirements for map keys, so they can be used in practically any generics-based map
+implementation.
+
+Note that we chose [`OrderMap`](https://github.com/indexmap-rs/ordermap) for our normal map
+implementation. The rationale:
+
+1. [`std::collections::HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html)
+   does not support the `Hash` trait, so it's ruled out.
+2. [`std::collections::BTreeMap`](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html)
+   *does* support `Hash`, but has the unwanted side effect of keeping the keys sorted.
+3. OrderMap's less invasive side effect is that it retains insertion order, which might actually
+   be useful for certain debugging purposes (note that CPS intentionally leaves map order
+   undefined).
+
 ### Go
 
 Unfortunately, the most popular Go YAML parser does not easily support arbitrarily complex keys
-(see this [issue](https://github.com/go-yaml/yaml/issues/502)). We provide an independent library,
+(see this [issue](https://github.com/go-yaml/yaml/issues/502)). We made an independent library,
 [yamlkeys](https://github.com/tliron/yamlkeys), to make this easier.
 
 ### Python
 
-Likewise, the Python [ruamel.yaml](https://yaml.readthedocs.io) parser does not easily support
-arbitrarily complex keys. We solve this by extending ruamel.yaml in our
-[Python CPS library](https://github.com/tliron/python-ard).
+Likewise, the popular Python [ruamel.yaml](https://yaml.readthedocs.io) parser does not easily
+support arbitrarily complex keys. We solved this by extending ruamel.yaml in our
+[Python ARD library](https://github.com/tliron/python-ard).
 
 ### JavaScript
 
-See the discussion of JSON, above (JSON stands for "JavaScript Object Notation"). A
-straightforward way to work with CPS in JavaScript is via our
-[CPS-compatible extended JSON conventions](xjson.go). However, it may also be possible to create a
-library of classes to support CPS features.
+See the discussion of JSON, above. JSON stands for "JavaScript Object Notation", so those
+limitations come from JavaScript.
+
+It might be nice to have JavaScript library to work with our XJSON conventions. TODO!

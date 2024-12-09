@@ -7,7 +7,7 @@ HERE=$(dirname "$(readlink --canonicalize "$BASH_SOURCE")")
 cd "$ROOT"
 
 if [ "$TARGET" == release ]; then
-	cargo install --path="$ROOT/crates/cpsq" --release
+	cargo install --path="$ROOT/crates/cli" --release
 else
-	cargo install --path="$ROOT/crates/cpsq"
+	cargo install --path="$ROOT/crates/cli"
 fi

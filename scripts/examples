@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+HERE=$(dirname "$(readlink --canonicalize "$BASH_SOURCE")")
+. "$HERE/_env"
+
+cd "$ROOT"
+
+# See: https://github.com/rust-lang/cargo/issues/8356#issuecomment-1153051224
+
+cargo run --example 2>&1 | grep -E '^ ' | xargs -n1 cargo run --example

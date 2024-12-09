@@ -1,0 +1,31 @@
+[package]
+edition = "2021"
+
+name = "compris-cli"
+description = "Query and convert Composite Primitive Schema (CPS) formats"
+version = "0.0.2"
+rust-version = "1.83"
+
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tliron/rust-compris"
+documentation = "https://docs.rs/compris"
+authors = ["Tal Liron"]
+
+readme = "../../README.md"
+
+categories = ["data-structures", "encoding", "parsing"] # https://crates.io/category_slugs
+keywords = ["cps"]
+
+[dependencies]
+anstream = "0.6.18"
+clap = { version = "4.5.23", features = ["derive"] }
+clap_complete_command = "0.6.1"
+kutil-cli = "0.0.2"
+compris = { path = "../library", version = "0.0.2", features = ["serde"] }
+read-url = "0.0.2"
+thiserror = "2.0.5"
+tracing = "0.1.41"
+
+[[bin]]
+name = "compris"
+path = "src/main.rs"

@@ -1,7 +1,8 @@
 [workspace]
-members = ["crates/compris", "crates/cpsq"]
+members = ["crates/library", "crates/cli"]
 resolver = "2"
 
-[patch.crates-io]
-common-cli = { path = "../rust-common/crates/cli" }
-read-url = { path = "../rust-read-url" }
+# [patch.crates-io]
+# kutil-cli = { path = "../rust-kutil/crates/cli" }
+# kutil-std = { path = "../rust-kutil/crates/std" }
+# read-url = { path = "../rust-read-url" }

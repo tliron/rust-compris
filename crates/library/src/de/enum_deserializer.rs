@@ -1,5 +1,7 @@
 use super::{super::*, deserializer::*, errors::*, variant_deserializer::*};
 
+use kutil_cli::debug::*;
+
 //
 // EnumDeserializer
 //

@@ -1,10 +1,10 @@
-/// Creates a [compris::Value] from a bare primitive expression.
+/// Creates a [Value](super::Value) from a bare primitive expression.
 #[macro_export]
 macro_rules! normal (
     ( $value:expr ) => ( $crate::Value::from($value) );
 );
 
-/// Creates a [compris::Value::List] from a sequence of bare primitive expression.
+/// Creates a [Value::List](super::Value::List) from a sequence of bare primitive expressions.
 #[macro_export]
 macro_rules! normal_list (
     () => ( $crate::Value::List(compris::List::new()) );
@@ -14,7 +14,7 @@ macro_rules! normal_list (
     );
 );
 
-/// Creates a [compris::Value::Map] from a sequence of key-value tuples.
+/// Creates a [Value::Map](super::Value::Map) from a sequence of key-value tuples.
 #[macro_export]
 macro_rules! normal_map (
     () => ( $crate::Value::Map($crate::Map::new()) );

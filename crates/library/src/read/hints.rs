@@ -12,33 +12,33 @@ pub fn to_hinted_value(map: &Map, hints: &Hints) -> Result<Option<Value>, ReadEr
 
     let (key, value) = map.value.iter().next().unwrap();
 
-    if let Value::String(hint) = key {
+    if let Value::Text(hint) = key {
         if hint.value == hints.integer {
             match value {
-                Value::String(string) => {
+                Value::Text(string) => {
                     let integer: i64 = string.value.parse()?;
                     trace!("hinted {}: {}", hints.integer, integer);
-                    return Ok(Some(Integer::new(integer).with_meta(&string.meta).into()));
+                    return Ok(Some(Integer::new(integer).with_meta(string.meta.clone()).into()));
                 }
 
                 _ => return Err(ReadError::Hint(format!("malformed {:?}, not a string", hints.integer))),
             }
         } else if hint.value == hints.unsigned_integer {
             match value {
-                Value::String(string) => {
+                Value::Text(string) => {
                     let unsigned_integer: u64 = string.value.parse()?;
                     trace!("hinted {}: {}", hints.unsigned_integer, unsigned_integer);
-                    return Ok(Some(UnsignedInteger::new(unsigned_integer).with_meta(&string.meta).into()));
+                    return Ok(Some(UnsignedInteger::new(unsigned_integer).with_meta(string.meta.clone()).into()));
                 }
 
                 _ => return Err(ReadError::Hint(format!("malformed {:?}, not a string", hints.unsigned_integer))),
             }
         } else if hint.value == hints.bytes {
             match value {
-                Value::String(string) => {
+                Value::Text(string) => {
                     let bytes = Bytes::new_from_base64(&string.value)?;
                     trace!("hinted {}: {} bytes", hints.bytes, bytes.value.len());
-                    return Ok(Some(bytes.with_meta(&string.meta).into()));
+                    return Ok(Some(bytes.with_meta(string.meta.clone()).into()));
                 }
 
                 _ => return Err(ReadError::Hint(format!("malformed {:?}, not a string", hints.bytes))),
@@ -68,7 +68,7 @@ pub fn to_hinted_value(map: &Map, hints: &Hints) -> Result<Option<Value>, ReadEr
                     }
 
                     trace!("hinted {}: {}", hints.map, new_map.value.len());
-                    return Ok(Some(new_map.with_meta(&map.meta).into()));
+                    return Ok(Some(new_map.with_meta(map.meta.clone()).into()));
                 }
 
                 _ => return Err(ReadError::Hint(format!("malformed {:?}, not a list", hints.map))),
@@ -76,23 +76,23 @@ pub fn to_hinted_value(map: &Map, hints: &Hints) -> Result<Option<Value>, ReadEr
         } else if hint.value == hints.escaped_integer {
             trace!("escaped hint: {}", hints.integer);
             let mut new_map = Map::new();
-            new_map.value.insert(String::new(hints.integer.clone()).into(), value.clone());
-            return Ok(Some(new_map.with_meta(&map.meta).into()));
+            new_map.value.insert(Text::new(hints.integer.clone()).into(), value.clone());
+            return Ok(Some(new_map.with_meta(map.meta.clone()).into()));
         } else if hint.value == hints.escaped_unsigned_integer {
             trace!("escaped hint: {}", hints.unsigned_integer);
             let mut new_map = Map::new();
-            new_map.value.insert(String::new(hints.unsigned_integer.clone()).into(), value.clone());
-            return Ok(Some(new_map.with_meta(&map.meta).into()));
+            new_map.value.insert(Text::new(hints.unsigned_integer.clone()).into(), value.clone());
+            return Ok(Some(new_map.with_meta(map.meta.clone()).into()));
         } else if hint.value == hints.escaped_bytes {
             trace!("escaped hint: {}", hints.bytes);
             let mut new_map = Map::new();
-            new_map.value.insert(String::new(hints.bytes.clone()).into(), value.clone());
-            return Ok(Some(new_map.with_meta(&map.meta).into()));
+            new_map.value.insert(Text::new(hints.bytes.clone()).into(), value.clone());
+            return Ok(Some(new_map.with_meta(map.meta.clone()).into()));
         } else if hint.value == hints.escaped_map {
             trace!("escaped hint: {}", hints.map);
             let mut new_map = Map::new();
-            new_map.value.insert(String::new(hints.map.clone()).into(), value.clone());
-            return Ok(Some(new_map.with_meta(&map.meta).into()));
+            new_map.value.insert(Text::new(hints.map.clone()).into(), value.clone());
+            return Ok(Some(new_map.with_meta(map.meta.clone()).into()));
         }
     }
 

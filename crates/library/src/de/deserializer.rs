@@ -19,16 +19,16 @@ impl<'a> Deserializer<'a> {
         Self { value }
     }
 
-    fn incompatible_type(&self) -> DeserializationError {
+    fn incompatible_type_error(&self) -> DeserializationError {
         DeserializationError::incompatible_type(&self.value)
     }
 
-    fn incompatible_value(&self) -> Result<DeserializationError, io::Error> {
+    fn incompatible_value_error(&self) -> Result<DeserializationError, io::Error> {
         DeserializationError::incompatible_value(&self.value)
     }
 }
 
-/// See: https://serde.rs/impl-deserializer.html
+// See: https://serde.rs/impl-deserializer.html
 
 impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
     type Error = DeserializationError;
@@ -41,7 +41,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
             Value::UnsignedInteger(_) => self.deserialize_u64(visitor),
             Value::Float(_) => self.deserialize_f64(visitor),
             Value::Boolean(_) => self.deserialize_bool(visitor),
-            Value::String(_) => self.deserialize_str(visitor),
+            Value::Text(_) => self.deserialize_str(visitor),
             Value::Bytes(_) => self.deserialize_bytes(visitor),
             Value::List(_) => self.deserialize_seq(visitor),
             Value::Map(_) => self.deserialize_map(visitor),
@@ -51,7 +51,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
     fn deserialize_bool<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Boolean(boolean) => visitor.visit_bool(boolean.value),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -59,12 +59,12 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
         match self.value {
             Value::Integer(integer) => match num_traits::cast::<_, i8>(integer.value) {
                 Some(integer) => visitor.visit_i8(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, i8>(unsigned_integer.value) {
                 Some(integer) => visitor.visit_i8(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Float(float) => {
@@ -72,14 +72,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if float.fract() == 0. {
                     match num_traits::cast::<_, i8>(float) {
                         Some(integer) => visitor.visit_i8(integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -87,12 +87,12 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
         match self.value {
             Value::Integer(integer) => match num_traits::cast::<_, i16>(integer.value) {
                 Some(integer) => visitor.visit_i16(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, i16>(unsigned_integer.value) {
                 Some(integer) => visitor.visit_i16(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Float(float) => {
@@ -100,14 +100,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if float.fract() == 0. {
                     match num_traits::cast::<_, i16>(float) {
                         Some(integer) => visitor.visit_i16(integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -115,12 +115,12 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
         match self.value {
             Value::Integer(integer) => match num_traits::cast::<_, i32>(integer.value) {
                 Some(integer) => visitor.visit_i32(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, i32>(unsigned_integer.value) {
                 Some(integer) => visitor.visit_i32(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Float(float) => {
@@ -128,14 +128,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if float.fract() == 0. {
                     match num_traits::cast::<_, i32>(float) {
                         Some(integer) => visitor.visit_i32(integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -145,7 +145,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, i64>(unsigned_integer.value) {
                 Some(integer) => visitor.visit_i64(integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Float(float) => {
@@ -153,14 +153,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if float.fract() == 0. {
                     match num_traits::cast::<_, i64>(float) {
                         Some(integer) => visitor.visit_i64(integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -168,17 +168,17 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
         match self.value {
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, u8>(unsigned_integer.value) {
                 Some(unsigned_integer) => visitor.visit_u8(unsigned_integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Integer(integer) => {
                 if integer.value >= 0 {
                     match num_traits::cast::<_, u8>(integer.value) {
                         Some(insigned_integer) => visitor.visit_u8(insigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
@@ -187,14 +187,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if (float >= 0.) && (float.fract() == 0.) {
                     match num_traits::cast::<_, u8>(float) {
                         Some(unsigned_integer) => visitor.visit_u8(unsigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -202,17 +202,17 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
         match self.value {
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, u16>(unsigned_integer.value) {
                 Some(unsigned_integer) => visitor.visit_u16(unsigned_integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Integer(integer) => {
                 if integer.value >= 0 {
                     match num_traits::cast::<_, u16>(integer.value) {
                         Some(insigned_integer) => visitor.visit_u16(insigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
@@ -221,14 +221,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if (float >= 0.) && (float.fract() == 0.) {
                     match num_traits::cast::<_, u16>(float) {
                         Some(unsigned_integer) => visitor.visit_u16(unsigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -236,17 +236,17 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
         match self.value {
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, u32>(unsigned_integer.value) {
                 Some(unsigned_integer) => visitor.visit_u32(unsigned_integer),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::Integer(integer) => {
                 if integer.value >= 0 {
                     match num_traits::cast::<_, u32>(integer.value) {
                         Some(insigned_integer) => visitor.visit_u32(insigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
@@ -255,14 +255,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if (float >= 0.) && (float.fract() == 0.) {
                     match num_traits::cast::<_, u32>(float) {
                         Some(unsigned_integer) => visitor.visit_u32(unsigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -274,10 +274,10 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if integer.value >= 0 {
                     match num_traits::cast::<_, u64>(integer.value) {
                         Some(insigned_integer) => visitor.visit_u64(insigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
@@ -286,14 +286,14 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 if (float >= 0.) && (float.fract() == 0.) {
                     match num_traits::cast::<_, u64>(float) {
                         Some(unsigned_integer) => visitor.visit_u64(unsigned_integer),
-                        None => Err(self.incompatible_value()?),
+                        None => Err(self.incompatible_value_error()?),
                     }
                 } else {
-                    Err(self.incompatible_value()?)
+                    Err(self.incompatible_value_error()?)
                 }
             }
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -303,21 +303,21 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 let float: f64 = float.value.into();
                 match num_traits::cast::<_, f32>(float) {
                     Some(float) => visitor.visit_f32(float),
-                    None => Err(self.incompatible_value()?),
+                    None => Err(self.incompatible_value_error()?),
                 }
             }
 
             Value::Integer(integer) => match num_traits::cast::<_, f32>(integer.value) {
                 Some(float) => visitor.visit_f32(float),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, f32>(unsigned_integer.value) {
                 Some(float) => visitor.visit_f32(float),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -327,15 +327,15 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 
             Value::Integer(integer) => match num_traits::cast::<_, f64>(integer.value) {
                 Some(float) => visitor.visit_f64(float),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
             Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, f64>(unsigned_integer.value) {
                 Some(float) => visitor.visit_f64(float),
-                None => Err(self.incompatible_value()?),
+                None => Err(self.incompatible_value_error()?),
             },
 
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -345,29 +345,29 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
 
     fn deserialize_str<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
-            Value::String(string) => visitor.visit_str(&string.value),
-            _ => Err(self.incompatible_type()),
+            Value::Text(string) => visitor.visit_str(&string.value),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
     fn deserialize_string<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
-            Value::String(string) => visitor.visit_string(string.value.clone()),
-            _ => Err(self.incompatible_type()),
+            Value::Text(string) => visitor.visit_string(string.value.clone()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
     fn deserialize_bytes<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Bytes(bytes) => visitor.visit_bytes(&bytes.value),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
     fn deserialize_byte_buf<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Bytes(bytes) => visitor.visit_byte_buf(bytes.value.clone()),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -381,7 +381,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
     fn deserialize_unit<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Null(_) => visitor.visit_unit(),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -404,7 +404,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
     fn deserialize_seq<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::List(list) => Ok(visitor.visit_seq(SeqDeserializer::new(list))?),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -424,7 +424,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
     fn deserialize_map<V: serde::de::Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Map(map) => Ok(visitor.visit_map(MapDeserializer::new(map))?),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 
@@ -445,7 +445,7 @@ impl<'de, 'a> serde::de::Deserializer<'de> for &'a mut Deserializer<'de> {
     ) -> Result<V::Value, Self::Error> {
         match self.value {
             Value::Map(map) => Ok(visitor.visit_enum(EnumDeserializer::new(map)?)?),
-            _ => Err(self.incompatible_type()),
+            _ => Err(self.incompatible_type_error()),
         }
     }
 

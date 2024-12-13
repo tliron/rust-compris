@@ -1,12 +1,10 @@
-use super::{
-    super::{normal::*, styles::*, write_debug::*},
-    meta::*,
-};
+use super::{super::normal::*, meta::*};
 
 use {
+    kutil_cli::debug::*,
     ordered_float::*,
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    owo_colors::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -30,23 +28,44 @@ impl Float {
     }
 }
 
-impl From<f64> for Float {
-    fn from(value: f64) -> Self {
-        Float::new(value)
+impl Normal for Float {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
+    }
+
+    fn to_map_string_key(&self) -> String {
+        self.value.to_string()
     }
 }
 
-impl From<f32> for Float {
-    fn from(value: f32) -> Self {
-        Float::new(value as f64)
+impl WriteDebug for Float {
+    fn write_debug_representation<W: io::Write>(
+        &self,
+        writer: &mut W,
+        indentation: usize,
+        styles: &Styles,
+    ) -> Result<(), io::Error> {
+        let value = self.value.style(styles.number);
+        write!(writer, "{} f64", value)?;
+        if let Some(location) = &self.meta.location {
+            write!(writer, " ")?;
+            location.write_debug_representation(writer, indentation, styles)?;
+        }
+        Ok(())
     }
 }
 
-impl From<Float> for f64 {
-    fn from(value: Float) -> Self {
-        value.value.into()
+impl fmt::Display for Float {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}f64", self.value)
     }
 }
+
+// Delegated
 
 impl PartialEq for Float {
     fn eq(&self, other: &Self) -> bool {
@@ -71,33 +90,22 @@ impl Hash for Float {
     }
 }
 
-impl Normal for Float {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
+// Conversions
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        self.value.to_string()
+impl From<f64> for Float {
+    fn from(value: f64) -> Self {
+        Float::new(value)
     }
 }
 
-impl fmt::Display for Float {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}f64", self.value)
+impl From<f32> for Float {
+    fn from(value: f32) -> Self {
+        Float::new(value as f64)
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for Float {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = self.value.style(styles.number);
-        write!(writer, "{} f64", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
+impl From<Float> for f64 {
+    fn from(value: Float) -> Self {
+        value.value.into()
     }
 }

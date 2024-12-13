@@ -1,11 +1,11 @@
-/// Traverse a value by calling [compris::Value::get] recursively.
+/// Traverse a value by calling [Value::get](super::Value::get) recursively.
 ///
-/// The first argument is the starting [compris::Value]. The following arguments
+/// The first argument is the starting [Value](super::Value). The following arguments
 /// are a sequence of keys, which will be tried one at a time. Any non-map or
 /// missing key will cause the macro to stop and return [None].
 ///
-/// The keys are either [Value] or anything that implements [Into<Value>], which
-/// includes all the supported primtive types.
+/// The keys are either [Value](super::Value) or anything that implements
+/// [Into]<[Value](super::Value)>, which includes all the supported primtive types.
 #[macro_export]
 macro_rules! traverse(
     ( $value:expr ) => ( Option::<&$crate::Value>::Some(&$value) );
@@ -20,14 +20,14 @@ macro_rules! traverse(
     );
 );
 
-/// Traverse a value by calling [Value::get_mut] recursively.
+/// Traverse a value by calling [Value::get_mut](super::Value::get_mut) recursively.
 ///
-/// The first argument is the starting [compris::Value]. The following arguments
+/// The first argument is the starting [Value](super::Value). The following arguments
 /// are a sequence of keys, which will be tried one at a time. Any non-map or
 /// missing key will cause the macro to stop and return [None].
 ///
-/// The keys are either [Value] or anything that implements [Into<Value>], which
-/// includes all the supported primtive types.
+/// The keys are either [Value](super::Value) or anything that implements
+/// [Into]<[Value](super::Value)>, which includes all the supported primtive types.
 #[macro_export]
 macro_rules! traverse_mut(
     ( $value:expr ) => ( Option::<&mut $crate::Value>::Some($value) );

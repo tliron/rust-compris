@@ -2,9 +2,9 @@ use super::super::{super::*, *};
 
 use std::io::Read;
 
-impl<R: Read> Reader<R> {
+impl Reader {
     /// Reads from XML into a normal value.
-    pub fn read_xml(&mut self) -> Result<Value, ReadError> {
+    pub fn read_xml<R: Read>(&self, _reader: &mut R) -> Result<Value, ReadError> {
         todo!()
     }
 }

@@ -34,7 +34,7 @@ impl Float {
                             serializer.serialize_i64(integer)
                         } else {
                             Integer::new(integer)
-                                .with_meta(&self.meta)
+                                .with_meta(self.meta.clone())
                                 .serialize_with_mode(serializer, serialization_mode)
                         }
                     }
@@ -52,7 +52,7 @@ impl Float {
                                 serializer.serialize_i64(integer)
                             } else {
                                 Integer::new(integer)
-                                    .with_meta(&self.meta)
+                                    .with_meta(self.meta.clone())
                                     .serialize_with_mode(serializer, serialization_mode)
                             }
                         }

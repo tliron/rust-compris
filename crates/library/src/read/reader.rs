@@ -7,10 +7,7 @@ use std::io::Read;
 //
 
 /// Reads from various formats into normal value types.
-pub struct Reader<R: Read> {
-    /// Reader.
-    pub reader: R,
-
+pub struct Reader {
     /// Format.
     pub format: Format,
 
@@ -30,11 +27,10 @@ pub struct Reader<R: Read> {
     pub base64: bool,
 }
 
-impl<R: Read> Reader<R> {
+impl Reader {
     /// Constructor.
-    pub fn new(reader: R, format: Format) -> Self {
+    pub fn new(format: Format) -> Self {
         Self {
-            reader,
             format,
             try_integers: false,
             try_unsigned_integers: false,
@@ -42,12 +38,6 @@ impl<R: Read> Reader<R> {
             allow_legacy_types: false,
             base64: false,
         }
-    }
-
-    /// Set reader.
-    pub fn with_reader(mut self, reader: R) -> Self {
-        self.reader = reader;
-        self
     }
 
     /// Set format.
@@ -97,25 +87,25 @@ impl<R: Read> Reader<R> {
     }
 
     /// Reads into a normal value according to [Reader::format].
-    pub fn read(&mut self) -> Result<Value, ReadError> {
+    pub fn read<R: Read>(&self, reader: &mut R) -> Result<Value, ReadError> {
         match &self.format {
             #[cfg(feature = "yaml")]
-            Format::YAML => self.read_yaml(),
+            Format::YAML => self.read_yaml(reader),
 
             #[cfg(feature = "json")]
-            Format::JSON => self.read_json(),
+            Format::JSON => self.read_json(reader),
 
             #[cfg(feature = "json")]
-            Format::XJSON => self.read_xjson(),
+            Format::XJSON => self.read_xjson(reader),
 
             #[cfg(feature = "xml")]
             Format::XML => todo!(),
 
             #[cfg(feature = "cbor")]
-            Format::CBOR => self.read_cbor(),
+            Format::CBOR => self.read_cbor(reader),
 
             #[cfg(feature = "messagepack")]
-            Format::MessagePack => self.read_message_pack(),
+            Format::MessagePack => self.read_message_pack(reader),
 
             #[cfg(not(all(
                 feature = "yaml",
@@ -127,20 +117,9 @@ impl<R: Read> Reader<R> {
             _ => Err(ReadError::UnsupportedFormat(self.format.clone())),
         }
     }
-}
 
-//
-// StringReader
-//
-
-/// String reader.
-pub trait StringReader<'a> {
-    /// Constructor.
-    fn new_for_string(string: &'a str, format: Format) -> Self;
-}
-
-impl<'a> StringReader<'a> for Reader<&'a [u8]> {
-    fn new_for_string(string: &'a str, format: Format) -> Self {
-        Self::new(string.as_bytes(), format)
+    /// Reads into a normal value according to [Reader::format].
+    pub fn read_from_string(&self, string: &str) -> Result<Value, ReadError> {
+        self.read(&mut string.as_bytes())
     }
 }

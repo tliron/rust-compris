@@ -1,4 +1,4 @@
-use super::{cli::*, completion::*, errors::*, version::*};
+use super::{cli::*, errors::*};
 
 use clap::*;
 
@@ -13,8 +13,8 @@ pub fn run() -> Result<(), MainError> {
     match &cli.subcommand {
         None => cli.convert()?,
         Some(subcommand) => match subcommand {
-            SubCommand::Version => version(),
-            SubCommand::Completion { shell } => completion(shell),
+            SubCommand::Version(version) => version.run::<CLI>(),
+            SubCommand::Completion(completion) => completion.run::<CLI>(),
         },
     }
 

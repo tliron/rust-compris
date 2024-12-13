@@ -1,22 +1,28 @@
-// You need this for the trait functions
-use compris::read::StringReader;
+use {
+    anstream::println,
+    compris::{read::*, *},
+    owo_colors::*,
+    serde::Deserialize,
+};
 
 pub fn main() {
-    // See examples/literals.rs
-    let value = compris::normal_map![
+    // See examples/literal.rs
+
+    let value = normal_map![
         ("name", "Tal"),
         ("credit", 800),
         ("enabled", true),
         ("group", ()),
-        ("role", compris::normal_map![("moderator", "forums")])
+        ("role", normal_map![("moderator", "forums")]),
     ];
 
     // We can "deserialize" from the normal value directly to our struct
+
     let user: User = value.deserialize().unwrap();
-    println!("from normal types:\n{:?}", user);
+    println!("{}\n{:#?}", "from normal types:".yellow(), user);
 
     // But we can also deserialize from a reader of any representation format
-    // (note that internally it is first read into normal value types)
+    // (note that internally it is first read into normal value types like above)
 
     let json = r#"
 {
@@ -28,12 +34,12 @@ pub fn main() {
 }
 "#;
 
-    let user: User = compris::read::Reader::new_for_string(json, compris::Format::JSON).deserialize().unwrap();
-    println!("\nfrom JSON:\n{:?}", user);
+    let user: User = Reader::new(Format::JSON).deserialize_from_string(json).unwrap();
+    println!("\n{}\n{:#?}", "from JSON:".yellow(), user);
 }
 
-#[derive(Debug, serde::Deserialize)]
-#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
 struct User {
     name: String,
     credit: i64,
@@ -42,8 +48,8 @@ struct User {
     role: Role,
 }
 
-#[derive(Debug, serde::Deserialize)]
-#[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+#[allow(unused)]
 enum Role {
     #[serde(rename = "admin")]
     Admin,

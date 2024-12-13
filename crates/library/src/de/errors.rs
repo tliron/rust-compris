@@ -1,7 +1,8 @@
 use super::super::*;
 
 use {
-    std::{fmt, io, string::String as StdString},
+    kutil_cli::debug::*,
+    std::{fmt, io, },
     thiserror::*,
 };
 
@@ -22,7 +23,7 @@ pub enum DeserializationError {
 
     /// Incompatible value.
     #[error("incompatible value: {0}")]
-    IncompatibleValue(StdString),
+    IncompatibleValue(String),
 
     /// No more elements.
     #[error("no more elements")]
@@ -34,7 +35,7 @@ pub enum DeserializationError {
 
     /// Custom.
     #[error("custom: {0}")]
-    Custom(StdString),
+    Custom(String),
 
     /// Read.
     #[error("read: {0}")]

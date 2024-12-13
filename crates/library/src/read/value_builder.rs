@@ -93,31 +93,62 @@ impl ValueBuilder {
     ///
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_list(&mut self) {
-        self.start_list_with_annotation(None);
+        self.push(List::new());
+    }
+
+    /// Starts a list with metadata.
+    ///
+    /// Should be followed later by [end_container](Self::end_container).
+    pub fn start_list_with_meta(&mut self, meta: Meta) {
+        self.push(List::new().with_meta(meta));
+    }
+
+    /// Starts a list with an optional location.
+    ///
+    /// Should be followed later by [end_container](Self::end_container).
+    pub fn start_list_with_location(&mut self, location: Option<Location>) {
+        self.start_list_with_meta(Meta::new().with_location(location));
     }
 
     /// Starts a list with an optional annotation.
     ///
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_list_with_annotation(&mut self, annotation: Option<Annotation>) {
-        self.push(List::new().with_annotation_option(annotation));
+        self.start_list_with_meta(Meta::new().with_annotation(annotation));
     }
 
     /// Starts a map.
     ///
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_map(&mut self) {
-        self.start_map_with_annotation(None);
+        self.push(Map::new());
+
+        // Every map entry on the stack has a matching key_stack entry
+        self.key_stack.push(None);
+    }
+
+    /// Starts a map with metadata.
+    ///
+    /// Should be followed later by [end_container](Self::end_container).
+    pub fn start_map_with_meta(&mut self, meta: Meta) {
+        self.push(Map::new().with_meta(meta));
+
+        // Every map entry on the stack has a matching key_stack entry
+        self.key_stack.push(None);
+    }
+
+    /// Starts a map with an optional location.
+    ///
+    /// Should be followed later by [end_container](Self::end_container).
+    pub fn start_map_with_location(&mut self, location: Option<Location>) {
+        self.start_map_with_meta(Meta::new().with_location(location));
     }
 
     /// Starts a map with an optional annotation.
     ///
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_map_with_annotation(&mut self, annotation: Option<Annotation>) {
-        self.push(Map::new().with_annotation_option(annotation));
-
-        // Every map entry on the stack has a matching key_stack entry
-        self.key_stack.push(None);
+        self.start_map_with_meta(Meta::new().with_annotation(annotation));
     }
 
     /// Ends a container.

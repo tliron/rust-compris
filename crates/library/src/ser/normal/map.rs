@@ -44,7 +44,7 @@ impl Map {
                 // Do we have a non-string key?
                 for key in self.value.keys() {
                     match key {
-                        Value::String(_) => {}
+                        Value::Text(_) => {}
 
                         _ => {
                             trace!("map has a non-string key");

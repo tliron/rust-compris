@@ -33,7 +33,9 @@ impl UnsignedInteger {
                         // Avoid endless recursion!
                         serializer.serialize_i64(integer)
                     } else {
-                        Integer::new(integer).with_meta(&self.meta).serialize_with_mode(serializer, serialization_mode)
+                        Integer::new(integer)
+                            .with_meta(self.meta.clone())
+                            .serialize_with_mode(serializer, serialization_mode)
                     }
                 }
 
@@ -42,7 +44,7 @@ impl UnsignedInteger {
 
             UnsignedIntegerSerializationMode::AsFloat => match num_traits::cast::<_, f64>(self.value) {
                 Some(float) => {
-                    Float::new(float).with_meta(&self.meta).serialize_with_mode(serializer, serialization_mode)
+                    Float::new(float).with_meta(self.meta.clone()).serialize_with_mode(serializer, serialization_mode)
                 }
 
                 None => Err(Error::custom(format!("cannot cast to f64: {}", self.value))),

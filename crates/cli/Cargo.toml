@@ -20,8 +20,8 @@ keywords = ["cps"]
 anstream = "0.6.18"
 clap = { version = "4.5.23", features = ["derive"] }
 clap_complete_command = "0.6.1"
-kutil-cli = "0.0.2"
-compris = { path = "../library", version = "0.0.2", features = ["serde"] }
+kutil-cli = "0.0.3"
+compris = { path = "../library", version = "0.0.3", features = ["serde"] }
 read-url = "0.0.2"
 thiserror = "2.0.5"
 tracing = "0.1.41"

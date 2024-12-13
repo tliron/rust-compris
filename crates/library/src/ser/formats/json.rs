@@ -7,25 +7,29 @@ use {
     tracing::trace,
 };
 
-impl<W: io::Write> ComprisSerializer<W> {
+impl ComprisSerializer {
     /// Serializes the provided value to the writer as JSON.
-    pub fn write_json<V: Serialize>(&mut self, value: &V) -> Result<(), SerializationError> {
-        let writer = if self.pretty {
+    pub fn write_json<W: io::Write, V: Serialize + ?Sized>(
+        &self,
+        value: &V,
+        writer: &mut W,
+    ) -> Result<(), SerializationError> {
+        let json_stream_writer = if self.pretty {
             struson::writer::JsonStreamWriter::new_custom(
-                self.writer.by_ref(),
+                writer.by_ref(),
                 struson::writer::WriterSettings { pretty_print: true, ..Default::default() },
             )
         } else {
-            struson::writer::JsonStreamWriter::new(self.writer.by_ref())
+            struson::writer::JsonStreamWriter::new(writer.by_ref())
         };
 
-        let mut writer = StyledJsonWriter::new(writer);
+        let mut json_stream_writer = StyledJsonWriter::new(json_stream_writer);
 
-        writer.serialize_value(&value)?;
-        writer.finish_document()?;
+        json_stream_writer.serialize_value(&value)?;
+        json_stream_writer.finish_document()?;
 
         if self.pretty {
-            self.write_newline()
+            Self::write_newline(writer)
         } else {
             Ok(())
         }

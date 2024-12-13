@@ -7,17 +7,17 @@ use {
     tracing::trace,
 };
 
-impl<R: Read> Reader<R> {
+impl Reader {
     /// Reads from MessagePack into a normal value.
     ///
     /// Is affected by [Reader::base64].
-    pub fn read_message_pack(&mut self) -> Result<Value, ReadError> {
+    pub fn read_message_pack<R: Read>(&self, reader: &mut R) -> Result<Value, ReadError> {
         let mut value_builder = ValueBuilder::new();
         if self.base64 {
-            let mut reader = DecoderReader::new(self.reader.by_ref(), &BASE64_STANDARD);
+            let mut reader = DecoderReader::new(reader, &BASE64_STANDARD);
             read_next_message_pack(&mut reader, &mut value_builder)?;
         } else {
-            read_next_message_pack(self.reader.by_ref(), &mut value_builder)?;
+            read_next_message_pack(reader, &mut value_builder)?;
         }
         Ok(value_builder.value())
     }
@@ -211,7 +211,7 @@ fn read_message_pack_string<R: Read>(
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
     let string = StdString::from_utf8(buffer)?;
-    Ok(value_builder.add(String::new(string)))
+    Ok(value_builder.add(Text::new(string)))
 }
 
 fn read_message_pack_bytes<R: Read>(

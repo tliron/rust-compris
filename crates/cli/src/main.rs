@@ -1,9 +1,7 @@
 mod cli;
-mod completion;
 mod convert;
 mod errors;
 mod run;
-mod version;
 
 use run::*;
 

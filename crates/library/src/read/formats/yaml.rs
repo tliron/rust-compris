@@ -1,19 +1,26 @@
-use super::super::{super::*, value_builder::*, *};
-
-use {
-    saphyr_parser::*,
-    std::{io::Read, string::String as StdString},
-    tracing::trace,
+use super::super::{
+    super::{Value, *},
+    value_builder::*,
+    *,
 };
 
-impl<R: Read> Reader<R> {
+use {
+    saphyr_parser::{Event, Span, *},
+    std::io::Read,
+    tracing::*,
+};
+
+impl Reader {
     /// Reads from YAML into a normal value.
-    pub fn read_yaml(&mut self) -> Result<Value, ReadError> {
+    ///
+    /// Is affected by [Reader::try_unsigned_integers], [Reader::allow_legacy_words],
+    /// and [Reader::allow_legacy_types].
+    pub fn read_yaml<R: Read>(&self, reader: &mut R) -> Result<Value, ReadError> {
         // https://github.com/saphyr-rs/saphyr/issues/17
         // https://github.com/saphyr-rs/saphyr/issues/16
 
-        let mut string = StdString::new();
-        self.reader.read_to_string(&mut string)?;
+        let mut string = String::new();
+        reader.read_to_string(&mut string)?;
         let mut receiver =
             YamlReceiver::new(self.try_unsigned_integers, self.allow_legacy_words, self.allow_legacy_types);
         Parser::new_from_str(&string).load(&mut receiver, false)?;
@@ -59,7 +66,7 @@ impl YamlReceiver {
 
     fn parse_yaml_tagged_scalar(
         &self,
-        value: StdString,
+        value: String,
         tag_prefix: &str,
         tag_suffix: &str,
         location: Location,
@@ -69,36 +76,40 @@ impl YamlReceiver {
             match tag_suffix {
                 // Failsafe schema, https://yaml.org/spec/1.2.2/#10113-generic-string
                 "str" => {
-                    return Ok(String::new(value).with_location(location).into());
+                    return Ok(Text::new(value).with_location(Some(location)).into());
                 }
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10211-null
                 "null" => {
                     self.parse_yaml_null(&value, &location)?;
-                    return Ok(Null::new().with_location(location).into());
+                    return Ok(Null::new().with_location(Some(location)).into());
                 }
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10212-boolean
                 "bool" => {
-                    return Ok(Boolean::new(self.parse_yaml_bool(&value, &location)?).with_location(location).into());
+                    return Ok(Boolean::new(self.parse_yaml_bool(&value, &location)?)
+                        .with_location(Some(location))
+                        .into());
                 }
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10213-integer
                 "int" => {
                     return Ok(Integer::new(Self::parse_yaml_integer(&value, &location)?)
-                        .with_location(location)
+                        .with_location(Some(location))
                         .into());
                 }
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10214-floating-point
                 "float" => {
-                    return Ok(Float::new(Self::parse_yaml_float(&value, &location)?).with_location(location).into());
+                    return Ok(Float::new(Self::parse_yaml_float(&value, &location)?)
+                        .with_location(Some(location))
+                        .into());
                 }
 
                 "binary" => {
                     // https://yaml.org/type/binary.html
                     if self.allow_legacy_types {
-                        return Ok(Bytes::new_from_base64(&value)?.with_location(location).into());
+                        return Ok(Bytes::new_from_base64(&value)?.with_location(Some(location)).into());
                     } else {
                         trace!("unsupported legacy tag suffix: {}{}", tag_prefix, tag_suffix);
                     }
@@ -113,25 +124,25 @@ impl YamlReceiver {
         }
 
         // Silently treat unsupported tag prefixes as strings
-        Ok(String::new(value).with_location(location).into())
+        Ok(Text::new(value).with_location(Some(location)).into())
     }
 
-    fn parse_yaml_bare_scalar(&self, value: StdString, location: Location) -> Result<Value, ReadError> {
+    fn parse_yaml_bare_scalar(&self, value: String, location: Location) -> Result<Value, ReadError> {
         // Core schema, https://yaml.org/spec/1.2.2/#1032-tag-resolution
         if let Ok(_) = self.parse_yaml_null(&value, &location) {
-            Ok(Null::new().with_location(location).into())
+            Ok(Null::new().with_location(Some(location)).into())
         } else if let Ok(boolean) = self.parse_yaml_bool(&value, &location) {
-            Ok(Boolean::new(boolean).with_location(location).into())
+            Ok(Boolean::new(boolean).with_location(Some(location)).into())
         } else if let Some(unsigned_integer) =
             if self.try_unsigned_integers { Self::parse_yaml_unsigned_integer(&value) } else { None }
         {
-            Ok(UnsignedInteger::new(unsigned_integer).with_location(location).into())
+            Ok(UnsignedInteger::new(unsigned_integer).with_location(Some(location)).into())
         } else if let Ok(integer) = Self::parse_yaml_integer(&value, &location) {
-            Ok(Integer::new(integer).with_location(location).into())
+            Ok(Integer::new(integer).with_location(Some(location)).into())
         } else if let Ok(float) = Self::parse_yaml_float(&value, &location) {
-            Ok(Float::new(float).with_location(location).into())
+            Ok(Float::new(float).with_location(Some(location)).into())
         } else {
-            Ok(String::new(value).with_location(location).into())
+            Ok(Text::new(value).with_location(Some(location)).into())
         }
     }
 
@@ -228,7 +239,7 @@ impl<'a> SpannedEventReceiver for YamlReceiver {
 
         match event {
             Event::SequenceStart(_anchor_id, _tag) => {
-                self.value_builder.start_list();
+                self.value_builder.start_list_with_location(Some(span.into()));
             }
 
             Event::SequenceEnd => {
@@ -236,7 +247,7 @@ impl<'a> SpannedEventReceiver for YamlReceiver {
             }
 
             Event::MappingStart(_anchor_id, _tag) => {
-                self.value_builder.start_map();
+                self.value_builder.start_map_with_location(Some(span.into()));
             }
 
             Event::MappingEnd => {
@@ -244,15 +255,13 @@ impl<'a> SpannedEventReceiver for YamlReceiver {
             }
 
             Event::Scalar(value, style, _anchor_id, tag) => {
-                let location = Location::new(span.start.index(), span.start.line(), span.start.col());
-
                 if style != TScalarStyle::Plain {
                     // All non-plain scalars are strings
-                    self.value_builder.add(String::new(value).with_location(location));
+                    self.value_builder.add(Text::new(value).with_location(Some(span.into())));
                 } else {
                     // Tagged plain scalar?
                     if let Some(Tag { ref handle, ref suffix }) = tag {
-                        match self.parse_yaml_tagged_scalar(value, handle, suffix, location) {
+                        match self.parse_yaml_tagged_scalar(value, handle, suffix, span.into()) {
                             Ok(value) => self.value_builder.add(value),
                             Err(err) => {
                                 // See: https://github.com/saphyr-rs/saphyr/issues/20
@@ -262,7 +271,7 @@ impl<'a> SpannedEventReceiver for YamlReceiver {
                         }
                     } else {
                         // Plain and untagged scalar, so determine type heuristically
-                        match self.parse_yaml_bare_scalar(value, location) {
+                        match self.parse_yaml_bare_scalar(value, span.into()) {
                             Ok(value) => self.value_builder.add(value),
                             Err(err) => {
                                 // See: https://github.com/saphyr-rs/saphyr/issues/20
@@ -279,10 +288,28 @@ impl<'a> SpannedEventReceiver for YamlReceiver {
     }
 }
 
-impl Into<Marker> for &Location {
-    fn into(self) -> Marker {
-        // Yeah, it's inefficient to convert a Location back to a Marker,
-        // but we only ever do this for errors
-        Marker::new(self.index, self.row, self.column)
+impl From<Span> for Location {
+    fn from(value: Span) -> Self {
+        Location::new(value.start.index(), value.start.line(), value.start.col())
+    }
+}
+
+// Yeah, it's inefficient to convert a Location back to a Marker,
+// but we only ever do this for errors
+impl From<&Location> for Marker {
+    fn from(value: &Location) -> Self {
+        let (row, column) = match value.row_and_column {
+            Some((row, column)) => (row, column),
+            None => (0, 0),
+        };
+
+        Marker::new(
+            match value.index {
+                Some(index) => index,
+                None => 0,
+            },
+            row,
+            column,
+        )
     }
 }

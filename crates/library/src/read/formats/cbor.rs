@@ -7,18 +7,18 @@ use {
     tracing::trace,
 };
 
-impl<R: Read> Reader<R> {
+impl Reader {
     /// Reads from CBOR into a normal value.
     ///
     /// Is affected by [Reader::base64].
-    pub fn read_cbor(&mut self) -> Result<Value, ReadError> {
+    pub fn read_cbor<R: Read>(&self, reader: &mut R) -> Result<Value, ReadError> {
         let mut value_builder = ValueBuilder::new();
         if self.base64 {
-            let reader = DecoderReader::new(self.reader.by_ref(), &BASE64_STANDARD);
+            let reader = DecoderReader::new(reader, &BASE64_STANDARD);
             let mut decoder = Decoder::new(reader);
             read_next_cbor(&mut decoder, &mut value_builder, None)?;
         } else {
-            let mut decoder = Decoder::new(self.reader.by_ref());
+            let mut decoder = Decoder::new(reader);
             read_next_cbor(&mut decoder, &mut value_builder, None)?;
         }
         Ok(value_builder.value())
@@ -46,17 +46,17 @@ fn read_next_cbor<R: Read>(
         }
 
         Event::Null => {
-            value_builder.add(Null::new().with_annotation_option(annotation));
+            value_builder.add(Null::new().with_annotation(annotation));
         }
 
         Event::Unsigned(unsigned_integer) => {
-            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation_option(annotation));
+            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation(annotation));
         }
 
         Event::Signed(integer) => {
             match Event::interpret_signed_checked(integer) {
                 Some(integer) => {
-                    value_builder.add(Integer::new(integer).with_annotation_option(annotation));
+                    value_builder.add(Integer::new(integer).with_annotation(annotation));
                 }
 
                 None => return Err(DecodeError::Malformed.into()),
@@ -64,29 +64,29 @@ fn read_next_cbor<R: Read>(
         }
 
         Event::Float(float) => {
-            value_builder.add(Float::new(float).with_annotation_option(annotation));
+            value_builder.add(Float::new(float).with_annotation(annotation));
         }
 
         Event::Bool(boolean) => {
-            value_builder.add(Boolean::new(boolean).with_annotation_option(annotation));
+            value_builder.add(Boolean::new(boolean).with_annotation(annotation));
         }
 
         Event::TextString(string) => {
-            value_builder.add(String::new(string).with_annotation_option(annotation));
+            value_builder.add(Text::new(string).with_annotation(annotation));
         }
 
         Event::UnknownLengthTextString => {
             let string = read_cbor_unknown_length_text_string(decoder)?;
-            value_builder.add(String::new(string).with_annotation_option(annotation));
+            value_builder.add(Text::new(string).with_annotation(annotation));
         }
 
         Event::ByteString(bytes) => {
-            value_builder.add(Bytes::new(bytes).with_annotation_option(annotation));
+            value_builder.add(Bytes::new(bytes).with_annotation(annotation));
         }
 
         Event::UnknownLengthByteString => {
             let bytes = read_cbor_unknown_length_bytes(decoder)?;
-            value_builder.add(Bytes::new(bytes).with_annotation_option(annotation));
+            value_builder.add(Bytes::new(bytes).with_annotation(annotation));
         }
 
         Event::Array(length) => {

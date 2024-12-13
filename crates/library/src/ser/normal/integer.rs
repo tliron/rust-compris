@@ -35,7 +35,7 @@ impl Integer {
                         serializer.serialize_u64(unsigned_integer)
                     } else {
                         UnsignedInteger::new(unsigned_integer)
-                            .with_meta(&self.meta)
+                            .with_meta(self.meta.clone())
                             .serialize_with_mode(serializer, serialization_mode)
                     }
                 }
@@ -47,7 +47,9 @@ impl Integer {
                         // Avoid endless recursion!
                         serializer.serialize_f64(float)
                     } else {
-                        Float::new(float).with_meta(&self.meta).serialize_with_mode(serializer, serialization_mode)
+                        Float::new(float)
+                            .with_meta(self.meta.clone())
+                            .serialize_with_mode(serializer, serialization_mode)
                     }
                 }
 

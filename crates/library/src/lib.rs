@@ -31,6 +31,9 @@ J'ai compris!
 pub mod de;
 /// Read from various formats into normal value types.
 pub mod read;
+/// Resolve normal value types into other types.
+#[cfg(feature = "resolve")]
+pub mod resolve;
 /// General-purpose serde serialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod ser;
@@ -38,8 +41,6 @@ pub mod ser;
 mod format;
 mod hints;
 mod normal;
-mod styles;
-mod write_debug;
 
 #[allow(unused_imports)]
-pub use {format::*, hints::*, normal::*, styles::*, write_debug::*};
+pub use {format::*, hints::*, normal::*};

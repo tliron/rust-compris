@@ -1,13 +1,12 @@
-use super::super::super::*;
+use super::super::super::normal::*;
 
 use serde::ser::*;
 
-//
-// String
-//
-
-impl Serialize for String {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+impl Serialize for Text {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_str(&*self.value)
     }
 }

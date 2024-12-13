@@ -1,17 +1,17 @@
-use super::super::*;
+use super::super::{normal::*, *};
 
 use {
-    std::{fmt, io, string::String as StdString},
+    std::{fmt, io},
     thiserror::*,
 };
 
 //
-// DeserializationError
+// DeserializeError
 //
 
-/// Deserialization error.
-#[derive(Error, Debug)]
-pub enum DeserializationError {
+/// Compris deserialization error.
+#[derive(Debug, Error)]
+pub enum DeserializeError {
     /// Unsupported format.
     #[error("unsupported format: {0:?}")]
     UnsupportedFormat(Format),
@@ -22,43 +22,46 @@ pub enum DeserializationError {
 
     /// Incompatible value.
     #[error("incompatible value: {0}")]
-    IncompatibleValue(StdString),
+    IncompatibleValue(String),
 
-    /// No more elements.
-    #[error("no more elements")]
-    NoMoreElements,
+    /// No more items.
+    #[error("no more items")]
+    NoMoreItems,
 
     /// Not supported.
     #[error("not supported: {0}")]
     NotSupported(&'static str),
 
-    /// Custom.
-    #[error("custom: {0}")]
-    Custom(StdString),
-
     /// Read.
     #[error("read: {0}")]
-    Read(#[from] read::ReadError),
+    Read(#[from] parse::ParseError),
 
     /// I/O.
     #[error("I/O: {0}")]
     IO(#[from] io::Error),
+
+    /// Custom.
+    #[error("custom: {0}")]
+    Custom(String),
 }
 
-impl DeserializationError {
+impl DeserializeError {
     /// Incompatible type.
-    pub fn incompatible_type(value: &Value) -> DeserializationError {
+    pub fn incompatible_type(value: &Value) -> DeserializeError {
         Self::IncompatibleType(value.get_type_name())
     }
 
     /// Incompatible value.
-    pub fn incompatible_value(value: &Value) -> Result<DeserializationError, io::Error> {
-        Ok(Self::IncompatibleValue(value.to_debug_string()?))
+    pub fn incompatible_value(value: &Value) -> DeserializeError {
+        Self::IncompatibleValue(format!("{}", value))
     }
 }
 
-impl serde::de::Error for DeserializationError {
-    fn custom<T: fmt::Display>(message: T) -> Self {
-        DeserializationError::Custom(message.to_string())
+impl serde::de::Error for DeserializeError {
+    fn custom<DisplayableT>(message: DisplayableT) -> Self
+    where
+        DisplayableT: fmt::Display,
+    {
+        DeserializeError::Custom(message.to_string())
     }
 }

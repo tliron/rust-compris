@@ -1,8 +1,9 @@
-use super::super::*;
+use super::super::meta::*;
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    duplicate::*,
+    kutil_cli::debug::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -10,7 +11,7 @@ use {
 //
 
 /// Normal integer value.
-#[derive(Debug, Default, Clone, Eq)]
+#[derive(Clone, Debug, Default, Eq)]
 pub struct Integer {
     /// Actual value.
     pub value: i64,
@@ -21,40 +22,45 @@ pub struct Integer {
 
 impl Integer {
     /// Constructor.
-    pub fn new(value: impl Into<i64>) -> Self {
-        Self { value: value.into(), ..Default::default() }
+    pub fn new<IntegerT>(integer: IntegerT) -> Self
+    where
+        IntegerT: Into<i64>,
+    {
+        Self { value: integer.into(), ..Default::default() }
     }
 }
 
-impl From<i64> for Integer {
-    fn from(value: i64) -> Self {
-        Integer::new(value)
+impl HasMeta for Integer {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
     }
 }
 
-impl From<i32> for Integer {
-    fn from(value: i32) -> Self {
-        Integer::new(value as i64)
+impl Debuggable for Integer {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+    where
+        WriteT: io::Write,
+    {
+        context.separate(writer)?;
+        if matches!(context.format, DebugFormat::Compact) {
+            context.theme.write_number(writer, self.value)
+        } else {
+            write!(writer, "{} {}", context.theme.number(self.value), context.theme.meta("i64"))
+        }
     }
 }
 
-impl From<i16> for Integer {
-    fn from(value: i16) -> Self {
-        Integer::new(value as i64)
+impl fmt::Display for Integer {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}i64", self.value)
     }
 }
 
-impl From<i8> for Integer {
-    fn from(value: i8) -> Self {
-        Integer::new(value as i64)
-    }
-}
-
-impl From<Integer> for i64 {
-    fn from(value: Integer) -> Self {
-        value.value
-    }
-}
+// Delegated
 
 impl PartialEq for Integer {
     fn eq(&self, other: &Self) -> bool {
@@ -75,38 +81,32 @@ impl Ord for Integer {
 }
 
 impl Hash for Integer {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<HasherT>(&self, state: &mut HasherT)
+    where
+        HasherT: Hasher,
+    {
         self.value.hash(state);
     }
 }
 
-impl Normal for Integer {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
+// Conversions
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        self.value.to_string()
-    }
-}
-
-impl fmt::Display for Integer {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}i64", self.value)
+#[duplicate_item(
+  _From;
+  [i64];
+  [i32];
+  [i16];
+  [i8];
+  [isize];
+)]
+impl From<_From> for Integer {
+    fn from(integer: _From) -> Self {
+        Integer::new(integer as i64)
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for Integer {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = self.value.style(styles.number);
-        write!(writer, "{} i64", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
+impl From<&Integer> for i64 {
+    fn from(integer: &Integer) -> Self {
+        integer.value
     }
 }

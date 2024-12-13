@@ -3,22 +3,24 @@
 #![warn(missing_docs)]
 
 /*!
-A Rust library to access, change, read, and write CPS (Composite Primitive Schema) data in
-several textual and binary representation formats.
+A Rust library to work with CPS (Composite Primitive Schema) data and parse it from and serialize
+it to several binary and textual representation formats.
 
-What's CPS? It's that schema that comprises primitive data types (numbers, booleans, strings,
-etc.) as well as list and map collection types. The collections allow for nested structure,
-hence it is a composite schema. This concept is very widely used but has remarkably been
-unnamed... until now. You're welcome.
+What is CPS? It's the implicit data schema underlying JSON and many other representation formats.
+It comprises primitive data types (numbers, booleans, strings, etc.) as well as list and map
+collection types. The collections allow for nested structure, hence it is "composite" (a.k.a.
+"algebraic").
 
-CPS is sometimes glossed it as "JSON", but that's misleading and ultimately unhelpful because
-JSON is merely one representation format for the data, and is actually comparitively quite
-limited (e.g. implementations do not often preserve the distinction between integers and
-floats). So instead of saying "let's just store it as JSON", say "let's just store it as CPS",
-and use Compris to handle the representation. It will allow you and your users to select from
-several formats at runtime.
+And yet despite being so widely used, it has been unnamed... until now. You're welcome.
 
-Compris is pronounced "com-PREE". It comes from CompositePrimitiveSchema, or ComPriS for short.
+CPS is sometimes glossed as "JSON", but that's misleading and ultimately unhelpful because JSON is
+merely one representation format for the data, and is actually comparitively quite limited (e.g.
+implementations do not often preserve the distinction between integers and floats). So instead of
+saying "let's just store it as JSON", say "let's just store it as CPS", and use Compris to handle
+the representation. It will allow you and your users to select from several formats at runtime.
+
+Compris is pronounced "com-PREE". The name comes from shortening CompositePrimitiveSchema to
+ComPriS.
 
 For more information and usage examples see the
 [home page](https://github.com/tliron/rust-compris).
@@ -26,20 +28,46 @@ For more information and usage examples see the
 J'ai compris!
 */
 
+mod format;
+mod macros;
+
+/// Citing the source.
+pub mod cite;
+
 /// General-purpose serde deserialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod de;
-/// Read from various formats into normal value types.
-pub mod read;
+
+/// Hints for extending representation formats (such as XJSON).
+pub mod hints;
+
+/// Iterate key-value pairs.
+pub mod kv;
+
+/// Metadata.
+pub mod meta;
+
+/// Merging.
+pub mod merge;
+
+/// Normal values.
+pub mod normal;
+
+/// Paths.
+pub mod path;
+
+/// Parse various formats into normal value types.
+pub mod parse;
+
+/// Resolve normal value types into other types.
+pub mod resolve;
+
 /// General-purpose serde serialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod ser;
 
-mod format;
-mod hints;
-mod normal;
-mod styles;
-mod write_debug;
+/// Tags for [Debuggable](kutil_cli::debug::Debuggable).
+pub mod tag;
 
 #[allow(unused_imports)]
-pub use {format::*, hints::*, normal::*, styles::*, write_debug::*};
+pub use format::*;

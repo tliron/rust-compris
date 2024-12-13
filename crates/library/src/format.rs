@@ -8,8 +8,14 @@ use {
 //
 
 /// CPS format.
-#[derive(Default, PartialEq, Clone, Debug)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub enum Format {
+    /// CBOR.
+    CBOR,
+
+    /// MessagePack.
+    MessagePack,
+
     /// YAML.
     #[default]
     YAML,
@@ -22,24 +28,18 @@ pub enum Format {
 
     /// XML.
     XML,
-
-    /// CBOR.
-    CBOR,
-
-    /// MessagePack.
-    MessagePack,
 }
 
 impl Format {
     /// String identifier for the format.
     pub fn get_identifier(&self) -> &'static str {
         match self {
+            Self::CBOR => "cbor",
+            Self::MessagePack => "messagepack",
             Self::YAML => "yaml",
             Self::JSON => "json",
             Self::XJSON => "xjson",
             Self::XML => "xml",
-            Self::CBOR => "cbor",
-            Self::MessagePack => "messagepack",
         }
     }
 
@@ -55,22 +55,22 @@ impl Format {
 impl TryFrom<&str> for Format {
     type Error = UnknownFormatError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match &*value.to_lowercase() {
+    fn try_from(string: &str) -> Result<Self, Self::Error> {
+        match &*string.to_lowercase() {
+            "cbor" => Ok(Self::CBOR),
+            "messagepack" => Ok(Self::MessagePack),
             "yaml" => Ok(Self::YAML),
             "json" => Ok(Self::JSON),
             "xjson" => Ok(Self::XJSON),
             "xml" => Ok(Self::XML),
-            "cbor" => Ok(Self::CBOR),
-            "messagepack" => Ok(Self::MessagePack),
-            _ => Err(UnknownFormatError::new(value)),
+            _ => Err(UnknownFormatError::new(string)),
         }
     }
 }
 
 impl fmt::Display for Format {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.get_identifier().fmt(formatter)
+        fmt::Display::fmt(self.get_identifier(), formatter)
     }
 }
 
@@ -79,7 +79,7 @@ impl fmt::Display for Format {
 //
 
 /// Uknown format error.
-#[derive(Error, Debug)]
+#[derive(Debug, Error)]
 pub struct UnknownFormatError(String);
 
 impl UnknownFormatError {
@@ -91,6 +91,6 @@ impl UnknownFormatError {
 
 impl fmt::Display for UnknownFormatError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(formatter)
+        fmt::Display::fmt(&self.0, formatter)
     }
 }

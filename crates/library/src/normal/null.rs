@@ -1,11 +1,8 @@
-use super::{
-    super::{normal::*, styles::*, write_debug::*},
-    meta::*,
-};
+use super::super::meta::*;
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    kutil_cli::debug::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -13,7 +10,7 @@ use {
 //
 
 /// Normal null value.
-#[derive(Debug, Default, Clone, Eq)]
+#[derive(Clone, Debug, Default, Eq)]
 pub struct Null {
     /// Metadata.
     pub meta: Meta,
@@ -26,11 +23,33 @@ impl Null {
     }
 }
 
-impl From<()> for Null {
-    fn from(_: ()) -> Self {
-        Self::new()
+impl HasMeta for Null {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
     }
 }
+
+impl Debuggable for Null {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+    where
+        WriteT: io::Write,
+    {
+        context.separate(writer)?;
+        context.theme.write_bare(writer, "Null")
+    }
+}
+
+impl fmt::Display for Null {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt("Null", formatter)
+    }
+}
+
+// Basics
 
 impl PartialEq for Null {
     fn eq(&self, _other: &Self) -> bool {
@@ -51,38 +70,24 @@ impl Ord for Null {
 }
 
 impl Hash for Null {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        state.write_u8(0)
+    fn hash<HasherT>(&self, state: &mut HasherT)
+    where
+        HasherT: Hasher,
+    {
+        ().hash(state)
     }
 }
 
-impl Normal for Null {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
+// Conversions
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        "null".into()
+impl From<()> for Null {
+    fn from(_: ()) -> Self {
+        Self::new()
     }
 }
 
-impl fmt::Display for Null {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        "null".fmt(formatter)
-    }
-}
-
-impl<W: io::Write> WriteDebug<W> for Null {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = "null".style(styles.plain);
-        write!(writer, "{}", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
+impl From<Null> for () {
+    fn from(_: Null) -> Self {
+        ()
     }
 }

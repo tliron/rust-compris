@@ -1,8 +1,8 @@
-use super::super::*;
+use super::super::meta::*;
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    kutil_cli::debug::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -10,7 +10,7 @@ use {
 //
 
 /// Normal boolean value.
-#[derive(Debug, Default, Clone, Eq)]
+#[derive(Clone, Debug, Default, Eq)]
 pub struct Boolean {
     /// Actual value.
     pub value: bool,
@@ -21,22 +21,41 @@ pub struct Boolean {
 
 impl Boolean {
     /// Constructor.
-    pub fn new(value: impl Into<bool>) -> Self {
-        Self { value: value.into(), ..Default::default() }
+    pub fn new<BooleanT>(boolean: BooleanT) -> Self
+    where
+        BooleanT: Into<bool>,
+    {
+        Self { value: boolean.into(), ..Default::default() }
     }
 }
 
-impl From<bool> for Boolean {
-    fn from(value: bool) -> Self {
-        Boolean::new(value)
+impl HasMeta for Boolean {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
     }
 }
 
-impl From<Boolean> for bool {
-    fn from(value: Boolean) -> Self {
-        value.value
+impl Debuggable for Boolean {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+    where
+        WriteT: io::Write,
+    {
+        context.separate(writer)?;
+        context.theme.write_bare(writer, self.value)
     }
 }
+
+impl fmt::Display for Boolean {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.value, formatter)
+    }
+}
+
+// Delegated
 
 impl PartialEq for Boolean {
     fn eq(&self, other: &Self) -> bool {
@@ -57,38 +76,24 @@ impl Ord for Boolean {
 }
 
 impl Hash for Boolean {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<HasherT>(&self, state: &mut HasherT)
+    where
+        HasherT: Hasher,
+    {
         self.value.hash(state);
     }
 }
 
-impl fmt::Display for Boolean {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.value.fmt(formatter)
+// Conversions
+
+impl From<bool> for Boolean {
+    fn from(boolean: bool) -> Self {
+        Boolean::new(boolean)
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for Boolean {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = self.value.style(styles.plain);
-        write!(writer, "{}", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
-    }
-}
-
-impl Normal for Boolean {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
-
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        self.value.to_string()
+impl From<&Boolean> for bool {
+    fn from(boolean: &Boolean) -> Self {
+        boolean.value
     }
 }

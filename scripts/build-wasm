@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+HERE=$(dirname "$(readlink --canonicalize "$BASH_SOURCE")")
+. "$HERE/_env"
+
+cd "$ROOT"
+
+if [ "$TARGET" == release ]; then
+	m 'building binaries (WASI release)...' "$CYAN"
+	cargo build --package=compris-cli --target=wasm32-unknown-unknown --release
+	rm --force --recursive target/web/
+	wasm-bindgen target/wasm32-unknown-unknown/release/compris.wasm --no-typescript --target=nodejs --out-dir=target/web
+else
+	m 'building binaries (WASI dev)...' "$CYAN"
+	cargo build --package=compris-cli --target=wasm32-unknown-unknown
+	rm --force --recursive target/web/
+	wasm-bindgen target/wasm32-unknown-unknown/debug/compris.wasm --no-typescript --target=nodejs --out-dir=target/web
+fi
+
+m 'to run' "$GREEN"
+m 'wasmtime --dir . target/wasm32-unknown-unknown/debug/compris.wasm'

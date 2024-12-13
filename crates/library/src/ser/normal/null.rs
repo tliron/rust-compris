@@ -1,13 +1,12 @@
-use super::super::super::*;
+use super::super::super::normal::*;
 
 use serde::ser::*;
 
-//
-// Null
-//
-
 impl Serialize for Null {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_unit()
     }
 }

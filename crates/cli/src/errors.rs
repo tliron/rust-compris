@@ -1,6 +1,6 @@
 use {
-    compris::{read::*, ser::*, UnknownFormatError},
-    kutil_cli::*,
+    compris::{parse::*, ser::*, UnknownFormatError},
+    kutil_cli::run::*,
     read_url::*,
     std::io,
     thiserror::*,
@@ -13,7 +13,7 @@ use {
 #[derive(Error, Debug)]
 pub enum MainError {
     #[error("exit: {0}")]
-    Exit(Exit),
+    Exit(#[from] Exit),
 
     #[error("I/O: {0}")]
     IO(#[from] io::Error),
@@ -22,10 +22,10 @@ pub enum MainError {
     UnknownFormat(#[from] UnknownFormatError),
 
     #[error("read: {0}")]
-    Read(#[from] ReadError),
+    Read(#[from] ParseError),
 
     #[error("write: {0}")]
-    Write(#[from] SerializationError),
+    Write(#[from] SerializeError),
 
     #[error("URL: {0}")]
     Url(#[from] UrlError),

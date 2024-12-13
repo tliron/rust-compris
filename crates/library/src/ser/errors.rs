@@ -6,12 +6,12 @@ use {
 };
 
 //
-// SerializationError
+// SerializeError
 //
 
-/// Compris serialization write error.
+/// Compris serialization error.
 #[derive(Error, Debug)]
-pub enum SerializationError {
+pub enum SerializeError {
     /// Unsupported format.
     #[error("unsupported format: {0:?}")]
     UnsupportedFormat(Format),
@@ -60,19 +60,24 @@ impl fmt::Display for CborWriteError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.borc {
             Some(borc) => write!(formatter, "{:?}", borc),
-            None => self.custom.fmt(formatter),
+            None => fmt::Display::fmt(&self.custom, formatter),
         }
     }
 }
 
 impl serde::ser::Error for CborWriteError {
-    fn custom<T: fmt::Display>(msg: T) -> Self {
+    fn custom<DisplayableT>(msg: DisplayableT) -> Self
+    where
+        DisplayableT: fmt::Display,
+    {
         Self { borc: None, custom: format!("{}", msg) }
     }
 }
 
+// Conversions
+
 impl From<borc::errors::EncodeError> for CborWriteError {
-    fn from(value: borc::errors::EncodeError) -> Self {
-        Self { borc: Some(value), custom: string::String::new() }
+    fn from(encode_error: borc::errors::EncodeError) -> Self {
+        Self { borc: Some(encode_error), custom: String::new() }
     }
 }

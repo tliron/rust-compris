@@ -1,12 +1,16 @@
-use super::{super::*, errors::*};
+use super::{
+    super::{normal::*, *},
+    errors::*,
+    modal::*,
+    mode::*,
+};
 
 use {
     serde::*,
     std::{
         fs::*,
-        io::{self, stdout, BufWriter, Stdout, Write},
-        path::*,
-        string::String as StdString,
+        io::{stdout, BufWriter, Write},
+        path,
     },
 };
 
@@ -16,10 +20,7 @@ use {
 
 /// General-purpose serde serializer supporting various formats.
 #[derive(Clone)]
-pub struct Serializer<W: Write + Sized> {
-    /// Writer.
-    pub writer: W,
-
+pub struct Serializer {
     /// Format.
     pub format: Format,
 
@@ -29,35 +30,14 @@ pub struct Serializer<W: Write + Sized> {
     /// Indent for pretty output (for YAML, JSON, and XML). Defaults to 2.
     pub indent: u64,
 
-    /// Strict output (for YAML only). Defaults to false.
-    pub strict: bool,
-
     /// Base64 output (for CBOR and MessagePack). Defaults to false.
     pub base64: bool,
 }
 
-impl Serializer<Stdout> {
+impl Serializer {
     /// Constructor.
-    pub fn new_for_stdout() -> Serializer<Stdout> {
-        Serializer::new(stdout())
-    }
-}
-
-impl<W: Write> Serializer<W> {
-    /// Constructor.
-    pub fn new(writer: W) -> Self {
-        Self { writer, format: Format::default(), pretty: false, indent: 2, strict: false, base64: false }
-    }
-
-    /// Constructor.
-    pub fn new_for_file(path: &Path) -> Result<Serializer<BufWriter<File>>, io::Error> {
-        Ok(Serializer::new(BufWriter::new(File::create(path)?)))
-    }
-
-    /// Set writer.
-    pub fn with_writer(mut self, writer: W) -> Self {
-        self.writer = writer;
-        self
+    pub fn new(format: Format) -> Self {
+        Self { format, pretty: false, indent: 2, base64: false }
     }
 
     /// Set format.
@@ -78,70 +58,134 @@ impl<W: Write> Serializer<W> {
         self
     }
 
-    /// Set strict output (for YAML only).
-    pub fn with_strict(mut self, strict: bool) -> Self {
-        self.strict = strict;
-        self
-    }
-
     /// Set Base64 output (for CBOR and MessagePack).
     pub fn with_base64(mut self, base64: bool) -> Self {
         self.base64 = base64;
         self
     }
 
-    /// Serializes the provided value to the writer according to [Serializer::format].
-    pub fn write<V: Serialize>(&mut self, value: &V) -> Result<(), SerializationError> {
+    /// Serializes the provided value to the writer according to [Serializer::format](Serializer).
+    pub fn write<WriteT, SerializableT>(&self, value: &SerializableT, writer: &mut WriteT) -> Result<(), SerializeError>
+    where
+        WriteT: Write,
+        SerializableT: Serialize,
+    {
         match self.format {
-            #[cfg(feature = "yaml")]
-            Format::YAML => self.write_yaml(value),
-
-            #[cfg(feature = "json")]
-            Format::JSON | Format::XJSON => self.write_json(value),
-
-            #[cfg(feature = "xml")]
-            Format::XML => self.write_xml(value),
-
             #[cfg(feature = "cbor")]
-            Format::CBOR => self.write_cbor(value),
+            Format::CBOR => self.write_cbor(value, writer),
 
             #[cfg(feature = "messagepack")]
-            Format::MessagePack => self.write_message_pack(value),
+            Format::MessagePack => self.write_message_pack(value, writer),
+
+            #[cfg(feature = "yaml")]
+            Format::YAML => self.write_yaml(value, writer),
+
+            #[cfg(feature = "json")]
+            Format::JSON | Format::XJSON => self.write_json(value, writer),
+
+            #[cfg(feature = "xml")]
+            Format::XML => self.write_xml(value, writer),
 
             #[cfg(not(all(
+                feature = "cbor",
+                feature = "messagepack",
                 feature = "yaml",
                 feature = "json",
                 feature = "xml",
-                feature = "cbor",
-                feature = "messagepack"
             )))]
-            _ => Err(SerializationError::UnsupportedFormat(self.format.clone())),
+            _ => Err(SerializeError::UnsupportedFormat(self.format.clone())),
+        }
+    }
+
+    /// Serializes the provided value to the writer according to [Serializer::format](Serializer).
+    pub fn write_modal<WriteT>(
+        &self,
+        value: &Value,
+        mode: &SerializationMode,
+        writer: &mut WriteT,
+    ) -> Result<(), SerializeError>
+    where
+        WriteT: Write,
+    {
+        let value = value.modal(mode, self);
+        self.write(&value, writer)
+    }
+
+    /// Serializes the provided value to the file according to [Serializer::format](Serializer).
+    pub fn write_to_file<SerializableT, PathT>(&self, value: &SerializableT, path: PathT) -> Result<(), SerializeError>
+    where
+        SerializableT: Serialize,
+        PathT: AsRef<path::Path>,
+    {
+        self.write(value, &mut BufWriter::new(File::create(path)?))
+    }
+
+    /// Serializes the provided value to the file according to [Serializer::format](Serializer).
+    pub fn write_to_file_modal(
+        &self,
+        value: &Value,
+        mode: &SerializationMode,
+        path: &path::Path,
+    ) -> Result<(), SerializeError> {
+        let value = value.modal(mode, self);
+        self.write_to_file(&value, path)
+    }
+
+    /// Serializes the provided value to [stdout] according to [Serializer::format](Serializer).
+    pub fn print<SerializableT>(&self, value: &SerializableT) -> Result<(), SerializeError>
+    where
+        SerializableT: Serialize,
+    {
+        self.write(value, &mut stdout())
+    }
+
+    /// Serializes the provided value to [stdout] according to [Serializer::format](Serializer).
+    pub fn print_modal(&self, value: &Value, mode: &SerializationMode) -> Result<(), SerializeError> {
+        let value = value.modal(mode, self);
+        self.print(&value)
+    }
+
+    /// Convenience function to serialize to a string.
+    ///
+    /// See [Serializer::write].
+    pub fn stringify<SerializableT>(&self, value: &SerializableT) -> Result<String, SerializeError>
+    where
+        SerializableT: Serialize,
+    {
+        let serializer =
+            Serializer::new(self.format.clone()).with_pretty(self.pretty).with_indent(self.indent).with_base64(true);
+
+        let mut writer = BufWriter::new(Vec::new());
+        match serializer.write(value, &mut writer) {
+            Ok(_) => Ok(String::from_utf8(writer.into_inner().unwrap())?),
+            Err(error) => Err(error),
         }
     }
 
     /// Convenience function to serialize to a string.
     ///
     /// See [Serializer::write].
-    pub fn stringify<V: Serialize>(&mut self, value: &V) -> Result<StdString, SerializationError> {
-        let mut serializer = Serializer::new(BufWriter::new(Vec::new()))
-            .with_format(self.format.clone())
-            .with_pretty(self.pretty)
-            .with_indent(self.indent)
-            .with_strict(self.strict)
-            .with_base64(true);
-
-        match serializer.write(value) {
-            Ok(_) => Ok(StdString::from_utf8(serializer.writer.buffer().into())?),
-            Err(err) => Err(err),
-        }
+    pub fn stringify_modal(&self, value: &Value, mode: &SerializationMode) -> Result<String, SerializeError> {
+        let value = value.modal(mode, self);
+        self.stringify(&value)
     }
 
-    pub(crate) fn write_newline(&mut self) -> Result<(), SerializationError> {
-        self.writer.write("\n".as_bytes())?;
+    // Utils
+
+    pub(crate) fn write_newline<WriteT>(writer: &mut WriteT) -> Result<(), SerializeError>
+    where
+        WriteT: Write,
+    {
+        writer.write("\n".as_bytes())?;
         Ok(())
     }
 
-    pub(crate) fn base64_writer(&mut self) -> base64::write::EncoderWriter<base64::engine::GeneralPurpose, &mut W> {
-        base64::write::EncoderWriter::new(self.writer.by_ref(), &base64::engine::general_purpose::STANDARD)
+    pub(crate) fn base64_writer<'own, WriteT>(
+        writer: &'own mut WriteT,
+    ) -> base64::write::EncoderWriter<'own, base64::engine::GeneralPurpose, &'own mut WriteT>
+    where
+        WriteT: Write,
+    {
+        base64::write::EncoderWriter::new(writer, &base64::engine::general_purpose::STANDARD)
     }
 }

@@ -55,22 +55,22 @@ impl Format {
 impl TryFrom<&str> for Format {
     type Error = UnknownFormatError;
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match &*value.to_lowercase() {
+    fn try_from(string: &str) -> Result<Self, Self::Error> {
+        match &*string.to_lowercase() {
             "yaml" => Ok(Self::YAML),
             "json" => Ok(Self::JSON),
             "xjson" => Ok(Self::XJSON),
             "xml" => Ok(Self::XML),
             "cbor" => Ok(Self::CBOR),
             "messagepack" => Ok(Self::MessagePack),
-            _ => Err(UnknownFormatError::new(value)),
+            _ => Err(UnknownFormatError::new(string)),
         }
     }
 }
 
 impl fmt::Display for Format {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.get_identifier().fmt(formatter)
+        fmt::Display::fmt(self.get_identifier(), formatter)
     }
 }
 
@@ -91,6 +91,6 @@ impl UnknownFormatError {
 
 impl fmt::Display for UnknownFormatError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(formatter)
+        fmt::Display::fmt(&self.0, formatter)
     }
 }

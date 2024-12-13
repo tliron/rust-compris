@@ -18,7 +18,8 @@ floats). So instead of saying "let's just store it as JSON", say "let's just sto
 and use Compris to handle the representation. It will allow you and your users to select from
 several formats at runtime.
 
-Compris is pronounced "com-PREE". It comes from CompositePrimitiveSchema, or ComPriS for short.
+Compris is pronounced "com-PREE". The name comes from shortening CompositePrimitiveSchema to
+ComPriS.
 
 For more information and usage examples see the
 [home page](https://github.com/tliron/rust-compris).
@@ -26,20 +27,31 @@ For more information and usage examples see the
 J'ai compris!
 */
 
+mod format;
+
+/// Citing the source.
+pub mod citation;
+
 /// General-purpose serde deserialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod de;
+
+/// Hints for extending representation formats (such as XJSON).
+pub mod hints;
+
+/// Normal values and metadata.
+pub mod normal;
+
 /// Read from various formats into normal value types.
 pub mod read;
+
+/// Resolve normal value types into other types.
+#[cfg(feature = "resolve")]
+pub mod resolve;
+
 /// General-purpose serde serialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod ser;
 
-mod format;
-mod hints;
-mod normal;
-mod styles;
-mod write_debug;
-
 #[allow(unused_imports)]
-pub use {format::*, hints::*, normal::*, styles::*, write_debug::*};
+pub use format::*;

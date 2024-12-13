@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use {serde::ser::*, tracing::trace};
 
@@ -16,14 +16,17 @@ impl Map {
     }
 
     /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+    pub fn serialize_with_mode<SerializerT>(
         &self,
-        serializer: S,
+        serializer: SerializerT,
         serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         // Map with string keys
 
-        if serialization_mode.map == MapSerializationMode::KeysAsStrings {
+        if serialization_mode.map == MapSerializationMode::KeysAsText {
             let mut map = serializer.serialize_map(Some(self.value.len()))?;
             for (key, value) in &self.value {
                 map.serialize_entry(&key.to_map_string_key(), value)?;
@@ -36,7 +39,7 @@ impl Map {
         if serialization_mode.map.might_be_list() {
             let (mut as_map, hint) = match &serialization_mode.map {
                 MapSerializationMode::AsList(hint) => (false, hint),
-                MapSerializationMode::AsListIfNonStringKey(hint) => (true, hint),
+                MapSerializationMode::AsListIfNonTextKey(hint) => (true, hint),
                 mode => panic!("unexpected map serialization mode: {:?}", mode),
             };
 
@@ -44,7 +47,7 @@ impl Map {
                 // Do we have a non-string key?
                 for key in self.value.keys() {
                     match key {
-                        Value::String(_) => {}
+                        Value::Text(_) => {}
 
                         _ => {
                             trace!("map has a non-string key");
@@ -104,7 +107,10 @@ impl Map {
 }
 
 impl Serialize for Map {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         let mut map = serializer.serialize_map(Some(self.value.len()))?;
         for (key, value) in &self.value {
             map.serialize_entry(key, value)?;
@@ -118,7 +124,7 @@ impl Serialize for Map {
 //
 
 /// Adds [SerializationMode] support to [Map]. The mode will be applied recursively
-/// to map keys and values.
+/// to the map keys and values.
 pub struct MapWithSerializationMode<'a> {
     /// Wrapped value.
     pub map: &'a Map,
@@ -135,7 +141,10 @@ impl<'a> MapWithSerializationMode<'a> {
 }
 
 impl<'a> Serialize for MapWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         self.map.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

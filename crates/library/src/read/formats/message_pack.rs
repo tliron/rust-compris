@@ -1,23 +1,34 @@
-use super::super::{super::*, value_builder::*, *};
+use super::super::{
+    super::normal::{Bytes, *},
+    builder::*,
+    *,
+};
 
 use {
     base64::{prelude::*, read::*},
     rmp::{decode::*, *},
-    std::{io::Read, string::String as StdString},
+    std::io::Read,
     tracing::trace,
 };
 
-impl<R: Read> Reader<R> {
+//
+// Reader
+//
+
+impl Reader {
     /// Reads from MessagePack into a normal value.
     ///
-    /// Is affected by [Reader::base64].
-    pub fn read_message_pack(&mut self) -> Result<Value, ReadError> {
+    /// Is affected by [Reader::base64](super::super::Reader).
+    pub fn read_message_pack<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ReadError>
+    where
+        ReadT: Read,
+    {
         let mut value_builder = ValueBuilder::new();
         if self.base64 {
-            let mut reader = DecoderReader::new(self.reader.by_ref(), &BASE64_STANDARD);
+            let mut reader = DecoderReader::new(reader, &BASE64_STANDARD);
             read_next_message_pack(&mut reader, &mut value_builder)?;
         } else {
-            read_next_message_pack(self.reader.by_ref(), &mut value_builder)?;
+            read_next_message_pack(reader, &mut value_builder)?;
         }
         Ok(value_builder.value())
     }
@@ -25,13 +36,14 @@ impl<R: Read> Reader<R> {
 
 // Utils
 
-fn read_next_message_pack<R: Read>(reader: &mut R, value_builder: &mut ValueBuilder) -> Result<(), ReadError> {
+fn read_next_message_pack<ReadT>(reader: &mut ReadT, value_builder: &mut ValueBuilder) -> Result<(), ReadError>
+where
+    ReadT: Read,
+{
     let marker = read_marker(reader)?;
     trace!("{:?}", marker);
     match marker {
-        Marker::Reserved => {
-            trace!("reserved");
-        }
+        Marker::Reserved => {}
 
         Marker::Null => {
             value_builder.add(Null::new());
@@ -202,46 +214,58 @@ fn read_next_message_pack<R: Read>(reader: &mut R, value_builder: &mut ValueBuil
     Ok(())
 }
 
-fn read_message_pack_string<R: Read>(
-    reader: &mut R,
+fn read_message_pack_string<ReadT>(
+    reader: &mut ReadT,
     value_builder: &mut ValueBuilder,
     length: usize,
-) -> Result<(), ReadError> {
+) -> Result<(), ReadError>
+where
+    ReadT: Read,
+{
     trace!("string length: {}", length);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    let string = StdString::from_utf8(buffer)?;
-    Ok(value_builder.add(String::new(string)))
+    let string = String::from_utf8(buffer)?;
+    Ok(value_builder.add(Text::new(string)))
 }
 
-fn read_message_pack_bytes<R: Read>(
-    reader: &mut R,
+fn read_message_pack_bytes<ReadT>(
+    reader: &mut ReadT,
     value_builder: &mut ValueBuilder,
     length: usize,
-) -> Result<(), ReadError> {
+) -> Result<(), ReadError>
+where
+    ReadT: Read,
+{
     trace!("bytes length: {}", length);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(super::super::super::Bytes::new(buffer)))
+    Ok(value_builder.add(Bytes::new(buffer)))
 }
 
-fn read_message_pack_ext<R: Read>(
-    reader: &mut R,
+fn read_message_pack_ext<ReadT>(
+    reader: &mut ReadT,
     value_builder: &mut ValueBuilder,
     length: usize,
     annotation: i64,
-) -> Result<(), ReadError> {
+) -> Result<(), ReadError>
+where
+    ReadT: Read,
+{
     trace!("ext type: {}", annotation);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(super::super::super::Bytes::new(buffer).with_annotation_integer(annotation)))
+    Ok(value_builder.add(Bytes::new(buffer).with_annotation_integer(annotation)))
 }
 
-fn read_message_pack_array<R: Read>(
-    reader: &mut R,
+fn read_message_pack_array<ReadT>(
+    reader: &mut ReadT,
     value_builder: &mut ValueBuilder,
     length: usize,
-) -> Result<(), ReadError> {
+) -> Result<(), ReadError>
+where
+    ReadT: Read,
+{
     trace!("array length: {}", length);
     value_builder.start_list();
     for _ in 0..length {
@@ -251,11 +275,14 @@ fn read_message_pack_array<R: Read>(
     Ok(())
 }
 
-fn read_message_pack_map<R: Read>(
-    reader: &mut R,
+fn read_message_pack_map<ReadT>(
+    reader: &mut ReadT,
     value_builder: &mut ValueBuilder,
     length: usize,
-) -> Result<(), ReadError> {
+) -> Result<(), ReadError>
+where
+    ReadT: Read,
+{
     trace!("map length: {}", length);
     value_builder.start_map();
     for _ in 0..length {
@@ -267,7 +294,7 @@ fn read_message_pack_map<R: Read>(
 }
 
 impl From<MarkerReadError> for ReadError {
-    fn from(value: MarkerReadError) -> Self {
-        value.0.into()
+    fn from(marker_read_error: MarkerReadError) -> Self {
+        marker_read_error.0.into()
     }
 }

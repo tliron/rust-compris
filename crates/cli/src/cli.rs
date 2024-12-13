@@ -1,7 +1,6 @@
 use {
     clap::{builder::*, *},
-    clap_complete_command::*,
-    kutil_cli::*,
+    kutil_cli::clap::*,
 };
 
 // https://docs.rs/clap/latest/clap/_derive/index.html
@@ -74,11 +73,6 @@ pub struct CLI {
     /// avoid whitespace and colors
     #[arg(long = "plain", short = 'p')]
     pub output_plain: bool,
-
-    /// strict output;
-    /// for "yaml" format
-    #[arg(long = "strict", short = 's', verbatim_doc_comment)]
-    pub output_strict: bool,
 
     /// encode output to Base64;
     /// for "cbor" and "messagepack" formats
@@ -167,12 +161,8 @@ impl ToString for OutputFormat {
 pub enum SubCommand {
     /// show the version of compris
     #[command(action = ArgAction::Version)]
-    Version,
+    Version(Version),
 
     /// output the shell autocompletion script
-    Completion {
-        /// shell
-        #[arg(value_enum)]
-        shell: Shell,
-    },
+    Completion(Completion),
 }

@@ -1,10 +1,17 @@
-use super::super::{super::*, *};
+use super::super::{super::normal::*, *};
 
 use std::io::Read;
 
-impl<R: Read> Reader<R> {
+//
+// Reader
+//
+
+impl Reader {
     /// Reads from XML into a normal value.
-    pub fn read_xml(&mut self) -> Result<Value, ReadError> {
+    pub fn read_xml<ReadT>(&self, _reader: &mut ReadT) -> Result<Value, ReadError>
+    where
+        ReadT: Read,
+    {
         todo!()
     }
 }

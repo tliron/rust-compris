@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -16,11 +16,14 @@ impl Integer {
     }
 
     /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+    pub fn serialize_with_mode<SerializerT>(
         &self,
-        serializer: S,
+        serializer: SerializerT,
         serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         // See: https://docs.rs/num-traits/latest/num_traits/cast/trait.NumCast.html#tymethod.from
         match &serialization_mode.integer {
             IntegerSerializationMode::AsInteger => serializer.serialize_i64(self.value),
@@ -35,7 +38,7 @@ impl Integer {
                         serializer.serialize_u64(unsigned_integer)
                     } else {
                         UnsignedInteger::new(unsigned_integer)
-                            .with_meta(&self.meta)
+                            .with_meta(self.meta.clone())
                             .serialize_with_mode(serializer, serialization_mode)
                     }
                 }
@@ -47,14 +50,16 @@ impl Integer {
                         // Avoid endless recursion!
                         serializer.serialize_f64(float)
                     } else {
-                        Float::new(float).with_meta(&self.meta).serialize_with_mode(serializer, serialization_mode)
+                        Float::new(float)
+                            .with_meta(self.meta.clone())
+                            .serialize_with_mode(serializer, serialization_mode)
                     }
                 }
 
                 None => Err(Error::custom(format!("cannot cast to f64: {}", self.value))),
             },
 
-            IntegerSerializationMode::AsString(hint) => {
+            IntegerSerializationMode::AsText(hint) => {
                 let string = self.value.to_string();
                 match hint {
                     None => serializer.serialize_str(&string),
@@ -71,7 +76,10 @@ impl Integer {
 }
 
 impl Serialize for Integer {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_i64(self.value)
     }
 }
@@ -97,7 +105,10 @@ impl<'a> IntegerWithSerializationMode<'a> {
 }
 
 impl<'a> Serialize for IntegerWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         self.integer.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

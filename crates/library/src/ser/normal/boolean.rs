@@ -1,4 +1,4 @@
-use super::super::super::*;
+use super::super::super::normal::*;
 
 use serde::ser::*;
 
@@ -7,7 +7,10 @@ use serde::ser::*;
 //
 
 impl Serialize for Boolean {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_bool(self.value)
     }
 }

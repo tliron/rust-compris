@@ -1,24 +1,31 @@
-use super::super::{super::*, value_builder::*, *};
+use super::super::{super::normal::*, builder::*, *};
 
 use {
     base64::{prelude::*, read::*},
     borc::{basic::streaming::*, errors::*},
-    std::{io::Read, string::String as StdString},
+    std::io::Read,
     tracing::trace,
 };
 
-impl<R: Read> Reader<R> {
+//
+// Reader
+//
+
+impl Reader {
     /// Reads from CBOR into a normal value.
     ///
-    /// Is affected by [Reader::base64].
-    pub fn read_cbor(&mut self) -> Result<Value, ReadError> {
+    /// Is affected by [Reader::base64](super::super::Reader).
+    pub fn read_cbor<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ReadError>
+    where
+        ReadT: Read,
+    {
         let mut value_builder = ValueBuilder::new();
         if self.base64 {
-            let reader = DecoderReader::new(self.reader.by_ref(), &BASE64_STANDARD);
+            let reader = DecoderReader::new(reader, &BASE64_STANDARD);
             let mut decoder = Decoder::new(reader);
             read_next_cbor(&mut decoder, &mut value_builder, None)?;
         } else {
-            let mut decoder = Decoder::new(self.reader.by_ref());
+            let mut decoder = Decoder::new(reader);
             read_next_cbor(&mut decoder, &mut value_builder, None)?;
         }
         Ok(value_builder.value())
@@ -27,11 +34,14 @@ impl<R: Read> Reader<R> {
 
 // Utils
 
-fn read_next_cbor<R: Read>(
-    decoder: &mut Decoder<R>,
+fn read_next_cbor<ReadT>(
+    decoder: &mut Decoder<ReadT>,
     value_builder: &mut ValueBuilder,
     annotation: Option<Annotation>,
-) -> Result<bool, ReadError> {
+) -> Result<bool, ReadError>
+where
+    ReadT: Read,
+{
     let event = decoder.next_event()?;
     trace!("{:?}", event);
 
@@ -46,17 +56,17 @@ fn read_next_cbor<R: Read>(
         }
 
         Event::Null => {
-            value_builder.add(Null::new().with_annotation_option(annotation));
+            value_builder.add(Null::new().with_annotation(annotation));
         }
 
         Event::Unsigned(unsigned_integer) => {
-            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation_option(annotation));
+            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation(annotation));
         }
 
         Event::Signed(integer) => {
             match Event::interpret_signed_checked(integer) {
                 Some(integer) => {
-                    value_builder.add(Integer::new(integer).with_annotation_option(annotation));
+                    value_builder.add(Integer::new(integer).with_annotation(annotation));
                 }
 
                 None => return Err(DecodeError::Malformed.into()),
@@ -64,29 +74,29 @@ fn read_next_cbor<R: Read>(
         }
 
         Event::Float(float) => {
-            value_builder.add(Float::new(float).with_annotation_option(annotation));
+            value_builder.add(Float::new(float).with_annotation(annotation));
         }
 
         Event::Bool(boolean) => {
-            value_builder.add(Boolean::new(boolean).with_annotation_option(annotation));
+            value_builder.add(Boolean::new(boolean).with_annotation(annotation));
         }
 
         Event::TextString(string) => {
-            value_builder.add(String::new(string).with_annotation_option(annotation));
+            value_builder.add(Text::new(string).with_annotation(annotation));
         }
 
         Event::UnknownLengthTextString => {
             let string = read_cbor_unknown_length_text_string(decoder)?;
-            value_builder.add(String::new(string).with_annotation_option(annotation));
+            value_builder.add(Text::new(string).with_annotation(annotation));
         }
 
         Event::ByteString(bytes) => {
-            value_builder.add(Bytes::new(bytes).with_annotation_option(annotation));
+            value_builder.add(Bytes::new(bytes).with_annotation(annotation));
         }
 
         Event::UnknownLengthByteString => {
             let bytes = read_cbor_unknown_length_bytes(decoder)?;
-            value_builder.add(Bytes::new(bytes).with_annotation_option(annotation));
+            value_builder.add(Bytes::new(bytes).with_annotation(annotation));
         }
 
         Event::Array(length) => {
@@ -144,8 +154,11 @@ fn read_next_cbor<R: Read>(
     Ok(true)
 }
 
-fn read_cbor_unknown_length_text_string<R: Read>(decoder: &mut Decoder<R>) -> Result<StdString, DecodeError> {
-    let mut buffer = StdString::new();
+fn read_cbor_unknown_length_text_string<ReadT>(decoder: &mut Decoder<ReadT>) -> Result<String, DecodeError>
+where
+    ReadT: Read,
+{
+    let mut buffer = String::new();
 
     loop {
         match decoder.next_event()? {
@@ -160,7 +173,10 @@ fn read_cbor_unknown_length_text_string<R: Read>(decoder: &mut Decoder<R>) -> Re
     }
 }
 
-fn read_cbor_unknown_length_bytes<R: Read>(decoder: &mut Decoder<R>) -> Result<Vec<u8>, DecodeError> {
+fn read_cbor_unknown_length_bytes<ReadT>(decoder: &mut Decoder<ReadT>) -> Result<Vec<u8>, DecodeError>
+where
+    ReadT: Read,
+{
     let mut buffer = Vec::new();
 
     loop {

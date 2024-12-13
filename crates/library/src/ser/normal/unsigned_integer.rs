@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -16,11 +16,14 @@ impl UnsignedInteger {
     }
 
     /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+    pub fn serialize_with_mode<SerializerT>(
         &self,
-        serializer: S,
+        serializer: SerializerT,
         serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         // See: https://docs.rs/num-traits/latest/num_traits/cast/trait.NumCast.html#tymethod.from
         match &serialization_mode.unsigned_integer {
             UnsignedIntegerSerializationMode::AsUnsignedInteger => serializer.serialize_u64(self.value),
@@ -33,7 +36,9 @@ impl UnsignedInteger {
                         // Avoid endless recursion!
                         serializer.serialize_i64(integer)
                     } else {
-                        Integer::new(integer).with_meta(&self.meta).serialize_with_mode(serializer, serialization_mode)
+                        Integer::new(integer)
+                            .with_meta(self.meta.clone())
+                            .serialize_with_mode(serializer, serialization_mode)
                     }
                 }
 
@@ -42,13 +47,13 @@ impl UnsignedInteger {
 
             UnsignedIntegerSerializationMode::AsFloat => match num_traits::cast::<_, f64>(self.value) {
                 Some(float) => {
-                    Float::new(float).with_meta(&self.meta).serialize_with_mode(serializer, serialization_mode)
+                    Float::new(float).with_meta(self.meta.clone()).serialize_with_mode(serializer, serialization_mode)
                 }
 
                 None => Err(Error::custom(format!("cannot cast to f64: {}", self.value))),
             },
 
-            UnsignedIntegerSerializationMode::AsString(hint) => {
+            UnsignedIntegerSerializationMode::AsText(hint) => {
                 let string = self.value.to_string();
                 match hint {
                     None => serializer.serialize_str(&string),
@@ -65,7 +70,10 @@ impl UnsignedInteger {
 }
 
 impl Serialize for UnsignedInteger {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_u64(self.value)
     }
 }
@@ -91,7 +99,10 @@ impl<'a> UnsignedIntegerWithSerializationMode<'a> {
 }
 
 impl<'a> Serialize for UnsignedIntegerWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         self.unsigned_integer.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

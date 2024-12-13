@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -16,24 +16,30 @@ impl List {
     }
 
     /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+    pub fn serialize_with_mode<SerializerT>(
         &self,
-        serializer: S,
+        serializer: SerializerT,
         serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
-        for element in &self.value {
-            seq.serialize_element(&element.with_serialization_mode(serialization_mode))?;
+        for item in &self.value {
+            seq.serialize_element(&item.with_serialization_mode(serialization_mode))?;
         }
         seq.end()
     }
 }
 
 impl Serialize for List {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
-        for element in &self.value {
-            seq.serialize_element(element)?;
+        for item in &self.value {
+            seq.serialize_element(item)?;
         }
         seq.end()
     }
@@ -44,7 +50,7 @@ impl Serialize for List {
 //
 
 /// Adds [SerializationMode] support to [List]. The mode will be applied recursively
-/// to list elements.
+/// to the list items.
 pub struct ListWithSerializationMode<'a> {
     /// Wrapped value.
     pub list: &'a List,
@@ -61,7 +67,10 @@ impl<'a> ListWithSerializationMode<'a> {
 }
 
 impl<'a> Serialize for ListWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         self.list.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

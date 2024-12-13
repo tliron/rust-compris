@@ -6,24 +6,63 @@ We'll define CPS to contain these primitive data types:
 * **null** (a singleton)
 * **signed integer** (up to 64 bits)
 * **unsigned integer** (up to 64 bits)
-* **float** (up to 64 bits)
+* **float** ([IEEE 754](https://en.wikipedia.org/wiki/IEEE_754), up to 64 bits)
 * **boolean** (single bit)
 * **string** (any encoding)
 * **byte array**
 
-As well as two collection types:
+As well as two recursive collection types:
 
-* **list** (elements of any type, including collections)
+* **list** (ordered sequence of zero or more elements of any type, including collections)
 * **map** (list of key-value pairs in an undefined order; keys and values of any type, including
-  collections)
+  collections; keys are unique for the map)
 
-The power of CPS is its universality. The above primitives and basic collection types can be
-easily consumed by practically any programming language, stored in practically any database, and
-can also be transmitted in a wide variety of broadly-supported formats.
+The power of such a purposely reductive definition is its ubiquity. The above primitives and
+collection types are present in practically any programming language, can be stored in practically
+any database, and can also be transmitted in a wide variety of broadly-supported representation
+formats.
+
+Importantly, you do not have to support 100% of CPS in your use of it. Rather, treat it as the outer
+limit of possibility. Going beyond CPS can lead to compatibility challenges, but by avoiding
+some of its features you can increase compatibility.
+
+We'll detail some of these challenges and workarounds below. But first let's highlight two potential
+pain points:
+
+### Pain Point #1: The Immortality of Null
+
+The inclusion of **null** in this definition may be controversial
+(its [inventor regrets it](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/))
+but as it stands it's unapologetically present in all CPS representation formats. And it's popular.
+
+But please be careful with it. As the only singleton value in CPS, it is often used and abused for
+a variety of confusing and conflicting semantic purposes. Examples include signifying "nothing" for
+optional values, where it's not obvious whether or what default value would be assigned instead,
+nor whether or how assigning **null** is different from not assigning a value at all. Another common
+use is that it's a catch-all for the expected type's zero value (0 for numbers, empty string for
+strings, empty list for lists, false for booleans, etc.). Zero values are, emphatically, *not*
+"nothing". Finally, and worst, we've seen it used as a magical value that results in very specific
+behavior that cannot be reasonably inferred in context.
+
+The bottom line is that it's very likely that **null** may not be doing what the user thinks it should
+be doing—which is how bugs happen. If you insist on allowing **null** in your use of CPS, make sure
+to carefully document the rationale and effect of its use per instance.
+
+### Pain Point #2: Composite Map Keys
+
+Another controversial decision is our allowance for **map** keys to be *any* value, including
+recursively composite values. Here we deliberately chose flexibility over ubiquity. Unfortunately,
+composite keys can present a challenge for some representation formats and even some programming
+languages. Indeed, in many cases built-in hashmaps only allow keys to be strings. (Looking at you,
+JavaScript.)
+
+There are workarounds, but they are non-trivial. Again, you do not have to support 100% of CPS and
+can simply decide to not make use of composite keys if they cause more trouble than they are worth.
+And think twice: maybe you don't even need them.
 
 
-Representation Formats and Limitations
---------------------------------------
+CPS and Representation Formats
+------------------------------
 
 Not all formats can do it all, so be sure to pick the right ones for your use case, and be
 aware of necessary workarounds for others.
@@ -34,34 +73,53 @@ Both [CBOR](https://cbor.io/) and [MessagePack](https://msgpack.org/) support al
 (and more). They are not human-readable, but have the advantage of using less RAM, bandwidth,
 and compute power to parse and serialize than the textual formats.
 
+They are both highly recommended for machine-to-machine conversations. If you're using a
+textual format for that, stop. It's easy enough to convert them to text when necessary
+(Compris can do it for you).
+
+Which to choose? Due to some unfortunate drama, CBOR is a (non-enforced)
+[IETF standard](https://datatracker.ietf.org/doc/html/rfc8949) while MessagePack is not.
+CBOR also supports arbitrary-length streams, a feature with dubious applicability.
+MessagePack is a bit more complex, but that complexity allows for potentially smaller
+payloads. Both work great for CPS.
+
 ### YAML
+
+It's best to dismiss versions of YAML before 1.2, because they had ambiguities and too many
+optional features.
 
 YAML 1.2, when including the common [JSON schema](https://yaml.org/spec/1.2/spec.html#id2803231)),
 supports *most* of CPS.
 
 It does lack a distinction between signed and unsigned integers. If you need full 64-bit
 unsigned integers, which cannot be guaranteed casting to signed integers, then it might be
-best to encode them as string representations, e.g. in decimal or hex.
+best to encode them as string representations, e.g. in decimal or (smaller) hex.
 
 It also does not support byte arrays, though note that YAML 1.1 did draft a
 [`!!binary`](https://yaml.org/type/binary.html) type. Compris can be configured to support
-it, but other implementations may not. A common workaround is to encode byte arrays as Base64
-strings, which is Compris's default serialization mode for YAML.
+it, but other implementations may not, so do be careful with it. A common workaround is to
+encode byte arrays as Base64 strings, which is Compris's default serialization mode for
+**bytes** in YAML.
+
+By the way, YAML with the JSON schema is a superset of JSON. That means any YAML parser is
+also a JSON parser! If you need to parse both and are trying to conserve code, you can
+disable JSON parsing and simply treat JSON as YAML, though note that a dedicated JSON parser
+may be more efficient.
 
 ### JSON
 
 Though it's the most popular format, it's also the most limited.
 
-First, it does not distinguish between any number type. Parsers handle this challenge in
+Firstly, it does not distinguish between any number type. Parsers handle this challenge in
 a variety of ways, from just assuming they are all floats (bad!) to always encoding them as
-decimal strings. Compris gives you some control over how numbers are parsed.
+decimal strings (wasteful). Compris gives you some control over how numbers are parsed.
 
-Second, JSON map keys must be strings. By default Compris will stringify all JSON keys into
-a JSON representation, which can then be parse. JSON in JSON! However, Compris also has
+Secondly, JSON map keys must be strings. By default Compris will stringify all JSON keys into
+a JSON representation, which can then be parsed. JSON in JSON! However, Compris also has
 a serialization mode for serializing maps as lists of key-value lists, and can even do so
-only when a map has a non-string key.
+conditionally, only when a map has a non-string key.
 
-Finally, there is not support for byte arrays. By default Compris will serialize them as Base64
+Finally, JSON does not support byte arrays. By default Compris will serialize them as Base64
 strings.
 
 ### XJSON
@@ -85,14 +143,14 @@ strings. Here's an array of two of them:
 ]
 ```
 
-Byte arrays are Base64-encoded strings. Here it's used as a value in a map:
+Byte arrays are Base64-encoded strings. Here we use bytes as a value in a map:
 
 ```json
 {"binary content": {"$hint.bytes": "SGVsbG8sIHdvcmxk"}}
 ```
 
-Maps are arrays where each element is a map entry, an array of the key and value (always
-length 2). Here we combine it with other hints:
+Maps are arrays in which each element is a map entry, itself an array of the key and value
+(always length 2). Here we combine it with other hints:
 
 ```json
 "$hint.map": [
@@ -122,10 +180,6 @@ We just need a CPS schema for XML. TODO!
 CPS and Programming Languages
 -----------------------------
 
-We must highlight our controversial decision to allow CPS map keys to be *collections*, which
-indeed can can be arbitrarily nested. However, the built-in or standard hashmaps in many
-programming languages do not always allow for this, at least not trivially.
-
 ### Rust
 
 Compris's normal value types all support
@@ -141,8 +195,8 @@ implementation. The rationale:
 2. [`std::collections::BTreeMap`](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html)
    *does* support `Hash`, but has the unwanted side effect of keeping the keys sorted.
 3. OrderMap's less invasive side effect is that it retains insertion order, which might actually
-   be useful for certain debugging purposes (note that CPS intentionally leaves map order
-   undefined).
+   be useful for certain debugging purposes (though note that CPS intentionally leaves map order
+   undefined, so implementations should not rely on order).
 
 ### Go
 
@@ -152,13 +206,13 @@ Unfortunately, the most popular Go YAML parser does not easily support arbitrari
 
 ### Python
 
-Likewise, the popular Python [ruamel.yaml](https://yaml.readthedocs.io) parser does not easily
+Likewise, Python's popular [ruamel.yaml](https://yaml.readthedocs.io) parser does not easily
 support arbitrarily complex keys. We solved this by extending ruamel.yaml in our
 [Python ARD library](https://github.com/tliron/python-ard).
 
 ### JavaScript
 
 See the discussion of JSON, above. JSON stands for "JavaScript Object Notation", so those
-limitations come from JavaScript.
+limitations come straight from JavaScript.
 
 It might be nice to have JavaScript library to work with our XJSON conventions. TODO!

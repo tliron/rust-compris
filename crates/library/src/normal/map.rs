@@ -1,11 +1,15 @@
-use super::{
-    super::{normal::*, styles::*, write_debug::*},
-    meta::*,
-};
+use super::{super::normal::*, meta::*};
 
 use {
-    ordermap::*,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    kutil_cli::debug::*,
+    kutil_std::iter::*,
+    ordermap::{map, *},
+    std::{
+        cmp::*,
+        fmt::{self, Write},
+        hash::*,
+        io,
+    },
 };
 
 //
@@ -40,25 +44,67 @@ impl Map {
     }
 }
 
-impl Value {
-    /// If this is a map, gets a reference to a value in the map
-    pub fn get(&self, key: impl Into<Self>) -> Option<&Self> {
-        let key: Self = key.into();
-        match self {
-            Self::Map(map) => map.value.get(&key),
-            _ => None,
-        }
+impl Normal for Map {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
     }
 
-    /// If this is a map, gets a mutable reference to a value in the map
-    pub fn get_mut(&mut self, key: impl Into<Self>) -> Option<&mut Self> {
-        let key: Self = key.into();
-        match self {
-            Value::Map(map) => map.value.get_mut(&key),
-            _ => None,
-        }
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
+    }
+
+    fn to_map_string_key(&self) -> String {
+        let mut buffer = '{'.to_string();
+        let entries: Vec<String> =
+            self.value.iter().map(|(k, v)| k.to_map_string_key() + ":" + &v.to_map_string_key()).collect();
+        buffer.push_str(&entries.join(","));
+        buffer.push('}');
+        buffer
     }
 }
+
+impl Debuggable for Map {
+    fn write_debug_representation<WriteT>(
+        &self,
+        writer: &mut WriteT,
+        prefix: &DebugPrefix,
+        styles: &Styles,
+    ) -> Result<(), io::Error>
+    where
+        WriteT: io::Write,
+    {
+        let child_prefix = prefix.with("  ");
+
+        for ((key, value), first) in FirstIterator::new(self) {
+            prefix.write_with(writer, "? ", first)?;
+            key.write_debug_representation(writer, &child_prefix, styles)?;
+
+            prefix.write_with(writer, ": ", false)?;
+            value.write_debug_representation(writer, &child_prefix, styles)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl fmt::Display for Map {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_char('{')?;
+
+        for ((key, value), last) in LastIterator::new(self) {
+            fmt::Display::fmt(key, formatter)?;
+            formatter.write_char(':')?;
+            fmt::Display::fmt(value, formatter)?;
+            if !last {
+                formatter.write_char(',')?;
+            }
+        }
+
+        formatter.write_char('}')
+    }
+}
+
+// Delegated
 
 impl PartialEq for Map {
     fn eq(&self, other: &Self) -> bool {
@@ -79,75 +125,67 @@ impl Ord for Map {
 }
 
 impl Hash for Map {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<HasherT>(&self, state: &mut HasherT)
+    where
+        HasherT: Hasher,
+    {
         self.value.hash(state);
     }
 }
 
-impl Normal for Map {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
+impl IntoIterator for Map {
+    type Item = (Value, Value);
+    type IntoIter = map::IntoIter<Value, Value>;
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        let mut buffer = '{'.to_string();
-        let entries: Vec<StdString> =
-            self.value.iter().map(|(k, v)| k.to_map_string_key() + ":" + &v.to_map_string_key()).collect();
-        buffer.push_str(&entries.join(","));
-        buffer.push('}');
-        buffer
+    fn into_iter(self) -> Self::IntoIter {
+        self.value.into_iter()
     }
 }
 
-impl fmt::Display for Map {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{{")?;
+impl<'a> IntoIterator for &'a Map {
+    type Item = (&'a Value, &'a Value);
+    type IntoIter = map::Iter<'a, Value, Value>;
 
-        let mut i = self.value.iter().peekable();
-        while let Some((key, value)) = i.next() {
-            match i.peek() {
-                Some(_) => write!(formatter, "{}:{},", key, value)?,
-                None => write!(formatter, "{}:{}", key, value)?,
-            }
-        }
-
-        write!(formatter, "}}")?;
-
-        match &self.meta.location {
-            Some(location) => write!(formatter, " {}", location),
-            None => Ok(()),
-        }
+    fn into_iter(self) -> Self::IntoIter {
+        self.value.iter()
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for Map {
-    fn write_debug_representation(
-        &self,
-        writer: &mut W,
-        mut indentation: usize,
-        styles: &Styles,
-    ) -> Result<(), io::Error> {
-        let indent = " ".repeat(indentation);
-        indentation += 2;
+impl<'a> IntoIterator for &'a mut Map {
+    type Item = (&'a Value, &'a mut Value);
+    type IntoIter = map::IterMut<'a, Value, Value>;
 
-        let mut first = true;
-        for (key, value) in self.value.iter() {
-            if first {
-                write!(writer, "? ")?;
-                first = false;
-            } else {
-                write!(writer, "\n{}? ", indent)?;
+    fn into_iter(self) -> Self::IntoIter {
+        self.value.iter_mut()
+    }
+}
+
+// Conversions
+
+impl TryFrom<List> for Map {
+    type Error = IncompatibleValueTypeError;
+
+    /// Only works if all items of the list are themselves lists of length 2 (key-value pairs),
+    /// and that no key is repeated.
+    fn try_from(list: List) -> Result<Self, Self::Error> {
+        let mut map = Self::new();
+
+        for item in &list {
+            match item {
+                Value::List(list) => {
+                    if let Some((map_key, map_value)) = list.to_couple() {
+                        if map.value.insert(map_key.clone(), map_value.clone()).is_some() {
+                            return Err(IncompatibleValueTypeError::new(item, "list", Some("without repeating keys")));
+                        }
+                    } else {
+                        return Err(IncompatibleValueTypeError::new(item, "list", Some("of length 2")));
+                    }
+                }
+
+                _ => return Err(IncompatibleValueTypeError::new(item, "list", Some("of lists of length 2"))),
             }
-
-            key.write_debug_representation(writer, indentation, styles)?;
-            write!(writer, "\n{}: ", indent)?;
-            value.write_debug_representation(writer, indentation, styles)?;
         }
 
-        Ok(())
+        Ok(map)
     }
 }

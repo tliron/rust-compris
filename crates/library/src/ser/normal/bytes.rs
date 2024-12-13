@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -16,11 +16,14 @@ impl Bytes {
     }
 
     /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+    pub fn serialize_with_mode<SerializerT>(
         &self,
-        serializer: S,
+        serializer: SerializerT,
         serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         match &serialization_mode.bytes {
             BytesSerializationMode::AsBytes => serializer.serialize_bytes(&*self.value),
 
@@ -41,7 +44,10 @@ impl Bytes {
 }
 
 impl Serialize for Bytes {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_bytes(&*self.value)
     }
 }
@@ -67,7 +73,10 @@ impl<'a> BytesWithSerializationMode<'a> {
 }
 
 impl<'a> Serialize for BytesWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         self.bytes.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

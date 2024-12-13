@@ -1,29 +1,41 @@
-use super::super::{Serializer as ComprisSerializer, *};
+use super::super::*;
 
 use {
     borc::{basic::streaming::*, errors::*},
-    serde::*,
+    serde::{ser, Serialize},
     std::io::Write,
     tracing::trace,
 };
 
-impl<W: Write> ComprisSerializer<W> {
+//
+// Serializer
+//
+
+impl Serializer {
     /// Serializes the provided value to the writer as CBOR.
     ///
-    /// Is affected by [ComprisSerializer::base64].
-    pub fn write_cbor<V: Serialize + ?Sized>(&mut self, value: &V) -> Result<(), SerializationError> {
-        fn write<V: Serialize + ?Sized>(value: &V, writer: impl Write) -> Result<(), SerializationError> {
+    /// Is affected by [Serializer::base64](super::super::Serializer::base64).
+    pub fn write_cbor<WriteT, SerializableT>(
+        &self,
+        value: &SerializableT,
+        writer: &mut WriteT,
+    ) -> Result<(), SerializationError>
+    where
+        WriteT: Write,
+        SerializableT: Serialize + ?Sized,
+    {
+        fn write<W: Write, V: Serialize + ?Sized>(value: &V, writer: &mut W) -> Result<(), SerializationError> {
             Ok(value.serialize(&mut CborSerializer::new(writer))?)
         }
 
         if self.base64 {
-            write(value, self.base64_writer())?;
+            write(value, &mut Self::base64_writer(writer))?;
         } else {
-            write(value, self.writer.by_ref())?;
+            write(value, writer)?;
         }
 
         if self.pretty {
-            self.write_newline()
+            Self::write_newline(writer)
         } else {
             Ok(())
         }
@@ -34,12 +46,18 @@ impl<W: Write> ComprisSerializer<W> {
 // CborSerializer
 //
 
-struct CborSerializer<W: Write> {
-    encoder: Encoder<W>,
+struct CborSerializer<WriteT>
+where
+    WriteT: Write,
+{
+    encoder: Encoder<WriteT>,
 }
 
-impl<W: Write> CborSerializer<W> {
-    fn new(writer: W) -> Self {
+impl<WriteT> CborSerializer<WriteT>
+where
+    WriteT: Write,
+{
+    fn new(writer: WriteT) -> Self {
         Self { encoder: Encoder::new(writer) }
     }
 
@@ -49,16 +67,19 @@ impl<W: Write> CborSerializer<W> {
     }
 }
 
-impl<'a, W: Write> ser::Serializer for &'a mut CborSerializer<W> {
+impl<'a, WriteT> ser::Serializer for &'a mut CborSerializer<WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
-    type SerializeSeq = CborSeqSerializer<'a, W>;
-    type SerializeTuple = CborTupleSerializer<'a, W>;
-    type SerializeTupleStruct = CborTupleStructSerializer<'a, W>;
-    type SerializeTupleVariant = CborTupleVariantSerializer<'a, W>;
-    type SerializeMap = CborMapSerializer<'a, W>;
-    type SerializeStruct = CborStructSerializer<'a, W>;
-    type SerializeStructVariant = CborStructVariantSerializer<'a, W>;
+    type SerializeSeq = CborSeqSerializer<'a, WriteT>;
+    type SerializeTuple = CborTupleSerializer<'a, WriteT>;
+    type SerializeTupleStruct = CborTupleStructSerializer<'a, WriteT>;
+    type SerializeTupleVariant = CborTupleVariantSerializer<'a, WriteT>;
+    type SerializeMap = CborMapSerializer<'a, WriteT>;
+    type SerializeStruct = CborStructSerializer<'a, WriteT>;
+    type SerializeStructVariant = CborStructVariantSerializer<'a, WriteT>;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
         Ok(self.event(Event::Bool(v))?)
@@ -146,21 +167,27 @@ impl<'a, W: Write> ser::Serializer for &'a mut CborSerializer<W> {
         self.serialize_str(variant)
     }
 
-    fn serialize_newtype_struct<T: ?Sized + Serialize>(
+    fn serialize_newtype_struct<SerializableT>(
         self,
         _name: &'static str,
-        value: &T,
-    ) -> Result<Self::Ok, Self::Error> {
+        value: &SerializableT,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         value.serialize(self)
     }
 
-    fn serialize_newtype_variant<T: ?Sized + Serialize>(
+    fn serialize_newtype_variant<SerializableT>(
         self,
         _name: &'static str,
         variant_index: u32,
         variant: &'static str,
-        value: &T,
-    ) -> Result<Self::Ok, Self::Error> {
+        value: &SerializableT,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         self.event(Event::Tag(variant_index as u64))?;
         self.event(Event::Map(1))?;
         variant.serialize(&mut *self)?;
@@ -245,17 +272,25 @@ impl<'a, W: Write> ser::Serializer for &'a mut CborSerializer<W> {
 // CborSeqSerializer
 //
 
-pub struct CborSeqSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborSeqSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
     known: bool,
 }
 
-impl<'a, W: Write> ser::SerializeSeq for CborSeqSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeSeq for CborSeqSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
-
     type Error = CborWriteError;
 
-    fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+    fn serialize_element<SerializableT>(&mut self, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         value.serialize(&mut *self.serializer)
     }
 
@@ -268,15 +303,24 @@ impl<'a, W: Write> ser::SerializeSeq for CborSeqSerializer<'a, W> {
 // CborTupleSerializer
 //
 
-pub struct CborTupleSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborTupleSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
 }
 
-impl<'a, W: Write> ser::SerializeTuple for CborTupleSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeTuple for CborTupleSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
 
-    fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+    fn serialize_element<SerializableT>(&mut self, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         value.serialize(&mut *self.serializer)
     }
 
@@ -289,15 +333,24 @@ impl<'a, W: Write> ser::SerializeTuple for CborTupleSerializer<'a, W> {
 // CborTupleStructSerializer
 //
 
-pub struct CborTupleStructSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborTupleStructSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
 }
 
-impl<'a, W: Write> ser::SerializeTupleStruct for CborTupleStructSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeTupleStruct for CborTupleStructSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+    fn serialize_field<SerializableT>(&mut self, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         value.serialize(&mut *self.serializer)
     }
 
@@ -310,15 +363,24 @@ impl<'a, W: Write> ser::SerializeTupleStruct for CborTupleStructSerializer<'a, W
 // CborTupleVariantSerializer
 //
 
-pub struct CborTupleVariantSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborTupleVariantSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
 }
 
-impl<'a, W: Write> ser::SerializeTupleVariant for CborTupleVariantSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeTupleVariant for CborTupleVariantSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+    fn serialize_field<SerializableT>(&mut self, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         value.serialize(&mut *self.serializer)
     }
 
@@ -331,20 +393,32 @@ impl<'a, W: Write> ser::SerializeTupleVariant for CborTupleVariantSerializer<'a,
 // CborMapSerializer
 //
 
-pub struct CborMapSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborMapSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
     known: bool,
 }
 
-impl<'a, W: Write> ser::SerializeMap for CborMapSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeMap for CborMapSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
 
-    fn serialize_key<T: ?Sized + Serialize>(&mut self, key: &T) -> Result<(), Self::Error> {
+    fn serialize_key<SerializableT>(&mut self, key: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         key.serialize(&mut *self.serializer)
     }
 
-    fn serialize_value<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<(), Self::Error> {
+    fn serialize_value<SerializableT>(&mut self, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         value.serialize(&mut *self.serializer)
     }
 
@@ -357,15 +431,24 @@ impl<'a, W: Write> ser::SerializeMap for CborMapSerializer<'a, W> {
 // CborStructSerializer
 //
 
-pub struct CborStructSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborStructSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
 }
 
-impl<'a, W: Write> ser::SerializeStruct for CborStructSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeStruct for CborStructSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error> {
+    fn serialize_field<SerializableT>(&mut self, key: &'static str, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         key.serialize(&mut *self.serializer)?;
         value.serialize(&mut *self.serializer)
     }
@@ -376,18 +459,27 @@ impl<'a, W: Write> ser::SerializeStruct for CborStructSerializer<'a, W> {
 }
 
 //
-// CborStructSerializer
+// CborStructVariantSerializer
 //
 
-pub struct CborStructVariantSerializer<'a, W: Write> {
-    serializer: &'a mut CborSerializer<W>,
+pub struct CborStructVariantSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
+    serializer: &'a mut CborSerializer<WriteT>,
 }
 
-impl<'a, W: Write> ser::SerializeStructVariant for CborStructVariantSerializer<'a, W> {
+impl<'a, WriteT> ser::SerializeStructVariant for CborStructVariantSerializer<'a, WriteT>
+where
+    WriteT: Write,
+{
     type Ok = ();
     type Error = CborWriteError;
 
-    fn serialize_field<T: ?Sized + Serialize>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error> {
+    fn serialize_field<SerializableT>(&mut self, key: &'static str, value: &SerializableT) -> Result<(), Self::Error>
+    where
+        SerializableT: ?Sized + Serialize,
+    {
         key.serialize(&mut *self.serializer)?;
         value.serialize(&mut *self.serializer)
     }

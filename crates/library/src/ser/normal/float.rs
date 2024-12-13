@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -16,11 +16,14 @@ impl Float {
     }
 
     /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+    pub fn serialize_with_mode<SerializerT>(
         &self,
-        serializer: S,
+        serializer: SerializerT,
         serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         // See: https://docs.rs/num-traits/latest/num_traits/cast/trait.NumCast.html#tymethod.from
         match &serialization_mode.float {
             FloatSerializationMode::AsFloat => serializer.serialize_f64(self.value.into()),
@@ -34,7 +37,7 @@ impl Float {
                             serializer.serialize_i64(integer)
                         } else {
                             Integer::new(integer)
-                                .with_meta(&self.meta)
+                                .with_meta(self.meta.clone())
                                 .serialize_with_mode(serializer, serialization_mode)
                         }
                     }
@@ -52,7 +55,7 @@ impl Float {
                                 serializer.serialize_i64(integer)
                             } else {
                                 Integer::new(integer)
-                                    .with_meta(&self.meta)
+                                    .with_meta(self.meta.clone())
                                     .serialize_with_mode(serializer, serialization_mode)
                             }
                         }
@@ -64,7 +67,7 @@ impl Float {
                 }
             }
 
-            FloatSerializationMode::AsString(hint) => {
+            FloatSerializationMode::AsText(hint) => {
                 let string = self.value.to_string();
                 match hint {
                     None => serializer.serialize_str(&string),
@@ -81,7 +84,10 @@ impl Float {
 }
 
 impl Serialize for Float {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         serializer.serialize_f64(self.value.into())
     }
 }
@@ -107,7 +113,10 @@ impl<'a> FloatWithSerializationMode<'a> {
 }
 
 impl<'a> Serialize for FloatWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         self.float.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

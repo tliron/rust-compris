@@ -1,8 +1,9 @@
-use super::super::*;
+use super::{meta::*, normal::*};
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    kutil_cli::debug::*,
+    owo_colors::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -26,35 +27,47 @@ impl Integer {
     }
 }
 
-impl From<i64> for Integer {
-    fn from(value: i64) -> Self {
-        Integer::new(value)
+impl Normal for Integer {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
+    }
+
+    fn to_map_string_key(&self) -> String {
+        self.value.to_string()
     }
 }
 
-impl From<i32> for Integer {
-    fn from(value: i32) -> Self {
-        Integer::new(value as i64)
+impl Debuggable for Integer {
+    fn write_debug_representation<WriteT>(
+        &self,
+        writer: &mut WriteT,
+        prefix: &DebugPrefix,
+        styles: &Styles,
+    ) -> Result<(), io::Error>
+    where
+        WriteT: io::Write,
+    {
+        let value = self.value.style(styles.number);
+        write!(writer, "{} i64", value)?;
+        if let Some(coordinates) = &self.meta.coordinates {
+            write!(writer, " ")?;
+            coordinates.write_debug_representation(writer, prefix, styles)?;
+        }
+        Ok(())
     }
 }
 
-impl From<i16> for Integer {
-    fn from(value: i16) -> Self {
-        Integer::new(value as i64)
+impl fmt::Display for Integer {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}i64", self.value)
     }
 }
 
-impl From<i8> for Integer {
-    fn from(value: i8) -> Self {
-        Integer::new(value as i64)
-    }
-}
-
-impl From<Integer> for i64 {
-    fn from(value: Integer) -> Self {
-        value.value
-    }
-}
+// Delegated
 
 impl PartialEq for Integer {
     fn eq(&self, other: &Self) -> bool {
@@ -75,38 +88,42 @@ impl Ord for Integer {
 }
 
 impl Hash for Integer {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<HasherT>(&self, state: &mut HasherT)
+    where
+        HasherT: Hasher,
+    {
         self.value.hash(state);
     }
 }
 
-impl Normal for Integer {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
+// Conversions
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        self.value.to_string()
+impl From<i64> for Integer {
+    fn from(integer: i64) -> Self {
+        Integer::new(integer)
     }
 }
 
-impl fmt::Display for Integer {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}i64", self.value)
+impl From<i32> for Integer {
+    fn from(integer: i32) -> Self {
+        Integer::new(integer as i64)
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for Integer {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = self.value.style(styles.number);
-        write!(writer, "{} i64", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
+impl From<i16> for Integer {
+    fn from(integer: i16) -> Self {
+        Integer::new(integer as i64)
+    }
+}
+
+impl From<i8> for Integer {
+    fn from(integer: i8) -> Self {
+        Integer::new(integer as i64)
+    }
+}
+
+impl From<Integer> for i64 {
+    fn from(integer: Integer) -> Self {
+        integer.value
     }
 }

@@ -1,8 +1,11 @@
 [workspace]
-members = ["crates/library", "crates/cli"]
-resolver = "2"
+members = ["crates/library", "crates/macros", "crates/cli"]
+resolver = "3"
 
-# [patch.crates-io]
-# kutil-cli = { path = "../rust-kutil/crates/cli" }
-# kutil-std = { path = "../rust-kutil/crates/std" }
-# read-url = { path = "../rust-read-url" }
+[patch.crates-io]
+kutil-cli = { path = "../rust-kutil/crates/cli" }
+read-url = { path = "../rust-read-url/crates/library" }
+
+[profile.release]
+strip = "debuginfo"
+lto = true

@@ -1,41 +1,44 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{
+    super::{meta::*, normal::*},
+    mode::*,
+    modal::*,
+};
 
 use serde::ser::*;
 
-//
-// Float
-//
-
-impl Float {
-    /// Adds [SerializationMode] support.
-    pub fn with_serialization_mode<'a>(
-        &'a self,
-        serialization_mode: &'a SerializationMode,
-    ) -> FloatWithSerializationMode<'a> {
-        FloatWithSerializationMode::new(self, serialization_mode)
+impl Serialize for Float {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
+        serializer.serialize_f64(self.value.into())
     }
+}
 
-    /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+impl SerializeModal for Float {
+    fn serialize_modal<SerializerT>(
         &self,
-        serializer: S,
-        serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
+        serializer: SerializerT,
+        mode: &SerializationMode,
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
         // See: https://docs.rs/num-traits/latest/num_traits/cast/trait.NumCast.html#tymethod.from
-        match &serialization_mode.float {
-            FloatSerializationMode::AsFloat => serializer.serialize_f64(self.value.into()),
+        match &mode.float {
+            FloatSerializationMode::AsF64 => serializer.serialize_f64(self.value.into()),
 
-            FloatSerializationMode::AsInteger => {
+            FloatSerializationMode::AsI64 => {
                 let float: f64 = self.value.trunc().into();
                 match num_traits::cast::<_, i64>(float) {
                     Some(integer) => {
-                        if serialization_mode.integer.might_be_float() {
+                        if mode.integer.might_be_float() {
                             // Avoid endless recursion!
                             serializer.serialize_i64(integer)
                         } else {
                             Integer::new(integer)
-                                .with_meta(&self.meta)
-                                .serialize_with_mode(serializer, serialization_mode)
+                                .with_meta(self.meta.clone())
+                                .serialize_modal(serializer, mode)
                         }
                     }
 
@@ -43,17 +46,17 @@ impl Float {
                 }
             }
 
-            FloatSerializationMode::AsIntegerIfFractionless => {
+            FloatSerializationMode::AsI64IfFractionless => {
                 if self.value.fract() == 0.0 {
                     match num_traits::cast::<_, i64>(self.value) {
                         Some(integer) => {
-                            if serialization_mode.integer.might_be_float() {
+                            if mode.integer.might_be_float() {
                                 // Avoid endless recursion!
                                 serializer.serialize_i64(integer)
                             } else {
                                 Integer::new(integer)
-                                    .with_meta(&self.meta)
-                                    .serialize_with_mode(serializer, serialization_mode)
+                                    .with_meta(self.meta.clone())
+                                    .serialize_modal(serializer, mode)
                             }
                         }
 
@@ -64,7 +67,7 @@ impl Float {
                 }
             }
 
-            FloatSerializationMode::AsString(hint) => {
+            FloatSerializationMode::Stringify(hint) => {
                 let string = self.value.to_string();
                 match hint {
                     None => serializer.serialize_str(&string),
@@ -77,37 +80,5 @@ impl Float {
                 }
             }
         }
-    }
-}
-
-impl Serialize for Float {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_f64(self.value.into())
-    }
-}
-
-//
-// FloatWithSerializationMode
-//
-
-/// Adds [SerializationMode] support to [Float].
-pub struct FloatWithSerializationMode<'a> {
-    /// Wrapped value.
-    pub float: &'a Float,
-
-    /// Serialization mode.
-    pub serialization_mode: &'a SerializationMode,
-}
-
-impl<'a> FloatWithSerializationMode<'a> {
-    /// Constructor.
-    pub fn new(float: &'a Float, serialization_mode: &'a SerializationMode) -> Self {
-        Self { float, serialization_mode }
-    }
-}
-
-impl<'a> Serialize for FloatWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.float.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

@@ -7,7 +7,9 @@ HERE=$(dirname "$(readlink --canonicalize "$BASH_SOURCE")")
 cd "$ROOT"
 
 if [ "$TARGET" == release ]; then
-	cargo install --path="$ROOT/crates/cli" --release
-else
+	m 'building binaries (release)...' "$CYAN"
 	cargo install --path="$ROOT/crates/cli"
+else
+	m 'building binaries (dev)...' "$CYAN"
+	cargo install --path="$ROOT/crates/cli" --debug
 fi

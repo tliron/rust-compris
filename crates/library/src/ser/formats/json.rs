@@ -1,31 +1,39 @@
-use super::super::{Serializer as ComprisSerializer, *};
+use super::super::*;
 
 use {
-    serde::ser::*,
+    serde::Serialize,
     std::io,
     struson::{serde::*, writer::*},
     tracing::trace,
 };
 
-impl<W: io::Write> ComprisSerializer<W> {
+impl Serializer {
     /// Serializes the provided value to the writer as JSON.
-    pub fn write_json<V: Serialize>(&mut self, value: &V) -> Result<(), SerializationError> {
-        let writer = if self.pretty {
+    pub fn write_json<WriteT, SerializableT>(
+        &self,
+        value: &SerializableT,
+        writer: &mut WriteT,
+    ) -> Result<(), SerializeError>
+    where
+        WriteT: io::Write,
+        SerializableT: Serialize + ?Sized,
+    {
+        let json_stream_writer = if self.pretty {
             struson::writer::JsonStreamWriter::new_custom(
-                self.writer.by_ref(),
+                writer.by_ref(),
                 struson::writer::WriterSettings { pretty_print: true, ..Default::default() },
             )
         } else {
-            struson::writer::JsonStreamWriter::new(self.writer.by_ref())
+            struson::writer::JsonStreamWriter::new(writer.by_ref())
         };
 
-        let mut writer = StyledJsonWriter::new(writer);
+        let mut json_stream_writer = StyledJsonWriter::new(json_stream_writer);
 
-        writer.serialize_value(&value)?;
-        writer.finish_document()?;
+        json_stream_writer.serialize_value(&value)?;
+        json_stream_writer.finish_document()?;
 
         if self.pretty {
-            self.write_newline()
+            Self::write_newline(writer)
         } else {
             Ok(())
         }
@@ -38,18 +46,24 @@ impl<W: io::Write> ComprisSerializer<W> {
 
 // TODO: does nothing
 
-struct StyledJsonWriter<W: JsonWriter> {
-    writer: W,
+struct StyledJsonWriter<JsonWriterT: JsonWriter> {
+    writer: JsonWriterT,
 }
 
-impl<W: JsonWriter> StyledJsonWriter<W> {
-    fn new(writer: W) -> Self {
+impl<JsonWriterT> StyledJsonWriter<JsonWriterT>
+where
+    JsonWriterT: JsonWriter,
+{
+    fn new(writer: JsonWriterT) -> Self {
         Self { writer }
     }
 }
 
-impl<W: JsonWriter> JsonWriter for StyledJsonWriter<W> {
-    type WriterResult = W::WriterResult;
+impl<JsonWriterT> JsonWriter for StyledJsonWriter<JsonWriterT>
+where
+    JsonWriterT: JsonWriter,
+{
+    type WriterResult = JsonWriterT::WriterResult;
 
     fn begin_object(&mut self) -> Result<(), io::Error> {
         trace!("begin_object");
@@ -73,8 +87,6 @@ impl<W: JsonWriter> JsonWriter for StyledJsonWriter<W> {
 
     fn name(&mut self, name: &str) -> Result<(), io::Error> {
         trace!("name {}", name);
-        //self.writer.name("\x1b[93mError\x1b[0m")
-        //self.writer.name(&name.green())
         self.writer.name(name)
     }
 

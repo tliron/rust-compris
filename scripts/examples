@@ -6,6 +6,8 @@ HERE=$(dirname "$(readlink --canonicalize "$BASH_SOURCE")")
 
 cd "$ROOT"
 
-# See: https://github.com/rust-lang/cargo/issues/8356#issuecomment-1153051224
-
-cargo run --example 2>&1 | grep -E '^ ' | xargs -n1 cargo run --example
+for E in $(cargo run --example 2>&1 | grep --extended-regexp '^    ' | sort); do
+	# Note: specifying the "serde" feature is actually unneeded here
+	# seemingly because it is implicitly enabled by crates/cli/Cargo.toml
+	cargo run --example "$E" --features=derive,serde
+done

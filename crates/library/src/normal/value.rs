@@ -1,49 +1,46 @@
 use super::{
-    super::*, boolean::*, bytes::*, float::*, integer::*, list::*, map::*, normal::*, null::*, string::*,
+    super::kv::*, boolean::*, bytes::*, float::*, integer::*, iterator::*, list::*, map::*, null::*, text::*,
     unsigned_integer::*,
 };
 
-use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
-};
+use std::{cmp::*, hash::*, mem::*};
 
 //
 // Value
 //
 
 /// Container for a normal value.
-#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Value {
     /// Signifies no value.
     #[default]
     Nothing,
 
-    /// Null value.
+    /// Null.
     Null(Null),
 
-    /// Integer value.
+    /// Integer.
     Integer(Integer),
 
-    /// Unsigned integer value.
+    /// Unsigned integer.
     UnsignedInteger(UnsignedInteger),
 
-    /// Float value.
+    /// Float.
     Float(Float),
 
-    /// Boolean value.
+    /// Boolean.
     Boolean(Boolean),
 
-    /// String value.
-    String(String),
+    /// Text.
+    Text(Text),
 
-    /// Bytes value.
+    /// Bytes.
     Bytes(Bytes),
 
-    /// List value.
+    /// List.
     List(List),
 
-    /// Map value.
+    /// Map.
     Map(Map),
 }
 
@@ -51,313 +48,171 @@ impl Value {
     /// The value's type name.
     pub fn get_type_name(&self) -> &'static str {
         match self {
-            Self::Nothing => "nothing",
-            Self::Null(_) => "null",
-            Self::Integer(_) => "integer",
-            Self::UnsignedInteger(_) => "unsigned integer",
-            Self::Float(_) => "float",
-            Self::Boolean(_) => "boolean",
-            Self::String(_) => "string",
-            Self::Bytes(_) => "bytes",
-            Self::List(_) => "list",
-            Self::Map(_) => "map",
-        }
-    }
-}
-
-impl Normal for Value {
-    fn get_meta(&self) -> Option<&Meta> {
-        match self {
-            Self::Nothing => None,
-            Self::Null(null) => null.get_meta(),
-            Self::Integer(integer) => integer.get_meta(),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.get_meta(),
-            Self::Float(float) => float.get_meta(),
-            Self::Boolean(boolean) => boolean.get_meta(),
-            Self::String(string) => string.get_meta(),
-            Self::Bytes(bytes) => bytes.get_meta(),
-            Self::List(list) => list.get_meta(),
-            Self::Map(map) => map.get_meta(),
+            Self::Nothing => "Nothing",
+            Self::Null(_) => "Null",
+            Self::Integer(_) => "Integer",
+            Self::UnsignedInteger(_) => "UnsignedInteger",
+            Self::Float(_) => "Float",
+            Self::Boolean(_) => "Boolean",
+            Self::Text(_) => "Text",
+            Self::Bytes(_) => "Bytes",
+            Self::List(_) => "List",
+            Self::Map(_) => "Map",
         }
     }
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+    /// True if [List] or [Map].
+    pub fn is_collection(&self) -> bool {
         match self {
-            Self::Nothing => None,
-            Self::Null(null) => null.get_meta_mut(),
-            Self::Integer(integer) => integer.get_meta_mut(),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.get_meta_mut(),
-            Self::Float(float) => float.get_meta_mut(),
-            Self::Boolean(boolean) => boolean.get_meta_mut(),
-            Self::String(string) => string.get_meta_mut(),
-            Self::Bytes(bytes) => bytes.get_meta_mut(),
-            Self::List(list) => list.get_meta_mut(),
-            Self::Map(map) => map.get_meta_mut(),
+            Self::List(_) | Self::Map(_) => true,
+            _ => false,
         }
     }
 
-    fn to_map_string_key(&self) -> StdString {
+    /// Gets a reference to a nested value.
+    ///
+    /// If this is a [Map], the argument is treated as a key.
+    ///
+    /// If this is a [List], the argument is treated as an index and must be an
+    /// [Value::UnsignedInteger] or an [Value::Integer].
+    pub fn get(&self, key: &Self) -> Option<&Self> {
         match self {
-            Self::Nothing => "nothing".into(),
-            Self::Null(null) => null.to_map_string_key(),
-            Self::Integer(integer) => integer.to_map_string_key(),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.to_map_string_key(),
-            Self::Float(float) => float.to_map_string_key(),
-            Self::Boolean(boolean) => boolean.to_map_string_key(),
-            Self::String(string) => string.to_map_string_key(),
-            Self::Bytes(bytes) => bytes.to_map_string_key(),
-            Self::List(list) => list.to_map_string_key(),
-            Self::Map(map) => map.to_map_string_key(),
+            Self::Map(map) => map.value.get(key),
+
+            Self::List(list) => match key {
+                Self::UnsignedInteger(unsigned_integer) => list.value.get(unsigned_integer.value as usize),
+                Self::Integer(integer) => list.value.get(integer.value as usize),
+                _ => None,
+            },
+
+            _ => None,
         }
     }
-}
 
-impl fmt::Display for Value {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    /// Gets a mutable reference to a nested value.
+    ///
+    /// If this is a [Map], the argument is treated as a key.
+    ///
+    /// If this is a [List], the argument is treated as an index and must be an
+    /// [Value::UnsignedInteger] or an [Value::Integer].
+    pub fn get_mut(&mut self, key: &Self) -> Option<&mut Self> {
         match self {
-            Self::Nothing => write!(formatter, "nothing"),
-            Self::Null(null) => null.fmt(formatter),
-            Self::Integer(integer) => integer.fmt(formatter),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.fmt(formatter),
-            Self::Float(float) => float.fmt(formatter),
-            Self::Boolean(boolean) => boolean.fmt(formatter),
-            Self::String(string) => string.fmt(formatter),
-            Self::Bytes(bytes) => bytes.fmt(formatter),
-            Self::List(list) => list.fmt(formatter),
-            Self::Map(map) => map.fmt(formatter),
+            Value::Map(map) => map.value.get_mut(key),
+
+            Self::List(list) => match key {
+                Value::UnsignedInteger(unsigned_integer) => list.value.get_mut(unsigned_integer.value as usize),
+                Value::Integer(integer) => list.value.get_mut(integer.value as usize),
+                _ => None,
+            },
+
+            _ => None,
         }
     }
-}
 
-impl<W: io::Write> WriteDebug<W> for Value {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        match self {
-            Self::Nothing => write!(writer, "{}", "nothing".style(styles.plain)),
-            Self::Null(null) => null.write_debug_representation(writer, indentation, styles),
-            Self::Integer(integer) => integer.write_debug_representation(writer, indentation, styles),
-            Self::UnsignedInteger(unsigned_integer) => {
-                unsigned_integer.write_debug_representation(writer, indentation, styles)
+    /// Gets a reference to a nested value.
+    ///
+    /// If this is a [Map], the argument is treated as a key.
+    ///
+    /// If this is a [List], the argument is treated as an index and must be an
+    /// [Value::UnsignedInteger] or an [Value::Integer].
+    pub fn into_get<KeyT>(&self, key: KeyT) -> Option<&Self>
+    where
+        KeyT: Into<Self>,
+    {
+        self.get(&key.into())
+    }
+
+    /// Gets a mutable reference to a nested value.
+    ///
+    /// If this is a [Map], the argument is treated as a key.
+    ///
+    /// If this is a [List], the argument is treated as an index and must be an
+    /// [Value::UnsignedInteger] or an [Value::Integer].
+    pub fn into_get_mut<KeyT>(&mut self, key: KeyT) -> Option<&mut Self>
+    where
+        KeyT: Into<Self>,
+    {
+        self.get_mut(&key.into())
+    }
+
+    /// Traverse a value by calling [Value::get] repeatedly.
+    ///
+    /// Any non-collection or missing key will cause the traversal to stop and return [None].
+    ///
+    /// Use the [traverse!](crate::traverse) macro instead if you can. It will generally
+    /// be more efficient because it doesn't require an allocated array.
+    pub fn traverse<'own, IterableT>(&self, keys: IterableT) -> Option<&Self>
+    where
+        IterableT: IntoIterator<Item = &'own Self>,
+    {
+        let mut found = self;
+        for key in keys {
+            found = match found.get(key) {
+                Some(value) => value,
+                None => return None,
             }
-            Self::Float(float) => float.write_debug_representation(writer, indentation, styles),
-            Self::Boolean(boolean) => boolean.write_debug_representation(writer, indentation, styles),
-            Self::String(string) => string.write_debug_representation(writer, indentation, styles),
-            Self::Bytes(bytes) => bytes.write_debug_representation(writer, indentation, styles),
-            Self::List(list) => list.write_debug_representation(writer, indentation, styles),
-            Self::Map(map) => map.write_debug_representation(writer, indentation, styles),
+        }
+        Some(found)
+    }
+
+    /// Traverse a value by calling [Value::get_mut] repeatedly.
+    ///
+    /// Any non-collection or missing key will cause the traversal to stop and return [None].
+    ///
+    /// Use the [traverse_mut!](crate::traverse_mut) macro instead if you can. It will generally
+    /// be more efficient because it doesn't require an allocated array.
+    pub fn traverse_mut(&mut self, keys: &[Self]) -> Option<&mut Self> {
+        let mut found = self;
+        for key in keys {
+            found = match found.get_mut(key) {
+                Some(value) => value,
+                None => return None,
+            }
+        }
+        Some(found)
+    }
+
+    /// Compare type.
+    pub fn same_type(&self, other: &Self) -> bool {
+        discriminant(self) == discriminant(other)
+    }
+
+    /// If the value is a [List] with length of 2, returns it as a tuple.
+    ///
+    /// Useful when using the list as a key-value pair for a map.
+    pub fn to_pair(&self) -> Option<(&Self, &Self)> {
+        match self {
+            Self::List(list) => list.to_pair(),
+            _ => None,
         }
     }
-}
 
-// From normal types
-
-impl From<Null> for Value {
-    fn from(value: Null) -> Self {
-        Self::Null(value)
-    }
-}
-
-impl From<Integer> for Value {
-    fn from(value: Integer) -> Self {
-        Self::Integer(value)
-    }
-}
-
-impl From<UnsignedInteger> for Value {
-    fn from(value: UnsignedInteger) -> Self {
-        Self::UnsignedInteger(value)
-    }
-}
-
-impl From<Float> for Value {
-    fn from(value: Float) -> Self {
-        Self::Float(value)
-    }
-}
-
-impl From<Boolean> for Value {
-    fn from(value: Boolean) -> Self {
-        Self::Boolean(value)
-    }
-}
-
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Self::String(value)
-    }
-}
-
-impl From<List> for Value {
-    fn from(value: List) -> Self {
-        Self::List(value)
-    }
-}
-
-impl From<Map> for Value {
-    fn from(value: Map) -> Self {
-        Self::Map(value)
-    }
-}
-
-// From primitive types
-
-impl From<()> for Value {
-    fn from(_: ()) -> Self {
-        Self::Null(Null::new())
-    }
-}
-
-impl From<i64> for Value {
-    fn from(value: i64) -> Self {
-        Self::Integer(value.into())
-    }
-}
-
-impl From<i32> for Value {
-    fn from(value: i32) -> Self {
-        Self::Integer(value.into())
-    }
-}
-
-impl From<i16> for Value {
-    fn from(value: i16) -> Self {
-        Self::Integer(value.into())
-    }
-}
-
-impl From<i8> for Value {
-    fn from(value: i8) -> Self {
-        Self::Integer(value.into())
-    }
-}
-
-impl From<u64> for Value {
-    fn from(value: u64) -> Self {
-        Self::UnsignedInteger(value.into())
-    }
-}
-
-impl From<u32> for Value {
-    fn from(value: u32) -> Self {
-        Self::UnsignedInteger(value.into())
-    }
-}
-
-impl From<u16> for Value {
-    fn from(value: u16) -> Self {
-        Self::UnsignedInteger(value.into())
-    }
-}
-
-impl From<u8> for Value {
-    fn from(value: u8) -> Self {
-        Self::UnsignedInteger(value.into())
-    }
-}
-
-impl From<f64> for Value {
-    fn from(value: f64) -> Self {
-        Self::Float(value.into())
-    }
-}
-
-impl From<f32> for Value {
-    fn from(value: f32) -> Self {
-        Self::Float(value.into())
-    }
-}
-
-impl From<bool> for Value {
-    fn from(value: bool) -> Self {
-        Self::Boolean(value.into())
-    }
-}
-
-impl From<StdString> for Value {
-    fn from(value: StdString) -> Self {
-        Self::String(value.into())
-    }
-}
-
-impl From<&str> for Value {
-    fn from(value: &str) -> Self {
-        Self::String(value.into())
-    }
-}
-
-// To primitive types
-
-/// Wrong value type.
-pub struct WrongValueTypeError(pub StdString);
-
-impl WrongValueTypeError {
-    /// Constructor.
-    pub fn new(format: &str) -> Self {
-        Self(format.into())
-    }
-}
-
-impl TryFrom<&Value> for i64 {
-    type Error = WrongValueTypeError;
-
-    fn try_from(value: &Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Integer(integer) => Ok(integer.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+    /// If the value is a [Map] with *only* one key, returns the key-value
+    /// tuple.
+    pub fn to_key_value_pair(&self) -> Option<(&Self, &Self)> {
+        match self {
+            Self::Map(map) => map.to_key_value_pair(),
+            _ => None,
         }
     }
-}
 
-impl TryFrom<&Value> for u64 {
-    type Error = WrongValueTypeError;
-
-    fn try_from(value: &Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::UnsignedInteger(unsigned_integer) => Ok(unsigned_integer.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
-        }
+    /// If the value is a [List], iterates its items. Otherwise just iterates itself once.
+    pub fn iterator(&self) -> ValueIterator {
+        ValueIterator::new(self)
     }
-}
 
-impl TryFrom<&Value> for f64 {
-    type Error = WrongValueTypeError;
-
-    fn try_from(value: &Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Float(float) => Ok(float.value.into()),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
-        }
-    }
-}
-
-impl TryFrom<&Value> for bool {
-    type Error = WrongValueTypeError;
-
-    fn try_from(value: &Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Boolean(boolean) => Ok(boolean.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a Value> for &'a StdString {
-    type Error = WrongValueTypeError;
-
-    fn try_from(value: &'a Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::String(string) => Ok(&string.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
-        }
-    }
-}
-
-impl<'a> TryFrom<&'a Value> for &'a str {
-    type Error = WrongValueTypeError;
-
-    fn try_from(value: &'a Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::String(string) => Ok(&string.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+    /// An iterator for key-value pairs.
+    ///
+    /// Can be used on a [Map] or a [List]. The items in a [List] are expected to each be
+    /// key-value pairs ([List] of length 2) with unique keys.
+    ///
+    /// Note that the implementation relies on `dyn` to support two different [KeyValuePairIterator]
+    /// implementations.
+    pub fn key_value_iterator<'own>(&'own self) -> Option<Box<dyn KeyValuePairIterator + 'own>> {
+        match self {
+            Value::Map(map) => Some(Box::new(KeyValuePairIteratorForBTreeMap::new_for(&map.value))),
+            Value::List(list) => Some(Box::new(KeyValuePairIteratorForValueIterator::new_for(list))),
+            _ => None,
         }
     }
 }

@@ -1,30 +1,29 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*, modal::*};
 
 use serde::ser::*;
 
-//
-// Bytes
-//
-
-impl Bytes {
-    /// Adds [SerializationMode] support.
-    pub fn with_serialization_mode<'a>(
-        &'a self,
-        serialization_mode: &'a SerializationMode,
-    ) -> BytesWithSerializationMode<'a> {
-        BytesWithSerializationMode::new(self, serialization_mode)
+impl Serialize for Bytes {
+    fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
+        serializer.serialize_bytes(&*self.value)
     }
+}
 
-    /// Serializes according to the [SerializationMode].
-    pub fn serialize_with_mode<S: Serializer>(
+impl SerializeModal for Bytes {
+    fn serialize_modal<SerializerT>(
         &self,
-        serializer: S,
-        serialization_mode: &SerializationMode,
-    ) -> Result<S::Ok, S::Error> {
-        match &serialization_mode.bytes {
+        serializer: SerializerT,
+        mode: &SerializationMode,
+    ) -> Result<SerializerT::Ok, SerializerT::Error>
+    where
+        SerializerT: Serializer,
+    {
+        match &mode.bytes {
             BytesSerializationMode::AsBytes => serializer.serialize_bytes(&*self.value),
 
-            BytesSerializationMode::AsBase64(hint) => {
+            BytesSerializationMode::StringifyBase64(hint) => {
                 let string = self.to_base64();
                 match hint {
                     None => serializer.serialize_str(&string),
@@ -37,37 +36,5 @@ impl Bytes {
                 }
             }
         }
-    }
-}
-
-impl Serialize for Bytes {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_bytes(&*self.value)
-    }
-}
-
-//
-// BytesWithSerializationMode
-//
-
-/// Adds [SerializationMode] support to [Bytes].
-pub struct BytesWithSerializationMode<'a> {
-    /// Wrapped value.
-    pub bytes: &'a Bytes,
-
-    /// Serialization mode.
-    pub serialization_mode: &'a SerializationMode,
-}
-
-impl<'a> BytesWithSerializationMode<'a> {
-    /// Constructor.
-    pub fn new(bytes: &'a Bytes, serialization_mode: &'a SerializationMode) -> Self {
-        Self { bytes, serialization_mode }
-    }
-}
-
-impl<'a> Serialize for BytesWithSerializationMode<'a> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.bytes.serialize_with_mode(serializer, self.serialization_mode)
     }
 }

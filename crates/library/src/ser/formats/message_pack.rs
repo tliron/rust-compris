@@ -1,24 +1,32 @@
-use super::super::{Serializer as ComprisSerializer, *};
+use super::super::*;
 
-use {serde::*, std::io::Write};
+use {serde::Serialize, std::io::Write};
 
-impl<W: Write> ComprisSerializer<W> {
+//
+// Serializer
+//
+
+impl Serializer {
     /// Serializes the provided value to the writer as MessagePack.
     ///
-    /// Is affected by [ComprisSerializer::base64].
-    pub fn write_message_pack<V: Serialize + ?Sized>(&mut self, value: &V) -> Result<(), SerializationError> {
-        fn write<V: Serialize + ?Sized>(value: &V, writer: &mut impl Write) -> Result<(), SerializationError> {
+    /// Is affected by [Serializer::base64](super::super::Serializer::base64).
+    pub fn write_message_pack<W: Write, V: Serialize + ?Sized>(
+        &self,
+        value: &V,
+        writer: &mut W,
+    ) -> Result<(), SerializationError> {
+        fn write<W: Write, V: Serialize + ?Sized>(value: &V, writer: &mut W) -> Result<(), SerializationError> {
             Ok(rmp_serde::encode::write(writer, value)?)
         }
 
         if self.base64 {
-            write(value, &mut self.base64_writer())?;
+            write(value, &mut Self::base64_writer(writer))?;
         } else {
-            write(value, self.writer.by_ref())?;
+            write(value, writer)?;
         }
 
         if self.pretty {
-            self.write_newline()
+            Self::write_newline(writer)
         } else {
             Ok(())
         }

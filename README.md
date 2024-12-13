@@ -21,9 +21,10 @@ floats). So instead of saying "let's just store it as JSON", say "let's just sto
 and use Compris to handle the representation. It will allow you and your users to select from
 several formats at runtime.
 
-Compris is pronounced "com-PREE". It comes from CompositePrimitiveSchema, or ComPriS for short.
-
 See [here](CPS.md) for a full descripton of CPS.
+
+Compris is pronounced "com-PREE". The name comes from shortering CompositePrimitiveSchema to
+ComPriS.
 
 Get started with the [API documentation](https://docs.rs/compris/latest/compris/) and the
 [examples](crates/library/examples/).
@@ -54,14 +55,35 @@ Need more formats? We accept contributions and suggestions!
 Traversal
 ---------
 
-Included are ergonomic facilities for accessing nested values by path.
+Included are ergonomic facilities for accessing nested values by path and for presenting
+paths in a human-readable format.
 
 [Example](crates/library/examples/traverse.rs).
+
+Resolution
+----------
+
+The optional `resolve` feature allows you to "resolve" the normal value types into your own
+types.
+
+The API is simple but powerful, making use of a `#[derive(Resolve)]` procedural macro that
+generates resolution code for you, while also allowing you to implement your own custom
+resolution semantics with your own errors. Errors can contain location information allowing
+for detailed, colorful, user-friendly reports.
+
+Indeed, Compris resolution can form the basis for sophisticated parsers based on CPS.
+
+Does resolution sound a bit like Serde deserialization? It can have the same results, and we do
+support Serde, too (see below). However, Compris's resolution is more flexible in that it allows
+for accumulating errors from nested resolution, instead of failing on the first error, like
+Serde.
+
+[Example](crates/library/examples/resolve.rs).
 
 Serialization
 -------------
 
-Compris's normal value types can be serialized via [serde](https://serde.rs/) (optional
+Compris's normal value types can be serialized via [Serde](https://serde.rs/) (optional
 `serde` feature).
 
 But we also allow you to attach "serialization modes" that allow some control over seralization
@@ -72,11 +94,11 @@ and does not modify your in-memory data.
 We additionally provide serializers for all supported representation formats behind a common
 API so that they can be selected at runtime. For the textual formats, we support pretty printing
 for human readability, including colorization for terminals. For the binary formats, we support
-Base64 encoding.
+optional Base64 encoding.
 
-Actually, this common serialization API can be used with any Rust type that supports serde
-serialization, not just our normal types. It is thus useful if your program needs to serialize
-to a range of different formats and you would rather use a single crate with a single API.
+This general-purpose serialization API can be used with any Rust type that supports Serde
+serialization, not just our normal types. It is thus useful if your program needs to serialize to
+a range of different formats and you would rather use a single crate with a single API.
 
 [Example](crates/library/examples/serialize.rs).
 
@@ -86,15 +108,17 @@ Deserialization
 As with serialization, we provide a common API to deserialize from all supported representation
 formats (optional `serde` feature).
 
-However, there is a twist, as this is done in two phases. Internally, we *first* read the format
-into Compris's normal value types before deserializing. This enables our full feature set, though
-it can be considered inefficient if you do not need these values.
+However, there is a twist, as this is interally done in two phases. We *first* read the format
+into Compris's normal value types and only then deserialize those to your types. This enables our
+full feature set, though that interim step can be considered inefficient.
 
 But there is additional utility here. Often you will be working with Compris's normal values
 types, not the raw formats. Do you need to populate your own structs and enums from them? Instead
 of doing it manually, you can "deserialize" directly from there. No representation format is
-involved and no parsing is done. This feature merely uses serde's deserialization mechanism to
-efficiently handle the data placement.
+involved and no parsing is done. This feature merely uses Serde's deserialization mechanism to
+efficiently handle the data placement. Generally, the `resolve` feature mentioned above does the
+same and is more flexible, but if you're using types that already support Serde, then this will just
+work.
 
 [Example](crates/library/examples/deserialize.rs).
 

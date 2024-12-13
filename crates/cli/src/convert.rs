@@ -1,16 +1,12 @@
 use super::{cli::*, errors::*};
 
 use {
-    clap::CommandFactory,
-    compris::WriteDebugDyn,
-    kutil_cli::*,
+    clap::*,
+    compris::{normal::Value, *},
+    kutil_cli::{debug::*, run::*},
     read_url::*,
-    std::{
-        fs::File,
-        io::{empty, stdin, stdout, BufReader, BufWriter, IsTerminal, Read, Write},
-        path::*,
-    },
-    tracing::info,
+    std::{fs::File, io::*, path::Path, result::Result},
+    tracing::*,
 };
 
 impl CLI {
@@ -82,19 +78,18 @@ impl CLI {
         compris::Format::try_from(&*input_format.as_str())
     }
 
-    fn read(&self) -> Result<(compris::Value, compris::Format), MainError> {
-        let (reader, input_url_extension) = self.get_reader()?;
-        let reader = Box::leak(reader);
+    fn read(&self) -> Result<(Value, Format), MainError> {
+        let (mut reader, input_url_extension) = self.get_reader()?;
         let input_format = self.get_input_format(&input_url_extension)?;
 
         Ok((
-            compris::read::Reader::new(reader, input_format.clone())
+            compris::read::Reader::new(input_format.clone())
                 .with_try_integers(self.input_integers)
                 .with_try_unsigned_integers(self.input_unsigned_integers)
                 .with_allow_legacy_words(self.input_legacy)
                 .with_allow_legacy_types(self.input_legacy)
                 .with_base64(self.input_base64)
-                .read()?,
+                .read(&mut reader)?,
             input_format,
         ))
     }
@@ -144,45 +139,43 @@ impl CLI {
         }
     }
 
-    fn write(&self, content: compris::Value, input_format: compris::Format) -> Result<(), MainError> {
+    fn write(&self, content: Value, input_format: compris::Format) -> Result<(), MainError> {
         let output_format = self.get_output_format(&input_format);
-        let writer = Box::leak(self.get_writer(&output_format));
+        let mut writer = self.get_writer(&output_format);
 
         match output_format {
             Some(output_format) => {
-                let mut serialize = compris::ser::Serializer::new(writer)
-                    .with_format(output_format.clone())
+                let serializer = compris::ser::Serializer::new(output_format.clone())
                     .with_pretty(!self.output_plain)
-                    .with_strict(self.output_strict)
                     .with_base64(self.output_base64);
 
                 match output_format {
                     compris::Format::YAML => {
                         let serialization_mode = compris::ser::SerializationMode::for_yaml();
                         let content = content.with_serialization_mode(&serialization_mode);
-                        serialize.write(&content)?;
+                        serializer.write(&content, &mut writer)?;
                     }
 
                     compris::Format::JSON => {
                         let serialization_mode = compris::ser::SerializationMode::for_json();
                         let content = content.with_serialization_mode(&serialization_mode);
-                        serialize.write(&content)?;
+                        serializer.write(&content, &mut writer)?;
                     }
 
                     compris::Format::XJSON => {
                         let serialization_mode = compris::ser::SerializationMode::for_xjson();
                         let content = content.with_serialization_mode(&serialization_mode);
-                        serialize.write(&content)?;
+                        serializer.write(&content, &mut writer)?;
                     }
 
                     _ => {
-                        serialize.write(&content)?;
+                        serializer.write(&content, &mut writer)?;
                     }
                 }
             }
 
             None => {
-                content.write_debug_dyn(writer)?;
+                content.write_debug(&mut writer)?;
             }
         }
 

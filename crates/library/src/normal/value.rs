@@ -1,11 +1,12 @@
 use super::{
-    super::*, boolean::*, bytes::*, float::*, integer::*, list::*, map::*, normal::*, null::*, string::*,
+    boolean::*, bytes::*, errors::*, float::*, integer::*, list::*, map::*, meta::*, normal::*, null::*, text::*,
     unsigned_integer::*,
 };
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    kutil_cli::debug::*,
+    owo_colors::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -19,31 +20,31 @@ pub enum Value {
     #[default]
     Nothing,
 
-    /// Null value.
+    /// Null.
     Null(Null),
 
-    /// Integer value.
+    /// Integer.
     Integer(Integer),
 
-    /// Unsigned integer value.
+    /// Unsigned integer.
     UnsignedInteger(UnsignedInteger),
 
-    /// Float value.
+    /// Float.
     Float(Float),
 
-    /// Boolean value.
+    /// Boolean.
     Boolean(Boolean),
 
-    /// String value.
-    String(String),
+    /// Text.
+    Text(Text),
 
-    /// Bytes value.
+    /// Bytes.
     Bytes(Bytes),
 
-    /// List value.
+    /// List.
     List(List),
 
-    /// Map value.
+    /// Map.
     Map(Map),
 }
 
@@ -57,13 +58,73 @@ impl Value {
             Self::UnsignedInteger(_) => "unsigned integer",
             Self::Float(_) => "float",
             Self::Boolean(_) => "boolean",
-            Self::String(_) => "string",
+            Self::Text(_) => "text",
             Self::Bytes(_) => "bytes",
             Self::List(_) => "list",
             Self::Map(_) => "map",
         }
     }
+
+    /// Gets a reference to contained value.
+    ///
+    /// If this is a map, the argument is treated as a key.
+    ///
+    /// If this is a list, the argument is treated as an index and must be an
+    /// [Value::UnsignedInteger] or an [Value::Integer].
+    pub fn get(&self, key: impl Into<Self>) -> Option<&Self> {
+        let key = key.into();
+        match self {
+            Self::Map(map) => map.value.get(&key),
+
+            Self::List(list) => match key {
+                Self::UnsignedInteger(unsigned_integer) => list.value.get(unsigned_integer.value as usize),
+                Self::Integer(integer) => list.value.get(integer.value as usize),
+                _ => None,
+            },
+
+            _ => None,
+        }
+    }
+
+    /// Gets a mutable reference to contained value.
+    ///
+    /// If this is a map, the argument is treated as a key.
+    ///
+    /// If this is a list, the argument is treated as an index and must be an
+    /// [Value::UnsignedInteger] or an [Value::Integer].
+    pub fn get_mut(&mut self, key: impl Into<Self>) -> Option<&mut Self> {
+        let key = key.into();
+        match self {
+            Value::Map(map) => map.value.get_mut(&key),
+
+            Self::List(list) => match key {
+                Value::UnsignedInteger(unsigned_integer) => list.value.get_mut(unsigned_integer.value as usize),
+                Value::Integer(integer) => list.value.get_mut(integer.value as usize),
+                _ => None,
+            },
+
+            _ => None,
+        }
+    }
+
+    /// If the value is a [Map] with *only* one key, returns the key-value
+    /// tuple.
+    pub fn get_single_map_entry(&self) -> Option<(&Self, &Self)> {
+        match self {
+            Value::Map(map) => {
+                if map.value.len() == 1 {
+                    map.value.iter().next()
+                } else {
+                    None
+                }
+            }
+
+            _ => None,
+        }
+    }
 }
+
+// Delegated
 
 impl Normal for Value {
     fn get_meta(&self) -> Option<&Meta> {
@@ -74,7 +135,7 @@ impl Normal for Value {
             Self::UnsignedInteger(unsigned_integer) => unsigned_integer.get_meta(),
             Self::Float(float) => float.get_meta(),
             Self::Boolean(boolean) => boolean.get_meta(),
-            Self::String(string) => string.get_meta(),
+            Self::Text(text) => text.get_meta(),
             Self::Bytes(bytes) => bytes.get_meta(),
             Self::List(list) => list.get_meta(),
             Self::Map(map) => map.get_meta(),
@@ -89,14 +150,14 @@ impl Normal for Value {
             Self::UnsignedInteger(unsigned_integer) => unsigned_integer.get_meta_mut(),
             Self::Float(float) => float.get_meta_mut(),
             Self::Boolean(boolean) => boolean.get_meta_mut(),
-            Self::String(string) => string.get_meta_mut(),
+            Self::Text(text) => text.get_meta_mut(),
             Self::Bytes(bytes) => bytes.get_meta_mut(),
             Self::List(list) => list.get_meta_mut(),
             Self::Map(map) => map.get_meta_mut(),
         }
     }
 
-    fn to_map_string_key(&self) -> StdString {
+    fn to_map_string_key(&self) -> String {
         match self {
             Self::Nothing => "nothing".into(),
             Self::Null(null) => null.to_map_string_key(),
@@ -104,10 +165,34 @@ impl Normal for Value {
             Self::UnsignedInteger(unsigned_integer) => unsigned_integer.to_map_string_key(),
             Self::Float(float) => float.to_map_string_key(),
             Self::Boolean(boolean) => boolean.to_map_string_key(),
-            Self::String(string) => string.to_map_string_key(),
+            Self::Text(text) => text.to_map_string_key(),
             Self::Bytes(bytes) => bytes.to_map_string_key(),
             Self::List(list) => list.to_map_string_key(),
             Self::Map(map) => map.to_map_string_key(),
+        }
+    }
+}
+
+impl Debuggable for Value {
+    fn write_debug_representation<W: io::Write>(
+        &self,
+        writer: &mut W,
+        nested_prefix: &NestedPrefix,
+        styles: &Styles,
+    ) -> Result<(), io::Error> {
+        match self {
+            Self::Nothing => write!(writer, "{}", "nothing".style(styles.plain)),
+            Self::Null(null) => null.write_debug_representation(writer, nested_prefix, styles),
+            Self::Integer(integer) => integer.write_debug_representation(writer, nested_prefix, styles),
+            Self::UnsignedInteger(unsigned_integer) => {
+                unsigned_integer.write_debug_representation(writer, nested_prefix, styles)
+            }
+            Self::Float(float) => float.write_debug_representation(writer, nested_prefix, styles),
+            Self::Boolean(boolean) => boolean.write_debug_representation(writer, nested_prefix, styles),
+            Self::Text(text) => text.write_debug_representation(writer, nested_prefix, styles),
+            Self::Bytes(bytes) => bytes.write_debug_representation(writer, nested_prefix, styles),
+            Self::List(list) => list.write_debug_representation(writer, nested_prefix, styles),
+            Self::Map(map) => map.write_debug_representation(writer, nested_prefix, styles),
         }
     }
 }
@@ -121,29 +206,10 @@ impl fmt::Display for Value {
             Self::UnsignedInteger(unsigned_integer) => unsigned_integer.fmt(formatter),
             Self::Float(float) => float.fmt(formatter),
             Self::Boolean(boolean) => boolean.fmt(formatter),
-            Self::String(string) => string.fmt(formatter),
+            Self::Text(text) => text.fmt(formatter),
             Self::Bytes(bytes) => bytes.fmt(formatter),
             Self::List(list) => list.fmt(formatter),
             Self::Map(map) => map.fmt(formatter),
-        }
-    }
-}
-
-impl<W: io::Write> WriteDebug<W> for Value {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        match self {
-            Self::Nothing => write!(writer, "{}", "nothing".style(styles.plain)),
-            Self::Null(null) => null.write_debug_representation(writer, indentation, styles),
-            Self::Integer(integer) => integer.write_debug_representation(writer, indentation, styles),
-            Self::UnsignedInteger(unsigned_integer) => {
-                unsigned_integer.write_debug_representation(writer, indentation, styles)
-            }
-            Self::Float(float) => float.write_debug_representation(writer, indentation, styles),
-            Self::Boolean(boolean) => boolean.write_debug_representation(writer, indentation, styles),
-            Self::String(string) => string.write_debug_representation(writer, indentation, styles),
-            Self::Bytes(bytes) => bytes.write_debug_representation(writer, indentation, styles),
-            Self::List(list) => list.write_debug_representation(writer, indentation, styles),
-            Self::Map(map) => map.write_debug_representation(writer, indentation, styles),
         }
     }
 }
@@ -180,9 +246,15 @@ impl From<Boolean> for Value {
     }
 }
 
-impl From<String> for Value {
-    fn from(value: String) -> Self {
-        Self::String(value)
+impl From<Text> for Value {
+    fn from(value: Text) -> Self {
+        Self::Text(value)
+    }
+}
+
+impl From<Bytes> for Value {
+    fn from(value: Bytes) -> Self {
+        Value::Bytes(value)
     }
 }
 
@@ -272,92 +344,83 @@ impl From<bool> for Value {
     }
 }
 
-impl From<StdString> for Value {
-    fn from(value: StdString) -> Self {
-        Self::String(value.into())
+impl From<String> for Value {
+    fn from(value: String) -> Self {
+        Self::Text(value.into())
     }
 }
 
 impl From<&str> for Value {
     fn from(value: &str) -> Self {
-        Self::String(value.into())
+        Self::Text(value.into())
     }
 }
 
 // To primitive types
 
-/// Wrong value type.
-pub struct WrongValueTypeError(pub StdString);
-
-impl WrongValueTypeError {
-    /// Constructor.
-    pub fn new(format: &str) -> Self {
-        Self(format.into())
-    }
-}
-
 impl TryFrom<&Value> for i64 {
-    type Error = WrongValueTypeError;
+    type Error = IncompatibleValueTypeError;
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Integer(integer) => Ok(integer.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+            _ => Err(IncompatibleValueTypeError::new(value, "integer")),
         }
     }
 }
 
 impl TryFrom<&Value> for u64 {
-    type Error = WrongValueTypeError;
+    type Error = IncompatibleValueTypeError;
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::UnsignedInteger(unsigned_integer) => Ok(unsigned_integer.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+            _ => Err(IncompatibleValueTypeError::new(value, "unsigned integer")),
         }
     }
 }
 
 impl TryFrom<&Value> for f64 {
-    type Error = WrongValueTypeError;
+    type Error = IncompatibleValueTypeError;
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Float(float) => Ok(float.value.into()),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+            _ => Err(IncompatibleValueTypeError::new(value, "float")),
         }
     }
 }
 
 impl TryFrom<&Value> for bool {
-    type Error = WrongValueTypeError;
+    type Error = IncompatibleValueTypeError;
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
             Value::Boolean(boolean) => Ok(boolean.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+            _ => Err(IncompatibleValueTypeError::new(value, "boolean")),
         }
     }
 }
 
-impl<'a> TryFrom<&'a Value> for &'a StdString {
-    type Error = WrongValueTypeError;
+impl TryFrom<&Value> for String {
+    type Error = IncompatibleValueTypeError;
 
-    fn try_from(value: &'a Value) -> Result<Self, Self::Error> {
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        // Note: this will clone the string
         match value {
-            Value::String(string) => Ok(&string.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+            Value::Text(text) => Ok(text.value.clone()),
+            _ => Err(IncompatibleValueTypeError::new(value, "text")),
         }
     }
 }
 
 impl<'a> TryFrom<&'a Value> for &'a str {
-    type Error = WrongValueTypeError;
+    type Error = IncompatibleValueTypeError;
 
     fn try_from(value: &'a Value) -> Result<Self, Self::Error> {
         match value {
-            Value::String(string) => Ok(&string.value),
-            _ => Err(WrongValueTypeError::new(value.get_type_name())),
+            Value::Text(text) => Ok(&text.value),
+            _ => Err(IncompatibleValueTypeError::new(value, "text")),
         }
     }
 }

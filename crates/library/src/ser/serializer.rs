@@ -4,9 +4,8 @@ use {
     serde::*,
     std::{
         fs::*,
-        io::{self, stdout, BufWriter, Stdout, Write},
-        path::*,
-        string::String as StdString,
+        io::{stdout, BufWriter, Write},
+        path,
     },
 };
 
@@ -16,10 +15,7 @@ use {
 
 /// General-purpose serde serializer supporting various formats.
 #[derive(Clone)]
-pub struct Serializer<W: Write + Sized> {
-    /// Writer.
-    pub writer: W,
-
+pub struct Serializer {
     /// Format.
     pub format: Format,
 
@@ -29,35 +25,14 @@ pub struct Serializer<W: Write + Sized> {
     /// Indent for pretty output (for YAML, JSON, and XML). Defaults to 2.
     pub indent: u64,
 
-    /// Strict output (for YAML only). Defaults to false.
-    pub strict: bool,
-
     /// Base64 output (for CBOR and MessagePack). Defaults to false.
     pub base64: bool,
 }
 
-impl Serializer<Stdout> {
+impl Serializer {
     /// Constructor.
-    pub fn new_for_stdout() -> Serializer<Stdout> {
-        Serializer::new(stdout())
-    }
-}
-
-impl<W: Write> Serializer<W> {
-    /// Constructor.
-    pub fn new(writer: W) -> Self {
-        Self { writer, format: Format::default(), pretty: false, indent: 2, strict: false, base64: false }
-    }
-
-    /// Constructor.
-    pub fn new_for_file(path: &Path) -> Result<Serializer<BufWriter<File>>, io::Error> {
-        Ok(Serializer::new(BufWriter::new(File::create(path)?)))
-    }
-
-    /// Set writer.
-    pub fn with_writer(mut self, writer: W) -> Self {
-        self.writer = writer;
-        self
+    pub fn new(format: Format) -> Self {
+        Self { format, pretty: false, indent: 2, base64: false }
     }
 
     /// Set format.
@@ -78,12 +53,6 @@ impl<W: Write> Serializer<W> {
         self
     }
 
-    /// Set strict output (for YAML only).
-    pub fn with_strict(mut self, strict: bool) -> Self {
-        self.strict = strict;
-        self
-    }
-
     /// Set Base64 output (for CBOR and MessagePack).
     pub fn with_base64(mut self, base64: bool) -> Self {
         self.base64 = base64;
@@ -91,22 +60,22 @@ impl<W: Write> Serializer<W> {
     }
 
     /// Serializes the provided value to the writer according to [Serializer::format].
-    pub fn write<V: Serialize>(&mut self, value: &V) -> Result<(), SerializationError> {
+    pub fn write<W: Write, V: Serialize>(&self, value: &V, writer: &mut W) -> Result<(), SerializationError> {
         match self.format {
             #[cfg(feature = "yaml")]
-            Format::YAML => self.write_yaml(value),
+            Format::YAML => self.write_yaml(value, writer),
 
             #[cfg(feature = "json")]
-            Format::JSON | Format::XJSON => self.write_json(value),
+            Format::JSON | Format::XJSON => self.write_json(value, writer),
 
             #[cfg(feature = "xml")]
-            Format::XML => self.write_xml(value),
+            Format::XML => self.write_xml(value, writer),
 
             #[cfg(feature = "cbor")]
-            Format::CBOR => self.write_cbor(value),
+            Format::CBOR => self.write_cbor(value, writer),
 
             #[cfg(feature = "messagepack")]
-            Format::MessagePack => self.write_message_pack(value),
+            Format::MessagePack => self.write_message_pack(value, writer),
 
             #[cfg(not(all(
                 feature = "yaml",
@@ -119,29 +88,38 @@ impl<W: Write> Serializer<W> {
         }
     }
 
+    /// Serializes the provided value to the file according to [Serializer::format].
+    pub fn write_to_file<V: Serialize>(&self, value: &V, path: &path::Path) -> Result<(), SerializationError> {
+        self.write(value, &mut BufWriter::new(File::create(path)?))
+    }
+
+    /// Serializes the provided value to the file according to [Serializer::format].
+    pub fn write_to_stdout<V: Serialize>(&self, value: &V) -> Result<(), SerializationError> {
+        self.write(value, &mut stdout())
+    }
+
     /// Convenience function to serialize to a string.
     ///
     /// See [Serializer::write].
-    pub fn stringify<V: Serialize>(&mut self, value: &V) -> Result<StdString, SerializationError> {
-        let mut serializer = Serializer::new(BufWriter::new(Vec::new()))
-            .with_format(self.format.clone())
-            .with_pretty(self.pretty)
-            .with_indent(self.indent)
-            .with_strict(self.strict)
-            .with_base64(true);
+    pub fn stringify<V: Serialize>(&self, value: &V) -> Result<String, SerializationError> {
+        let serializer =
+            Serializer::new(self.format.clone()).with_pretty(self.pretty).with_indent(self.indent).with_base64(true);
 
-        match serializer.write(value) {
-            Ok(_) => Ok(StdString::from_utf8(serializer.writer.buffer().into())?),
+        let mut writer = BufWriter::new(Vec::new());
+        match serializer.write(value, &mut writer) {
+            Ok(_) => Ok(String::from_utf8(writer.buffer().into())?),
             Err(err) => Err(err),
         }
     }
 
-    pub(crate) fn write_newline(&mut self) -> Result<(), SerializationError> {
-        self.writer.write("\n".as_bytes())?;
+    pub(crate) fn write_newline<W: Write>(writer: &mut W) -> Result<(), SerializationError> {
+        writer.write("\n".as_bytes())?;
         Ok(())
     }
 
-    pub(crate) fn base64_writer(&mut self) -> base64::write::EncoderWriter<base64::engine::GeneralPurpose, &mut W> {
-        base64::write::EncoderWriter::new(self.writer.by_ref(), &base64::engine::general_purpose::STANDARD)
+    pub(crate) fn base64_writer<'a, W: Write>(
+        writer: &'a mut W,
+    ) -> base64::write::EncoderWriter<'a, base64::engine::GeneralPurpose, &'a mut W> {
+        base64::write::EncoderWriter::new(writer, &base64::engine::general_purpose::STANDARD)
     }
 }

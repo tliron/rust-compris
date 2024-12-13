@@ -22,6 +22,9 @@ easily consumed by practically any programming language, stored in practically a
 can also be transmitted in a wide variety of broadly-supported formats.
 
 
+As the only singleton value, it 
+
+
 Representation Formats and Limitations
 --------------------------------------
 

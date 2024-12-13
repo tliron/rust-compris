@@ -26,20 +26,28 @@ For more information and usage examples see the
 J'ai compris!
 */
 
+mod format;
+
 /// General-purpose serde deserialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod de;
 /// Read from various formats into normal value types.
 pub mod read;
+/// Resolve normal value types into other types.
+#[cfg(feature = "resolve")]
+pub mod resolve;
 /// General-purpose serde serialization plus support for normal value types.
 #[cfg(feature = "serde")]
 pub mod ser;
 
-mod format;
-mod hints;
-mod normal;
-mod styles;
-mod write_debug;
+/// Citing from a source format.
+pub mod citation;
+
+/// Hints for extending source formats (such as XJSON).
+pub mod hints;
+
+/// Normal values and metadata.
+pub mod normal;
 
 #[allow(unused_imports)]
-pub use {format::*, hints::*, normal::*, styles::*, write_debug::*};
+pub use format::*;

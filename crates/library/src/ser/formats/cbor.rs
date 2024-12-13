@@ -1,29 +1,37 @@
-use super::super::{Serializer as ComprisSerializer, *};
+use super::super::*;
 
 use {
     borc::{basic::streaming::*, errors::*},
-    serde::*,
+    serde::{ser, Serialize},
     std::io::Write,
     tracing::trace,
 };
 
-impl<W: Write> ComprisSerializer<W> {
+//
+// Serializer
+//
+
+impl Serializer {
     /// Serializes the provided value to the writer as CBOR.
     ///
-    /// Is affected by [ComprisSerializer::base64].
-    pub fn write_cbor<V: Serialize + ?Sized>(&mut self, value: &V) -> Result<(), SerializationError> {
-        fn write<V: Serialize + ?Sized>(value: &V, writer: impl Write) -> Result<(), SerializationError> {
+    /// Is affected by [Serializer::base64](super::super::Serializer::base64).
+    pub fn write_cbor<W: Write, V: Serialize + ?Sized>(
+        &self,
+        value: &V,
+        writer: &mut W,
+    ) -> Result<(), SerializationError> {
+        fn write<W: Write, V: Serialize + ?Sized>(value: &V, writer: &mut W) -> Result<(), SerializationError> {
             Ok(value.serialize(&mut CborSerializer::new(writer))?)
         }
 
         if self.base64 {
-            write(value, self.base64_writer())?;
+            write(value, &mut Self::base64_writer(writer))?;
         } else {
-            write(value, self.writer.by_ref())?;
+            write(value, writer)?;
         }
 
         if self.pretty {
-            self.write_newline()
+            Self::write_newline(writer)
         } else {
             Ok(())
         }

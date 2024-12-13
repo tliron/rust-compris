@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -19,16 +19,16 @@ impl Value {
 impl Serialize for Value {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
-            Value::Nothing => Err(Error::custom("empty value")),
-            Value::Null(null) => null.serialize(serializer),
-            Value::Integer(integer) => integer.serialize(serializer),
-            Value::UnsignedInteger(unsigned_integer) => unsigned_integer.serialize(serializer),
-            Value::Float(float) => float.serialize(serializer),
-            Value::Boolean(boolean) => boolean.serialize(serializer),
-            Value::String(string) => string.serialize(serializer),
-            Value::Bytes(bytes) => bytes.serialize(serializer),
-            Value::List(list) => list.serialize(serializer),
-            Value::Map(map) => map.serialize(serializer),
+            Self::Nothing => Err(Error::custom("empty value")),
+            Self::Null(null) => null.serialize(serializer),
+            Self::Integer(integer) => integer.serialize(serializer),
+            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.serialize(serializer),
+            Self::Float(float) => float.serialize(serializer),
+            Self::Boolean(boolean) => boolean.serialize(serializer),
+            Self::Text(string) => string.serialize(serializer),
+            Self::Bytes(bytes) => bytes.serialize(serializer),
+            Self::List(list) => list.serialize(serializer),
+            Self::Map(map) => map.serialize(serializer),
         }
     }
 }
@@ -64,7 +64,7 @@ impl<'a> Serialize for ValueWithSerializationMode<'a> {
             }
             Value::Float(float) => float.with_serialization_mode(&self.serialization_mode).serialize(serializer),
             Value::Boolean(boolean) => boolean.serialize(serializer),
-            Value::String(string) => string.serialize(serializer),
+            Value::Text(string) => string.serialize(serializer),
             Value::Bytes(bytes) => bytes.with_serialization_mode(&self.serialization_mode).serialize(serializer),
             Value::List(list) => list.with_serialization_mode(&self.serialization_mode).serialize(serializer),
             Value::Map(map) => map.with_serialization_mode(&self.serialization_mode).serialize(serializer),

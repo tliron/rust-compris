@@ -1,7 +1,7 @@
-use super::super::*;
+use super::super::{normal::*, *};
 
 use {
-    std::{fmt, io, string::String as StdString},
+    std::{fmt, io},
     thiserror::*,
 };
 
@@ -22,7 +22,7 @@ pub enum DeserializationError {
 
     /// Incompatible value.
     #[error("incompatible value: {0}")]
-    IncompatibleValue(StdString),
+    IncompatibleValue(String),
 
     /// No more elements.
     #[error("no more elements")]
@@ -32,10 +32,6 @@ pub enum DeserializationError {
     #[error("not supported: {0}")]
     NotSupported(&'static str),
 
-    /// Custom.
-    #[error("custom: {0}")]
-    Custom(StdString),
-
     /// Read.
     #[error("read: {0}")]
     Read(#[from] read::ReadError),
@@ -43,6 +39,10 @@ pub enum DeserializationError {
     /// I/O.
     #[error("I/O: {0}")]
     IO(#[from] io::Error),
+
+    /// Custom.
+    #[error("custom: {0}")]
+    Custom(String),
 }
 
 impl DeserializationError {
@@ -52,8 +52,8 @@ impl DeserializationError {
     }
 
     /// Incompatible value.
-    pub fn incompatible_value(value: &Value) -> Result<DeserializationError, io::Error> {
-        Ok(Self::IncompatibleValue(value.to_debug_string()?))
+    pub fn incompatible_value(value: &Value) -> DeserializationError {
+        Self::IncompatibleValue(format!("{}", value))
     }
 }
 

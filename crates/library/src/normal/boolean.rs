@@ -1,8 +1,9 @@
-use super::super::*;
+use super::{meta::*, normal::*};
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    kutil_cli::debug::*,
+    owo_colors::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -26,17 +27,44 @@ impl Boolean {
     }
 }
 
-impl From<bool> for Boolean {
-    fn from(value: bool) -> Self {
-        Boolean::new(value)
+impl Normal for Boolean {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
+    }
+
+    fn to_map_string_key(&self) -> String {
+        self.value.to_string()
     }
 }
 
-impl From<Boolean> for bool {
-    fn from(value: Boolean) -> Self {
-        value.value
+impl Debuggable for Boolean {
+    fn write_debug_representation<W: io::Write>(
+        &self,
+        writer: &mut W,
+        nested_prefix: &NestedPrefix,
+        styles: &Styles,
+    ) -> Result<(), io::Error> {
+        let value = self.value.style(styles.plain);
+        write!(writer, "{}", value)?;
+        if let Some(coordinates) = &self.meta.coordinates {
+            write!(writer, " ")?;
+            coordinates.write_debug_representation(writer, nested_prefix, styles)?;
+        }
+        Ok(())
     }
 }
+
+impl fmt::Display for Boolean {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.value.fmt(formatter)
+    }
+}
+
+// Delegated
 
 impl PartialEq for Boolean {
     fn eq(&self, other: &Self) -> bool {
@@ -62,33 +90,16 @@ impl Hash for Boolean {
     }
 }
 
-impl fmt::Display for Boolean {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.value.fmt(formatter)
+// Conversions
+
+impl From<bool> for Boolean {
+    fn from(value: bool) -> Self {
+        Boolean::new(value)
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for Boolean {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = self.value.style(styles.plain);
-        write!(writer, "{}", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
-    }
-}
-
-impl Normal for Boolean {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
-
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        self.value.to_string()
+impl From<Boolean> for bool {
+    fn from(value: Boolean) -> Self {
+        value.value
     }
 }

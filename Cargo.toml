@@ -1,8 +1,8 @@
 [workspace]
-members = ["crates/library", "crates/cli"]
+members = ["crates/library", "crates/derive-resolve", "crates/cli"]
 resolver = "2"
 
-# [patch.crates-io]
-# kutil-cli = { path = "../rust-kutil/crates/cli" }
-# kutil-std = { path = "../rust-kutil/crates/std" }
+[patch.crates-io]
+kutil-cli = { path = "../rust-kutil/crates/cli" }
+kutil-std = { path = "../rust-kutil/crates/std" }
 # read-url = { path = "../rust-read-url" }

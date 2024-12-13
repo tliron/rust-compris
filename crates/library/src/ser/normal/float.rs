@@ -1,4 +1,4 @@
-use super::super::{super::*, serialization_mode::*};
+use super::super::{super::normal::*, mode::*};
 
 use serde::ser::*;
 
@@ -34,7 +34,7 @@ impl Float {
                             serializer.serialize_i64(integer)
                         } else {
                             Integer::new(integer)
-                                .with_meta(&self.meta)
+                                .with_meta(self.meta.clone())
                                 .serialize_with_mode(serializer, serialization_mode)
                         }
                     }
@@ -52,7 +52,7 @@ impl Float {
                                 serializer.serialize_i64(integer)
                             } else {
                                 Integer::new(integer)
-                                    .with_meta(&self.meta)
+                                    .with_meta(self.meta.clone())
                                     .serialize_with_mode(serializer, serialization_mode)
                             }
                         }
@@ -64,7 +64,7 @@ impl Float {
                 }
             }
 
-            FloatSerializationMode::AsString(hint) => {
+            FloatSerializationMode::AsText(hint) => {
                 let string = self.value.to_string();
                 match hint {
                     None => serializer.serialize_str(&string),

@@ -1,11 +1,10 @@
-use super::{
-    super::{normal::*, styles::*, write_debug::*},
-    meta::*,
-};
+use super::super::meta::*;
 
 use {
-    owo_colors::OwoColorize,
-    std::{cmp::*, fmt, hash::*, io, string::String as StdString},
+    duplicate::*,
+    kutil_cli::debug::*,
+    owo_colors::*,
+    std::{cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -24,40 +23,45 @@ pub struct UnsignedInteger {
 
 impl UnsignedInteger {
     /// Constructor.
-    pub fn new(value: impl Into<u64>) -> Self {
-        Self { value: value.into(), ..Default::default() }
+    pub fn new<UnsignedIntegerT>(unsigned_integer: UnsignedIntegerT) -> Self
+    where
+        UnsignedIntegerT: Into<u64>,
+    {
+        Self { value: unsigned_integer.into(), ..Default::default() }
     }
 }
 
-impl From<u64> for UnsignedInteger {
-    fn from(value: u64) -> Self {
-        UnsignedInteger::new(value)
+impl HasMeta for UnsignedInteger {
+    fn get_meta(&self) -> Option<&Meta> {
+        Some(&self.meta)
+    }
+
+    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
+        Some(&mut self.meta)
     }
 }
 
-impl From<u32> for UnsignedInteger {
-    fn from(value: u32) -> Self {
-        UnsignedInteger::new(value as u64)
+impl Debuggable for UnsignedInteger {
+    fn write_debug_representation<WriteT>(
+        &self,
+        writer: &mut WriteT,
+        _prefix: &DebugPrefix,
+        theme: &Theme,
+    ) -> Result<(), io::Error>
+    where
+        WriteT: io::Write,
+    {
+        write!(writer, "{} u64", self.value.style(theme.number))
     }
 }
 
-impl From<u16> for UnsignedInteger {
-    fn from(value: u16) -> Self {
-        UnsignedInteger::new(value as u64)
+impl fmt::Display for UnsignedInteger {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}u64", self.value)
     }
 }
 
-impl From<u8> for UnsignedInteger {
-    fn from(value: u8) -> Self {
-        UnsignedInteger::new(value as u64)
-    }
-}
-
-impl From<UnsignedInteger> for u64 {
-    fn from(value: UnsignedInteger) -> Self {
-        value.value
-    }
-}
+// Delegated
 
 impl PartialEq for UnsignedInteger {
     fn eq(&self, other: &Self) -> bool {
@@ -78,38 +82,32 @@ impl Ord for UnsignedInteger {
 }
 
 impl Hash for UnsignedInteger {
-    fn hash<H: Hasher>(&self, state: &mut H) {
+    fn hash<HasherT>(&self, state: &mut HasherT)
+    where
+        HasherT: Hasher,
+    {
         self.value.hash(state);
     }
 }
 
-impl Normal for UnsignedInteger {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
+// Conversion
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-
-    fn to_map_string_key(&self) -> StdString {
-        self.value.to_string()
-    }
-}
-
-impl fmt::Display for UnsignedInteger {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}u64", self.value)
+#[duplicate_item(
+    _From;
+  [u64];
+  [u32];
+  [u16];
+  [u8];
+  [usize];
+)]
+impl From<_From> for UnsignedInteger {
+    fn from(unsigned_integer: _From) -> Self {
+        UnsignedInteger::new(unsigned_integer as u64)
     }
 }
 
-impl<W: io::Write> WriteDebug<W> for UnsignedInteger {
-    fn write_debug_representation(&self, writer: &mut W, indentation: usize, styles: &Styles) -> Result<(), io::Error> {
-        let value = self.value.style(styles.number);
-        write!(writer, "{} u64", value)?;
-        if let Some(location) = &self.meta.location {
-            location.write_debug_representation(writer, indentation, styles)?;
-        }
-        Ok(())
+impl From<&UnsignedInteger> for u64 {
+    fn from(unsigned_integer: &UnsignedInteger) -> Self {
+        unsigned_integer.value
     }
 }

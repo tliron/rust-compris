@@ -100,11 +100,9 @@ where
         Ok(match self.to_key_value_pair() {
             Some((key, value)) => match key {
                 Self::Text(text) => match text.value.as_str() {
-                    "content" => {
-                        Resolve::resolve_for(value, context, ancestor, errors)?.map(|v| LoadableBlob::Content(v))
-                    }
+                    "content" => Resolve::resolve_for(value, context, ancestor, errors)?.map(LoadableBlob::Content),
 
-                    "path" => Resolve::resolve_for(value, context, ancestor, errors)?.map(|v| LoadableBlob::Path(v)),
+                    "path" => Resolve::resolve_for(value, context, ancestor, errors)?.map(LoadableBlob::Path),
 
                     key => {
                         errors.give(

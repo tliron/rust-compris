@@ -3,7 +3,7 @@ edition = "2024"
 
 name = "compris-macros"
 description = "Procedural macros for Compris"
-version = "0.0.1"
+version = "0.0.2"
 rust-version = "1.85"
 
 license = "MIT OR Apache-2.0"

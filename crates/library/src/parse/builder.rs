@@ -65,8 +65,9 @@ impl ValueBuilder {
                     list.value.push(value)
                 }
 
-                Value::Map(map) => match self.key_stack.last_mut() {
-                    Some(key) => match key.take() {
+                Value::Map(map) => {
+                    let key = self.key_stack.last_mut().expect("no key stack for map");
+                    match key.take() {
                         None => {
                             // We don't have a key, so that means this is the key
                             trace!("set map key: {}", value);
@@ -78,12 +79,8 @@ impl ValueBuilder {
                             trace!("insert in map: {} -> {}", key, value);
                             map.value.insert(key, value);
                         }
-                    },
-
-                    None => {
-                        panic!("no key stack for map");
                     }
-                },
+                }
 
                 _ => panic!("malformed: not a container: {}", container),
             },
@@ -168,25 +165,22 @@ impl ValueBuilder {
     ///
     /// See [Value::to_hinted_value].
     pub fn end_container_with_hints(&mut self, hints: Option<&Hints>) -> Result<(), ParseError> {
-        match self.stack.pop() {
-            Some(mut value) => {
-                trace!("pop from stack: {}", value);
-                if let Value::Map(_) = value {
-                    // Every map entry on the stack has a matching key_stack entry
-                    self.key_stack.pop();
-                }
+        let mut value = self.stack.pop().expect("malformed: empty stack");
 
-                if let Some(hints) = hints {
-                    if let Some(hinted_value) = value.to_hinted_value(hints)? {
-                        value = hinted_value;
-                    }
-                }
+        trace!("pop from stack: {}", value);
 
-                self.add(value)
-            }
-
-            None => panic!("malformed: empty stack"),
+        if matches!(value, Value::Map(_)) {
+            // Every map entry on the stack has a matching key_stack entry
+            self.key_stack.pop();
         }
+
+        if let Some(hints) = hints {
+            if let Some(hinted_value) = value.to_hinted_value(hints)? {
+                value = hinted_value;
+            }
+        }
+
+        self.add(value);
 
         Ok(())
     }

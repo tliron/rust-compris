@@ -73,7 +73,7 @@ impl IncompatibleValueTypeError {
     /// Constructor.
     pub fn new(value: &Value, expected_type_names: &[&str]) -> Self {
         Self {
-            expected_type_names: expected_type_names.iter().map(|s| String::from(*s)).collect(),
+            expected_type_names: expected_type_names.iter().map(|type_name| String::from(*type_name)).collect(),
             type_name: value.get_type_name().into(),
             citation: Citation::default(),
         }

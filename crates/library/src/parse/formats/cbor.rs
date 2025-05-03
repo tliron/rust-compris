@@ -64,13 +64,8 @@ where
         }
 
         Event::Signed(integer) => {
-            match Event::interpret_signed_checked(integer) {
-                Some(integer) => {
-                    value_builder.add(Integer::new(integer).with_annotation(annotation));
-                }
-
-                None => return Err(DecodeError::Malformed.into()),
-            };
+            let integer = Event::interpret_signed_checked(integer).ok_or_else(|| DecodeError::Malformed)?;
+            value_builder.add(Integer::new(integer).with_annotation(annotation));
         }
 
         Event::Float(float) => {

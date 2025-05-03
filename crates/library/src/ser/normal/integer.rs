@@ -1,7 +1,7 @@
 use super::super::{
     super::{meta::*, normal::*},
-    mode::*,
     modal::*,
+    mode::*,
 };
 
 use serde::ser::*;
@@ -44,18 +44,16 @@ impl SerializeModal for Integer {
                 }
             }
 
-            IntegerSerializationMode::AsF64 => match num_traits::cast::<_, f64>(self.value) {
-                Some(float) => {
-                    if mode.float.might_be_integer() {
-                        // Avoid endless recursion!
-                        serializer.serialize_f64(float)
-                    } else {
-                        Float::new(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
-                    }
+            IntegerSerializationMode::AsF64 => {
+                let float = num_traits::cast(self.value)
+                    .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.value)))?;
+                if mode.float.might_be_integer() {
+                    // Avoid endless recursion!
+                    serializer.serialize_f64(float)
+                } else {
+                    Float::new(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
                 }
-
-                None => Err(Error::custom(format!("cannot cast to f64: {}", self.value))),
-            },
+            }
 
             IntegerSerializationMode::Stringify(hint) => {
                 let string = self.value.to_string();

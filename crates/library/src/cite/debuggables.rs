@@ -59,10 +59,7 @@ where
         //wrapped.sort_by(|_a, _b| std::cmp::Ordering::Equal);
 
         for ((source, list), first) in IterateWithFirst::new(table) {
-            let section = match source {
-                Some(source) => source,
-                None => "general".into(),
-            };
+            let section = source.unwrap_or_else(|| "general".into());
 
             context.separate_or_indent(writer, first)?;
             context.theme.write_meta(writer, section)?;

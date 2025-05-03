@@ -3,8 +3,8 @@ edition = "2024"
 
 name = "compris"
 description = "Composite Primitive Schema (CPS) for Rust"
-version = "0.0.3"
-rust-version = "1.85"
+version = "0.0.4"
+rust-version = "1.86"
 
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/tliron/rust-compris"
@@ -24,18 +24,18 @@ keywords = ["cps"]
 anstream = "0.6.18"
 base64 = "0.22.1"
 borc = { optional = true, version = "0.6.0" }
-compris-macros = { optional = true, path = "../macros", version = "0.0.1" }
+compris-macros = { optional = true, version = "=0.0.2" }
 duplicate = "2.0.0"
-kutil-std = "0.0.2"
-kutil-cli = "0.0.4"
+kutil-std = "=0.0.4"
+kutil-cli = "=0.0.6"
 num-traits = "0.2.19"
 ordered-float = "5.0.0"
 rmp = { optional = true, version = "0.8" }
 rmp-serde = { optional = true, version = "1.3.0" }
 saphyr-parser = { optional = true, version = "0.0.4" }
 serde = { optional = true, version = "1.0.219" }
-serde-xml-rs = { optional = true, version = "0.7.1" }
-serde_yml = { optional = true, version = "0.0.12" }                         # YAML (eventually replace with saphyr-serde?)
+serde-xml-rs = { optional = true, version = "0.8.0" }
+serde_yml = { optional = true, version = "0.0.12" }      # YAML (eventually replace with saphyr-serde?)
 struson = { optional = true, version = "0.6.0" }
 thiserror = "2.0.12"
 tracing = "0.1.41"

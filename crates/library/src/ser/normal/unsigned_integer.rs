@@ -28,24 +28,22 @@ impl SerializeModal for UnsignedInteger {
         match &mode.unsigned_integer {
             UnsignedIntegerSerializationMode::AsU64 => serializer.serialize_u64(self.value),
 
-            UnsignedIntegerSerializationMode::AsI64 => match num_traits::cast::<_, i64>(self.value) {
-                Some(integer) => {
-                    if (integer >= 0) && (mode.integer == IntegerSerializationMode::AsU64IfNonNegative) {
-                        // Avoid endless recursion!
-                        serializer.serialize_i64(integer)
-                    } else {
-                        Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
-                    }
+            UnsignedIntegerSerializationMode::AsI64 => {
+                let integer = num_traits::cast(self.value)
+                    .ok_or_else(|| Error::custom(format!("cannot cast to i64: {}", self.value)))?;
+                if (integer >= 0) && (mode.integer == IntegerSerializationMode::AsU64IfNonNegative) {
+                    // Avoid endless recursion!
+                    serializer.serialize_i64(integer)
+                } else {
+                    Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
                 }
+            }
 
-                None => Err(Error::custom(format!("cannot cast to i64: {}", self.value))),
-            },
-
-            UnsignedIntegerSerializationMode::AsF64 => match num_traits::cast::<_, f64>(self.value) {
-                Some(float) => Float::new(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode),
-
-                None => Err(Error::custom(format!("cannot cast to f64: {}", self.value))),
-            },
+            UnsignedIntegerSerializationMode::AsF64 => {
+                let float: f64 = num_traits::cast(self.value)
+                    .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.value)))?;
+                Float::new(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+            }
 
             UnsignedIntegerSerializationMode::Stringify(hint) => {
                 let string = self.value.to_string();

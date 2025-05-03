@@ -14,9 +14,9 @@ impl Citation {
         ContextT: ResolveContext,
     {
         let (source, location, path) = (
-            context.and_then(|c| c.get_source().map(|s| s.clone())),
-            value.get_meta().and_then(|m| m.location.clone()),
-            ancestor.and_then(|a| Path::find(a, value)),
+            context.and_then(|context| context.get_source().map(|source| source.clone())),
+            value.get_meta().and_then(|meta| meta.location.clone()),
+            ancestor.and_then(|ancestor| Path::find(ancestor, value)),
         );
 
         Self::new(source, location, path)

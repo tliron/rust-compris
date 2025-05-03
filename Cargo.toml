@@ -3,7 +3,11 @@ members = ["crates/library", "crates/macros", "crates/cli"]
 resolver = "3"
 
 [patch.crates-io]
+compris = { path = "crates/library" }
+compris-macros = { path = "crates/macros" }
 kutil-cli = { path = "../rust-kutil/crates/cli" }
+kutil-io = { path = "../rust-kutil/crates/io" }
+kutil-std = { path = "../rust-kutil/crates/std" }
 read-url = { path = "../rust-read-url/crates/library" }
 
 [profile.release]

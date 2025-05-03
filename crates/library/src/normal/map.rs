@@ -208,16 +208,12 @@ impl TryFrom<List> for Map {
         // Repeat until we get a non-error
         let mut iterator = KeyValuePairIteratorForValueIterator::new_for(&list);
         loop {
-            match iterator.next() {
-                Ok(ok) => match ok {
-                    Some((key, value)) => {
-                        map.value.insert(key.clone(), value.clone());
-                    }
+            match iterator.next().map_err(|(error, _value)| error)? {
+                Some((key, value)) => {
+                    map.value.insert(key.clone(), value.clone());
+                }
 
-                    None => break,
-                },
-
-                Err((error, _)) => return Err(error),
+                None => break,
             }
         }
 

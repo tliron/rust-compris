@@ -69,8 +69,8 @@ impl YamlReceiver {
     /// Returns the final built value.
     fn value(&mut self) -> Result<Value, ParseError> {
         match self.error.take() {
-            Some(error) => Err(error),
             None => Ok(self.value_builder.value()),
+            Some(error) => Err(error),
         }
     }
 
@@ -249,7 +249,7 @@ impl<'own, 'input> SpannedEventReceiver<'input> for YamlReceiver {
 
         match event {
             Event::SequenceStart(_anchor_id, _tag) => {
-                let span = self.last_span.unwrap_or(span);
+                let span = self.last_span.unwrap_or_else(|| span);
                 self.value_builder.start_list_with_location(Some(span.into()));
             }
 
@@ -258,7 +258,7 @@ impl<'own, 'input> SpannedEventReceiver<'input> for YamlReceiver {
             }
 
             Event::MappingStart(_anchor_id, _tag) => {
-                let span = self.last_span.unwrap_or(span);
+                let span = self.last_span.unwrap_or_else(|| span);
                 self.value_builder.start_map_with_location(Some(span.into()));
             }
 
@@ -318,22 +318,17 @@ impl From<Span> for Location {
 // but we only ever do this for errors
 impl From<&Location> for Marker {
     fn from(location: &Location) -> Self {
-        let (row, column) = match location.row_and_column {
-            // Saphyr seems to have the first line at 1, but the first column at 0
-            Some((row, column)) => match column {
-                Some(column) => (row + 1, column),
-                None => (row, 0),
-            },
-            None => (0, 0),
+        let (row, column) = {
+            match location.row_and_column {
+                // Saphyr seems to have the first line at 1, but the first column at 0
+                Some((row, column)) => match column {
+                    Some(column) => (row + 1, column),
+                    None => (row, 0),
+                },
+                None => (0, 0),
+            }
         };
 
-        Marker::new(
-            match location.index {
-                Some(index) => index,
-                None => 0,
-            },
-            row,
-            column,
-        )
+        Marker::new(location.index.unwrap_or(0), row, column)
     }
 }

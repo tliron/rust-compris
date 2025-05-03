@@ -28,9 +28,6 @@ impl<'own> KeyValuePairIteratorForBTreeMap<'own> {
 
 impl<'own> KeyValuePairIterator for KeyValuePairIteratorForBTreeMap<'own> {
     fn next(&mut self) -> Result<Option<(&'own Value, &'own Value)>, (MalformedError, &Value)> {
-        match self.iterator.next() {
-            Some(pair) => Ok(Some(pair)),
-            None => Ok(None),
-        }
+        Ok(self.iterator.next())
     }
 }

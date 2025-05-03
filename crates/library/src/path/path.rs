@@ -38,18 +38,9 @@ impl Path {
     /// the *pointers* represented by the references. Thus a clone of a value or an
     /// otherwise equal value will *not* be considered identical.
     pub fn find<'own>(ancestor: &'own Value, descendent: &'own Value) -> Option<Self> {
-        match Route::find(ancestor, descendent) {
-            Some(route) => {
-                let path = route.to_path();
-                if !path.segments.is_empty() {
-                    Some(path)
-                } else {
-                    None
-                }
-            }
-
-            None => None,
-        }
+        let route = Route::find(ancestor, descendent)?;
+        let path = route.to_path();
+        if !path.segments.is_empty() { Some(path) } else { None }
     }
 
     /// Push a new list index path segment.

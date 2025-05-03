@@ -22,7 +22,7 @@ pub struct Citation {
 impl Citation {
     /// Constructor.
     pub fn new(source: Option<String>, location: Option<Location>, path: Option<Path>) -> Self {
-        let meta = location.map(|l| Meta::new().with_location(Some(l)));
+        let meta = location.map(|location| Meta::new().with_location(Some(location)));
         Self { source, meta, path }
     }
 

@@ -61,10 +61,10 @@ impl StructGenerator {
                     if attributes_have_ident(&field.attrs, "resolve") {
                         let field_attribute: FieldAttribute = extract_attributes(field)?;
 
-                        let field_name = match &field.ident {
-                            Some(name) => name,
-                            None => return Err(syn::Error::new(field.span(), "`resolve` attribute: unnamed field")),
-                        };
+                        let field_name = field
+                            .ident
+                            .as_ref()
+                            .ok_or_else(|| syn::Error::new(field.span(), "`resolve` attribute: unnamed field"))?;
 
                         if field_attribute.ignore_null && field_attribute.null.is_some() {
                             return Err(syn::Error::new(

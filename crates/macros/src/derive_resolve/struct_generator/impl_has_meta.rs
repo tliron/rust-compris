@@ -17,24 +17,12 @@ impl StructGenerator {
                 {
                     fn get_meta(&self) -> ::std::option::Option<&::compris::meta::Meta>
                     {
-                        match self.#citations_field_name.get(&::std::string::String::new()) {
-                            ::std::option::Option::Some(citation) => match &citation.meta {
-                                ::std::option::Option::Some(meta) => ::std::option::Option::Some(meta),
-                                ::std::option::Option::None => ::std::option::Option::None,
-                            },
-                            ::std::option::Option::None => ::std::option::Option::None,
-                        }
+                        self.#citations_field_name.get(&::std::string::String::new())?.meta.as_ref()
                     }
 
                     fn get_meta_mut(&mut self) -> ::std::option::Option<&mut ::compris::meta::Meta>
                     {
-                        match self.#citations_field_name.get_mut(&::std::string::String::new()) {
-                            ::std::option::Option::Some(citation) => match &mut citation.meta {
-                                ::std::option::Option::Some(meta) => ::std::option::Option::Some(meta),
-                                ::std::option::Option::None => ::std::option::Option::None,
-                            },
-                            ::std::option::Option::None => ::std::option::Option::None,
-                        }
+                        self.#citations_field_name.get_mut(&::std::string::String::new())?.meta.as_mut()
                     }
                 }
             })

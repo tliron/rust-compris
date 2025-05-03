@@ -125,18 +125,15 @@ impl TryFrom<&Value> for _To {
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         match value {
-            Value::Integer(integer) => match num_traits::cast::<_, _To>(integer.value) {
-                Some(number) => Ok(number),
-                None => Err(CastingError::new(&integer.to_string(), _Name).into()),
-            },
-            Value::UnsignedInteger(unsigned_integer) => match num_traits::cast::<_, _To>(unsigned_integer.value) {
-                Some(number) => Ok(number),
-                None => Err(CastingError::new(&unsigned_integer.to_string(), _Name).into()),
-            },
-            Value::Float(float) => match num_traits::cast::<f64, _To>(float.value.into()) {
-                Some(number) => Ok(number),
-                None => Err(CastingError::new(&float.to_string(), _Name).into()),
-            },
+            Value::Integer(integer) => num_traits::cast::<_, _To>(integer.value)
+                .ok_or_else(|| CastingError::new(&integer.to_string(), _Name).into()),
+
+            Value::UnsignedInteger(unsigned_integer) => num_traits::cast::<_, _To>(unsigned_integer.value)
+                .ok_or_else(|| CastingError::new(&unsigned_integer.to_string(), _Name).into()),
+
+            Value::Float(float) => num_traits::cast::<f64, _To>(float.value.into())
+                .ok_or_else(|| CastingError::new(&float.to_string(), _Name).into()),
+
             _ => Err(IncompatibleValueTypeError::new(value, &["integer", "unsigned integer", "float"]).into()),
         }
     }

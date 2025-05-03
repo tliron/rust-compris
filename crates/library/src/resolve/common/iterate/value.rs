@@ -78,9 +78,9 @@ where
     where
         ErrorRecipientT: ErrorRecipient<ErrorT>,
     {
-        match self.iterator.next() {
-            Some(value) => Ok(value.resolve_for(context, ancestor, errors)?),
-            None => Ok(None),
-        }
+        Ok(match self.iterator.next() {
+            Some(value) => value.resolve_for(context, ancestor, errors)?,
+            None => None,
+        })
     }
 }

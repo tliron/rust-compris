@@ -1,7 +1,7 @@
 use super::super::{
     super::{meta::*, normal::*},
-    mode::*,
     modal::*,
+    mode::*,
 };
 
 use serde::ser::*;
@@ -30,33 +30,25 @@ impl SerializeModal for Float {
 
             FloatSerializationMode::AsI64 => {
                 let float: f64 = self.value.trunc().into();
-                match num_traits::cast::<_, i64>(float) {
-                    Some(integer) => {
-                        if mode.integer.might_be_float() {
-                            // Avoid endless recursion!
-                            serializer.serialize_i64(integer)
-                        } else {
-                            Integer::new(integer)
-                                .with_meta(self.meta.clone())
-                                .serialize_modal(serializer, mode)
-                        }
-                    }
-
-                    None => Err(Error::custom(format!("cannot cast to i64: {}", float))),
+                let integer =
+                    num_traits::cast(float).ok_or_else(|| Error::custom(format!("cannot cast to i64: {}", float)))?;
+                if mode.integer.might_be_float() {
+                    // Avoid endless recursion!
+                    serializer.serialize_i64(integer)
+                } else {
+                    Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
                 }
             }
 
             FloatSerializationMode::AsI64IfFractionless => {
                 if self.value.fract() == 0.0 {
-                    match num_traits::cast::<_, i64>(self.value) {
+                    match num_traits::cast(self.value) {
                         Some(integer) => {
                             if mode.integer.might_be_float() {
                                 // Avoid endless recursion!
                                 serializer.serialize_i64(integer)
                             } else {
-                                Integer::new(integer)
-                                    .with_meta(self.meta.clone())
-                                    .serialize_modal(serializer, mode)
+                                Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
                             }
                         }
 

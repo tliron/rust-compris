@@ -147,10 +147,7 @@ impl Value {
     {
         let mut found = self;
         for key in keys {
-            found = match found.get(key) {
-                Some(value) => value,
-                None => return None,
-            }
+            found = found.get(key)?;
         }
         Some(found)
     }
@@ -164,10 +161,7 @@ impl Value {
     pub fn traverse_mut(&mut self, keys: &[Self]) -> Option<&mut Self> {
         let mut found = self;
         for key in keys {
-            found = match found.get_mut(key) {
-                Some(value) => value,
-                None => return None,
-            }
+            found = found.get_mut(key)?;
         }
         Some(found)
     }

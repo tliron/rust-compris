@@ -106,10 +106,7 @@ impl<'own> Route<'own> {
             segments: self
                 .nodes
                 .iter()
-                .filter_map(|n| match &n.segment {
-                    Some(segment) => Some(segment.to_string_keys()),
-                    None => None,
-                })
+                .filter_map(|node| node.segment.as_ref().map(|segment| segment.to_string_keys()))
                 .collect(),
         }
     }

@@ -12,7 +12,7 @@ impl EnumGenerator {
         if select_variant.newtype {
             quote! {
                 #key => ::compris::resolve::Resolve::resolve_for(value, context, ancestor, errors)?
-                    .map(|v| #enum_name::#variant_name(v)),
+                    .map(|value| #enum_name::#variant_name(value)),
             }
         } else {
             quote! {

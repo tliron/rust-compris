@@ -69,7 +69,7 @@ where
         }
 
         Event::Float(float) => {
-            value_builder.add(Float::new(float).with_annotation(annotation));
+            value_builder.add(Float::from(float).with_annotation(annotation));
         }
 
         Event::Bool(boolean) => {
@@ -77,21 +77,21 @@ where
         }
 
         Event::TextString(string) => {
-            value_builder.add(Text::new(string).with_annotation(annotation));
+            value_builder.add(Text::from(string).with_annotation(annotation));
         }
 
         Event::UnknownLengthTextString => {
             let string = read_cbor_unknown_length_text_string(decoder)?;
-            value_builder.add(Text::new(string).with_annotation(annotation));
+            value_builder.add(Text::from(string).with_annotation(annotation));
         }
 
         Event::ByteString(bytes) => {
-            value_builder.add(Bytes::new(bytes).with_annotation(annotation));
+            value_builder.add(Blob::from(bytes).with_annotation(annotation));
         }
 
         Event::UnknownLengthByteString => {
             let bytes = read_cbor_unknown_length_bytes(decoder)?;
-            value_builder.add(Bytes::new(bytes).with_annotation(annotation));
+            value_builder.add(Blob::from(bytes).with_annotation(annotation));
         }
 
         Event::Array(length) => {

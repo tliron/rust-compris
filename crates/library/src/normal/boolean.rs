@@ -21,11 +21,8 @@ pub struct Boolean {
 
 impl Boolean {
     /// Constructor.
-    pub fn new<BooleanT>(boolean: BooleanT) -> Self
-    where
-        BooleanT: Into<bool>,
-    {
-        Self { value: boolean.into(), ..Default::default() }
+    pub fn new(boolean: bool) -> Self {
+        Self { value: boolean, ..Default::default() }
     }
 }
 

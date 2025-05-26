@@ -22,11 +22,8 @@ pub struct Integer {
 
 impl Integer {
     /// Constructor.
-    pub fn new<IntegerT>(integer: IntegerT) -> Self
-    where
-        IntegerT: Into<i64>,
-    {
-        Self { value: integer.into(), ..Default::default() }
+    pub fn new(integer: i64) -> Self {
+        Self { value: integer, ..Default::default() }
     }
 }
 

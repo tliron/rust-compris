@@ -9,7 +9,7 @@ use {
     serde::*,
     std::{
         fs::*,
-        io::{stdout, BufWriter, Write},
+        io::{BufWriter, Write, stdout},
         path,
     },
 };
@@ -157,7 +157,7 @@ impl Serializer {
 
         let mut writer = BufWriter::new(Vec::new());
         match serializer.write(value, &mut writer) {
-            Ok(_) => Ok(String::from_utf8(writer.into_inner().unwrap())?),
+            Ok(_) => Ok(String::from_utf8(writer.into_inner().expect("writer"))?),
             Err(error) => Err(error),
         }
     }

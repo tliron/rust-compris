@@ -32,11 +32,8 @@ impl List {
     }
 
     /// Constructor.
-    pub fn new_with<VectorT>(vector: VectorT) -> Self
-    where
-        VectorT: Into<Vec<Value>>,
-    {
-        Self { value: vector.into(), ..Default::default() }
+    pub fn new_with(vector: Vec<Value>) -> Self {
+        Self { value: vector, ..Default::default() }
     }
 
     /// Constructor.
@@ -84,7 +81,7 @@ impl List {
         match self.value.len() {
             2 => {
                 let mut iterator = self.value.iter();
-                Some((iterator.next().unwrap(), iterator.next().unwrap()))
+                Some((iterator.next().expect("non-empty"), iterator.next().expect("non-empty")))
             }
             _ => None,
         }
@@ -186,6 +183,15 @@ impl<'own> IntoIterator for &'own mut List {
 impl From<Vec<Value>> for List {
     fn from(vector: Vec<Value>) -> Self {
         List::new_with(vector)
+    }
+}
+
+impl FromIterator<Value> for List {
+    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
+    where
+        IntoIteratorT: IntoIterator<Item = Value>,
+    {
+        Vec::from_iter(iterator).into()
     }
 }
 

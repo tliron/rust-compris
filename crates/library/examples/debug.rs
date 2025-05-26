@@ -33,11 +33,11 @@ pub fn main() {
 
     utils::heading("write_debug", false);
     let mut writer = anstream::stdout();
-    value.write_debug(&mut writer).unwrap();
+    value.write_debug(&mut writer).expect("write");
 
     // You can also capture the debug output into a string
 
-    let string = value.to_debug_string(&Theme::plain()).unwrap();
+    let string = value.to_debug_string(&Theme::plain()).expect("to string");
     utils::heading("to_debug_string", false);
     println!("{}", string);
 

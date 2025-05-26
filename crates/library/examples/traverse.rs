@@ -15,23 +15,23 @@ pub fn main() {
           doing
 "#;
 
-    let value = Parser::new(Format::YAML).parse_from_string(yaml).unwrap();
+    let value = Parser::new(Format::YAML).parse_from_string(yaml).expect("parse");
 
     // The first argument for "traverse!" is our starting point and then it's a sequence of
     // map keys or list indexes as bare primitive expressions or normal value types
     // (see examples/literal.rs)
 
-    let found_value = traverse!(value, "hello", "world", 10, "how", 0, "are you").unwrap();
+    let found_value = traverse!(value, "hello", "world", 10, "how", 0, "are you").expect("traverse");
 
     utils::heading("found by macro", true);
     found_value.print_debug();
 
     // The macro above works with a literal path (no allocation), but there's also a traversal
-    // function that accepts an iterator if your path is constructed dynamically
+    // function that accepts an iterator for when your path is constructed dynamically
 
     let mut path = normal_vec!["hello", "world", 10];
     path.push(normal!("how"));
-    let found_value = value.traverse(&path).unwrap();
+    let found_value = value.traverse(path.iter()).expect("traverse");
 
     utils::heading("found by array", false);
     found_value.print_debug();
@@ -71,8 +71,8 @@ pub fn main() {
     // Route::find gets us all values from an ancestor to a descendent
     // (Use Path::find instead for an owned version that doesn't keep the value references)
 
-    let found_value = traverse!(value, "hello", "world", 10, "how", 0, "are you").unwrap();
-    let route = Route::find(&value, found_value).unwrap();
+    let found_value = traverse!(value, "hello", "world", 10, "how", 0, "are you").expect("traverse");
+    let route = Route::find(&value, found_value).expect("find");
 
     utils::heading("route to found value", false);
     route.print_debug();

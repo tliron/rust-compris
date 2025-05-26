@@ -1,9 +1,10 @@
 use super::super::meta::*;
 
 use {
+    bytestring::*,
     duplicate::*,
     kutil_cli::debug::*,
-    std::{cmp::*, fmt, hash::*, io},
+    std::{borrow::*, cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -12,12 +13,13 @@ use {
 
 /// Normal text value.
 ///
-/// Why didn't we call this struct "String"? Honestly, just to avoid ambiguity with
-/// the built-in [String]. But it's a string.
+/// Relies on [ByteString] for zero-copy cloning.
+///
+/// We didn't call this struct "String" in order to avoid ambiguity with the built-in [String].
 #[derive(Clone, Debug, Default, Eq)]
 pub struct Text {
     /// Actual value.
-    pub value: String,
+    pub value: ByteString,
 
     /// Metadata.
     pub meta: Meta,
@@ -25,11 +27,13 @@ pub struct Text {
 
 impl Text {
     /// Constructor.
-    pub fn new<StringT>(string: StringT) -> Self
-    where
-        StringT: Into<String>,
-    {
-        Self { value: string.into(), ..Default::default() }
+    pub fn new(text: ByteString) -> Self {
+        Self { value: text, ..Default::default() }
+    }
+
+    /// As string.
+    pub fn as_str(&self) -> &str {
+        self.value.as_ref()
     }
 }
 
@@ -92,18 +96,25 @@ impl Hash for Text {
 
 #[duplicate_item(
   _From;
+  [ByteString];
   [String];
   [&str];
 )]
 impl From<_From> for Text {
     fn from(string: _From) -> Self {
-        Text::new(string)
+        Text::new(string.into())
+    }
+}
+
+impl From<Cow<'_, str>> for Text {
+    fn from(string: Cow<'_, str>) -> Self {
+        Text::from(string.as_ref())
     }
 }
 
 impl From<Text> for String {
     fn from(text: Text) -> Self {
-        text.value
+        text.into()
     }
 }
 

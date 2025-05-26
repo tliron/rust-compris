@@ -25,7 +25,7 @@ pub fn main() {
     // Note: "pretty" for CBOR just means adding a newline at the end
 
     utils::heading("CBOR", true);
-    Serializer::new(Format::CBOR).with_base64(true).with_pretty(true).print(&value).unwrap();
+    Serializer::new(Format::CBOR).with_base64(true).with_pretty(true).print(&value).expect("print");
 
     // While CBOR and MessagePack support 100% of CPS, YAML and JSON do not,
     // and so we need to attach a "serialization mode" to the value, which may make some
@@ -39,11 +39,11 @@ pub fn main() {
     // in order to conform to JSON's requirement that keys be strings
 
     utils::heading("JSON", false);
-    Serializer::new(Format::JSON).with_pretty(true).print_modal(&value, &SerializationMode::for_json()).unwrap();
+    Serializer::new(Format::JSON).with_pretty(true).print_modal(&value, &SerializationMode::for_json()).expect("print");
 
     // Serialize to string
 
-    let string = Serializer::new(Format::JSON).stringify_modal(&value, &SerializationMode::for_json()).unwrap();
+    let string = Serializer::new(Format::JSON).stringify_modal(&value, &SerializationMode::for_json()).expect("print");
 
     utils::heading("JSON stringify", false);
     println!("{}", string);
@@ -54,7 +54,10 @@ pub fn main() {
     // It's still true JSON, but readers would need to know what to do with the hints
 
     utils::heading("XJSON", false);
-    Serializer::new(Format::XJSON).with_pretty(true).print_modal(&value, &SerializationMode::for_xjson()).unwrap();
+    Serializer::new(Format::XJSON)
+        .with_pretty(true)
+        .print_modal(&value, &SerializationMode::for_xjson())
+        .expect("print");
 
     // Finally, let's just prove that the Compris serializer can serialize anything, not
     // just normal types
@@ -65,5 +68,5 @@ pub fn main() {
     let user = User { name: "Tal".into(), enabled: true };
 
     utils::heading("YAML", false);
-    Serializer::new(Format::YAML).with_pretty(true).print(&user).unwrap();
+    Serializer::new(Format::YAML).with_pretty(true).print(&user).expect("print");
 }

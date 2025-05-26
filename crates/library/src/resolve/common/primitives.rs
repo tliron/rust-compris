@@ -1,10 +1,8 @@
 use super::super::{super::normal::*, cite::*, context::*, error::*, resolve::*, result::*};
 
-use {duplicate::*, kutil_std::error::*};
+use {bytes::*, bytestring::*, duplicate::*, kutil_std::error::*};
 
-// See VecU8 for Bytes
-
-// Note that Strings will be cloned here
+// Note that Strings will be cloned, so using ByteString is more efficient
 
 #[duplicate_item(
   _Resolved;
@@ -21,7 +19,9 @@ use {duplicate::*, kutil_std::error::*};
   [f64];
   [f32];
   [bool];
+  [ByteString];
   [String];
+  [Bytes];
 )]
 impl<ContextT, ErrorT> Resolve<_Resolved, ContextT, ErrorT> for Value
 where

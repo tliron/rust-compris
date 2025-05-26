@@ -23,11 +23,8 @@ pub struct Float {
 
 impl Float {
     /// Constructor.
-    pub fn new<FloatT>(float: FloatT) -> Self
-    where
-        FloatT: Into<f64>,
-    {
-        Self { value: OrderedFloat(float.into()), ..Default::default() }
+    pub fn new(float: OrderedFloat<f64>) -> Self {
+        Self { value: float, ..Default::default() }
     }
 
     /// Constructor.
@@ -103,7 +100,7 @@ impl Hash for Float {
 )]
 impl From<_From> for Float {
     fn from(float: _From) -> Self {
-        Float::new(float as f64)
+        Float::new((float as f64).into())
     }
 }
 

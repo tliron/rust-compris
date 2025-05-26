@@ -54,7 +54,7 @@ pub fn main() {
     "mystery key 2!": null
 }]"#;
 
-    let value = Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).unwrap();
+    let value = Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).expect("parse");
 
     // Unlike resolve_basic.rs, here need generic parameters because our derived implementation is generic
     // (It's quite a verbose syntax here, but in real-world uses the types would probably be inferred)
@@ -62,8 +62,8 @@ pub fn main() {
     let mut errors = Errors::new();
     let users =
         <Value as Resolve<Vec<User>, CommonResolveContext, CommonResolveError>>::resolve_into(&value, &mut errors)
-            .unwrap()
-            .unwrap();
+            .expect("resolve")
+            .expect("some");
 
     utils::heading("partially resolved", true);
     println!("{:#?}", users);

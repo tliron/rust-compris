@@ -34,7 +34,7 @@ enum Data {
 
 pub fn main() {
     let value = normal_map![("content", "my content")];
-    let data: Data = value.resolve().unwrap().unwrap();
+    let data: Data = value.resolve().expect("resolve").expect("some");
 
     utils::heading("resolved content", true);
     println!("{:#?}", data);
@@ -43,7 +43,7 @@ pub fn main() {
     // (we can set it be Variant::Null)
 
     let value = normal_map![("empty", normal::Null::new())];
-    let data: Data = value.resolve().unwrap().unwrap();
+    let data: Data = value.resolve().expect("resolve").expect("some");
 
     utils::heading("resolved empty", false);
     println!("{:#?}", data);

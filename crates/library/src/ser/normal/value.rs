@@ -18,8 +18,8 @@ impl Serialize for Value {
             Self::UnsignedInteger(unsigned_integer) => unsigned_integer.serialize(serializer),
             Self::Float(float) => float.serialize(serializer),
             Self::Boolean(boolean) => boolean.serialize(serializer),
-            Self::Text(string) => string.serialize(serializer),
-            Self::Bytes(bytes) => bytes.serialize(serializer),
+            Self::Text(text) => text.serialize(serializer),
+            Self::Blob(blob) => blob.serialize(serializer),
             Self::List(list) => list.serialize(serializer),
             Self::Map(map) => map.serialize(serializer),
         }
@@ -44,7 +44,7 @@ impl SerializeModalRescursive for Value {
             Value::Float(float) => float.modal(mode).serialize(serializer),
             Value::Boolean(boolean) => boolean.serialize(serializer),
             Value::Text(text) => text.serialize(serializer),
-            Value::Bytes(bytes) => bytes.modal(mode).serialize(serializer),
+            Value::Blob(blob) => blob.modal(mode).serialize(serializer),
             Value::List(list) => list.modal(mode, modal_serializer).serialize(serializer),
             Value::Map(map) => map.modal(mode, modal_serializer).serialize(serializer),
         }

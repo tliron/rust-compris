@@ -22,7 +22,7 @@ impl Parser {
         ErrorRecipientT: ErrorRecipient<ErrorT>,
         Value: Resolve<ResolvedT, ContextT, ErrorT>,
     {
-        let value = self.parse(reader).unwrap();
+        let value = self.parse(reader).expect("parse");
         value.resolve_into(errors)
     }
 
@@ -38,7 +38,7 @@ impl Parser {
         ErrorRecipientT: ErrorRecipient<ErrorT>,
         Value: Resolve<ResolvedT, ContextT, ErrorT>,
     {
-        let value = self.parse_from_string(string).unwrap();
+        let value = self.parse_from_string(string).expect("parse");
         value.resolve_into(errors)
     }
 

@@ -51,7 +51,7 @@ impl SerializeModal for Integer {
                     // Avoid endless recursion!
                     serializer.serialize_f64(float)
                 } else {
-                    Float::new(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                    Float::from(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
                 }
             }
 

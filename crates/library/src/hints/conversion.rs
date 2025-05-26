@@ -28,7 +28,7 @@ impl Value {
                     return Ok(Some(UnsignedInteger::new(unsigned_integer).with_meta_from(text).into()));
                 } else if hint.value == hints.bytes {
                     let text = value.validate_hinted_text(&hints.bytes)?;
-                    let bytes = Bytes::new_from_base64(&text.value)?;
+                    let bytes = Blob::new_from_base64(&text.value)?;
                     trace!("hinted {}: {} bytes", hints.bytes, bytes.value.len());
                     return Ok(Some(bytes.with_meta_from(text).into()));
                 } else if hint.value == hints.map {
@@ -91,7 +91,7 @@ impl Value {
 
     fn unescape_hint(&self, new_key: &str, key: &Value, value: &Value) -> Self {
         let mut new_map = Map::new();
-        new_map.value.insert(Text::new(new_key).with_meta_from(key).into(), value.clone());
+        new_map.value.insert(Text::from(new_key).with_meta_from(key).into(), value.clone());
         new_map.with_meta_from(self).into()
     }
 }

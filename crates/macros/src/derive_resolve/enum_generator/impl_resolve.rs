@@ -42,7 +42,7 @@ impl EnumGenerator {
                     ::compris::resolve::ResolveResult::Ok(
                         match self.to_key_value_pair() {
                             Some((key, value)) => match key {
-                                Self::Text(text) => match text.value.as_str() {
+                                Self::Text(text) => match text.as_str() {
                                     #(#segments)*
 
                                     key => {

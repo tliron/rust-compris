@@ -2,9 +2,10 @@ use super::super::meta::*;
 
 use {
     base64::{prelude::*, *},
+    bytes::*,
     duplicate::*,
     kutil_cli::debug::*,
-    std::{cmp::*, fmt, hash::*, io},
+    std::{borrow::*, cmp::*, fmt, hash::*, io},
 };
 
 //
@@ -12,28 +13,27 @@ use {
 //
 
 /// Normal bytes value.
+///
+/// Relies on [Bytes] for zero-copy cloning.
 #[derive(Clone, Debug, Default, Eq)]
-pub struct Bytes {
+pub struct Blob {
     /// Actual value.
-    pub value: Vec<u8>,
+    pub value: Bytes,
 
     /// Metadata.
     pub meta: Meta,
 }
 
-impl Bytes {
+impl Blob {
     /// Constructor.
-    pub fn new<BytesT>(bytes: BytesT) -> Self
-    where
-        BytesT: Into<Vec<u8>>,
-    {
-        Self { value: bytes.into(), ..Default::default() }
+    pub fn new(bytes: Bytes) -> Self {
+        Self { value: bytes, ..Default::default() }
     }
 
     /// Constructor.
     pub fn new_from_base64(base64: &str) -> Result<Self, DecodeError> {
         let bytes = BASE64_STANDARD.decode(base64)?;
-        Ok(Self::new(bytes))
+        Ok(Self::from(bytes))
     }
 
     /// To Base64.
@@ -42,7 +42,7 @@ impl Bytes {
     }
 }
 
-impl HasMeta for Bytes {
+impl HasMeta for Blob {
     fn get_meta(&self) -> Option<&Meta> {
         Some(&self.meta)
     }
@@ -52,7 +52,7 @@ impl HasMeta for Bytes {
     }
 }
 
-impl Debuggable for Bytes {
+impl Debuggable for Blob {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
     where
         WriteT: io::Write,
@@ -62,7 +62,7 @@ impl Debuggable for Bytes {
     }
 }
 
-impl fmt::Display for Bytes {
+impl fmt::Display for Blob {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{} bytes", self.value.len())
     }
@@ -70,25 +70,25 @@ impl fmt::Display for Bytes {
 
 // Delegated
 
-impl PartialEq for Bytes {
+impl PartialEq for Blob {
     fn eq(&self, other: &Self) -> bool {
         self.value.eq(&other.value)
     }
 }
 
-impl PartialOrd for Bytes {
+impl PartialOrd for Blob {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.value.partial_cmp(&other.value)
     }
 }
 
-impl Ord for Bytes {
+impl Ord for Blob {
     fn cmp(&self, other: &Self) -> Ordering {
         self.value.cmp(&other.value)
     }
 }
 
-impl Hash for Bytes {
+impl Hash for Blob {
     fn hash<HasherT>(&self, state: &mut HasherT)
     where
         HasherT: Hasher,
@@ -101,23 +101,30 @@ impl Hash for Bytes {
 
 #[duplicate_item(
   _From;
+  [Bytes];
   [Vec<u8>];
-  [&[u8]];
+  [&'static [u8]];
 )]
-impl From<_From> for Bytes {
+impl From<_From> for Blob {
     fn from(bytes: _From) -> Self {
-        Bytes::new(bytes)
+        Blob::new(bytes.into())
     }
 }
 
-impl From<Bytes> for Vec<u8> {
-    fn from(bytes: Bytes) -> Self {
+impl From<Cow<'_, [u8]>> for Blob {
+    fn from(bytes: Cow<'_, [u8]>) -> Self {
+        Blob::from(bytes.into_owned())
+    }
+}
+
+impl From<Blob> for Bytes {
+    fn from(bytes: Blob) -> Self {
         bytes.value
     }
 }
 
-impl<'own> From<&'own Bytes> for &'own [u8] {
-    fn from(bytes: &'own Bytes) -> Self {
+impl<'own> From<&'own Blob> for &'own [u8] {
+    fn from(bytes: &'own Blob) -> Self {
         &bytes.value
     }
 }

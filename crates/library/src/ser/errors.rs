@@ -1,7 +1,7 @@
 use super::super::*;
 
 use {
-    std::{fmt, io, string},
+    std::{fmt, io, str, string},
     thiserror::*,
 };
 
@@ -22,7 +22,7 @@ pub enum SerializeError {
 
     /// UTF8.
     #[error("UTF8: {0}")]
-    UTF8(#[from] string::FromUtf8Error),
+    UTF8(#[from] str::Utf8Error),
 
     /// YAML.
     #[error("YAML: {0}")]

@@ -1,8 +1,8 @@
-use super::super::{super::normal::*, mode::*, modal::*};
+use super::super::{super::normal::*, modal::*, mode::*};
 
 use serde::ser::*;
 
-impl Serialize for Bytes {
+impl Serialize for Blob {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -11,7 +11,7 @@ impl Serialize for Bytes {
     }
 }
 
-impl SerializeModal for Bytes {
+impl SerializeModal for Blob {
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,

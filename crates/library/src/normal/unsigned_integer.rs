@@ -22,11 +22,8 @@ pub struct UnsignedInteger {
 
 impl UnsignedInteger {
     /// Constructor.
-    pub fn new<UnsignedIntegerT>(unsigned_integer: UnsignedIntegerT) -> Self
-    where
-        UnsignedIntegerT: Into<u64>,
-    {
-        Self { value: unsigned_integer.into(), ..Default::default() }
+    pub fn new(unsigned_integer: u64) -> Self {
+        Self { value: unsigned_integer, ..Default::default() }
     }
 }
 
@@ -92,7 +89,7 @@ impl Hash for UnsignedInteger {
 // Conversion
 
 #[duplicate_item(
-    _From;
+  _From;
   [u64];
   [u32];
   [u16];

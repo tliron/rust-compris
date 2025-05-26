@@ -42,11 +42,8 @@ impl Map {
     }
 
     /// Constructor.
-    pub fn new_with<MapT>(map: MapT) -> Self
-    where
-        MapT: Into<BTreeMap<Value, Value>>,
-    {
-        Self { value: map.into(), ..Default::default() }
+    pub fn new_with(map: BTreeMap<Value, Value>) -> Self {
+        Self { value: map, ..Default::default() }
     }
 
     /// Constructor.
@@ -187,6 +184,21 @@ impl From<BTreeMap<Value, Value>> for Map {
 impl From<Map> for BTreeMap<Value, Value> {
     fn from(map: Map) -> Self {
         map.value
+    }
+}
+
+impl<const SIZE: usize> From<[(Value, Value); SIZE]> for Map {
+    fn from(array: [(Value, Value); SIZE]) -> Self {
+        BTreeMap::from(array).into()
+    }
+}
+
+impl FromIterator<(Value, Value)> for Map {
+    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
+    where
+        IntoIteratorT: IntoIterator<Item = (Value, Value)>,
+    {
+        BTreeMap::from_iter(iterator).into()
     }
 }
 

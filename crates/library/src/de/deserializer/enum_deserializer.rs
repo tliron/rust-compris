@@ -18,7 +18,7 @@ pub(crate) struct EnumDeserializer<'de> {
 impl<'de> EnumDeserializer<'de> {
     pub(crate) fn new(map: &'de Map) -> Result<Self, DeserializeError> {
         if map.value.len() == 1 {
-            let (key, value) = map.value.iter().next().unwrap();
+            let (key, value) = map.value.iter().next().expect("non-empty");
             Ok(Self { key, value })
         } else {
             Err(DeserializeError::IncompatibleValue(format!("map length is not 1: {}", map)))

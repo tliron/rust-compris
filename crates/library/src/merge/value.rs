@@ -53,6 +53,6 @@ impl Value {
     /// Uses the default [MergeMode].
     pub fn merge(&mut self, other: &Self) -> bool {
         // The default mode should never cause errors, so unwrap is safe
-        self.merge_with_mode(other, &MergeMode::default()).unwrap()
+        self.merge_with_mode(other, &MergeMode::default()).expect("merge_with_mode")
     }
 }

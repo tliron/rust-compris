@@ -42,7 +42,7 @@ impl SerializeModal for UnsignedInteger {
             UnsignedIntegerSerializationMode::AsF64 => {
                 let float: f64 = num_traits::cast(self.value)
                     .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.value)))?;
-                Float::new(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                Float::from(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
             }
 
             UnsignedIntegerSerializationMode::Stringify(hint) => {

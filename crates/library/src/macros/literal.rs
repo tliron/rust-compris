@@ -18,7 +18,7 @@ macro_rules! normal_list (
     ( $( $value:expr ),+ $( , )? ) => (
         $crate::normal::Value::List(
             $crate::normal::List::new_with(
-                [ $( $crate::normal!( $value ) ),+ ]
+                vec![ $( $crate::normal!( $value ) ),+ ]
             )
         )
     );
@@ -35,7 +35,7 @@ macro_rules! normal_map (
 
     ( $( ( $key:expr, $value:expr ) ),+ $( , )? ) => (
         $crate::normal::Value::Map(
-            $crate::normal::Map::new_with(
+            $crate::normal::Map::from(
                 [ $( ( $crate::normal!( $key ), $crate::normal!( $value ) ) ),+ ]
             )
         )

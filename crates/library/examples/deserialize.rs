@@ -38,7 +38,7 @@ pub fn main() {
 
     // We can "deserialize" from the normal value directly to our struct
 
-    let user: User = value.deserialize().unwrap();
+    let user: User = value.deserialize().expect("deserialize");
 
     utils::heading("from normal types", true);
     println!("{:#?}", user);
@@ -54,7 +54,7 @@ pub fn main() {
     "role": {"moderator": "lobby"}
 }"#;
 
-    let user: User = Parser::new(Format::JSON).deserialize_from_string(json).unwrap();
+    let user: User = Parser::new(Format::JSON).deserialize_from_string(json).expect("deserialize");
 
     utils::heading("from JSON", false);
     println!("{:#?}", user);

@@ -31,7 +31,11 @@ impl Map {
     /// Return true if any change happened.
     ///
     /// The merging behavior depends on the [MergeMode].
-    pub fn merge_with_mode<'own>(&mut self, other: &'own Self, merge_mode: &MergeMode) -> Result<bool, MergeError<'own>> {
+    pub fn merge_with_mode<'own>(
+        &mut self,
+        other: &'own Self,
+        merge_mode: &MergeMode,
+    ) -> Result<bool, MergeError<'own>> {
         self.merge_with_errors(other, merge_mode, &mut FailFastErrorRecipient)
     }
 
@@ -40,7 +44,7 @@ impl Map {
     /// Uses the default [MergeMode].
     pub fn merge(&mut self, other: &Self) -> bool {
         // The default mode should never cause errors, so unwrap is safe
-        self.merge_with_mode(other, &MergeMode::default()).unwrap()
+        self.merge_with_mode(other, &MergeMode::default()).expect("merge_with_mode")
     }
 
     fn merge_key<'own, ErrorRecipientT>(

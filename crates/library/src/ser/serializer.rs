@@ -6,13 +6,16 @@ use super::{
 };
 
 use {
+    bytestring::*,
     serde::*,
     std::{
         fs::*,
-        io::{stdout, BufWriter, Write},
+        io::{BufWriter, Write, stdout},
         path,
     },
 };
+
+const STRINGIFY_BUFFER_CAPACITY: usize = 1024;
 
 //
 // Serializer
@@ -148,16 +151,16 @@ impl Serializer {
     /// Convenience function to serialize to a string.
     ///
     /// See [Serializer::write].
-    pub fn stringify<SerializableT>(&self, value: &SerializableT) -> Result<String, SerializeError>
+    pub fn stringify<SerializableT>(&self, value: &SerializableT) -> Result<ByteString, SerializeError>
     where
         SerializableT: Serialize,
     {
         let serializer =
             Serializer::new(self.format.clone()).with_pretty(self.pretty).with_indent(self.indent).with_base64(true);
 
-        let mut writer = BufWriter::new(Vec::new());
+        let mut writer = Vec::with_capacity(STRINGIFY_BUFFER_CAPACITY);
         match serializer.write(value, &mut writer) {
-            Ok(_) => Ok(String::from_utf8(writer.into_inner().unwrap())?),
+            Ok(_) => Ok(ByteString::try_from(writer)?),
             Err(error) => Err(error),
         }
     }
@@ -165,7 +168,7 @@ impl Serializer {
     /// Convenience function to serialize to a string.
     ///
     /// See [Serializer::write].
-    pub fn stringify_modal(&self, value: &Value, mode: &SerializationMode) -> Result<String, SerializeError> {
+    pub fn stringify_modal(&self, value: &Value, mode: &SerializationMode) -> Result<ByteString, SerializeError> {
         let value = value.modal(mode, self);
         self.stringify(&value)
     }

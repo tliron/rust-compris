@@ -1,9 +1,15 @@
 use super::{
-    boolean::*, bytes::*, errors::*, float::*, integer::*, list::*, map::*, null::*, text::*, unsigned_integer::*,
+    blob::*, boolean::*, errors::*, float::*, integer::*, list::*, map::*, null::*, text::*, unsigned_integer::*,
     value::*,
 };
 
-use {duplicate::*, ordered_float::OrderedFloat, std::collections::*};
+use {
+    bytes::*,
+    bytestring::*,
+    duplicate::*,
+    ordered_float::OrderedFloat,
+    std::{borrow::*, collections::*},
+};
 
 // Normal type -> Value
 
@@ -15,7 +21,7 @@ use {duplicate::*, ordered_float::OrderedFloat, std::collections::*};
   [Float];
   [Boolean];
   [Text];
-  [Bytes];
+  [Blob];
   [List];
   [Map];
 )]
@@ -44,28 +50,89 @@ impl From<_Normal> for Value {
   [Float]            [f32];
   [Float]            [OrderedFloat<f64>];
   [Boolean]          [bool];
+  [Text]             [ByteString];
   [Text]             [String];
-  [Bytes]            [Vec<u8>];
-  [Bytes]            [&[u8]];
   [Text]             [&str];
+  [Text]             [Cow<'_, str>];
+  [Blob]             [Bytes];
+  [Blob]             [Vec<u8>];
+  [Blob]             [&'static [u8]];
+  [Blob]             [Cow<'_, [u8]>];
   [List]             [Vec<Value>];
   [Map]              [BTreeMap<Value, Value>];
 )]
 impl From<_From> for Value {
     fn from(from_value: _From) -> Self {
-        Self::_ToNormal(from_value.into())
+        Self::_ToNormal(_ToNormal::from(from_value))
     }
 }
 
-// Value -> native types
+// Value -> native types (possible cloning)
+
+#[duplicate_item(
+  _FromNormal        _Name                 _To;
+  [Integer]          ["integer"]           [i64];
+  [UnsignedInteger]  ["unsigned integer"]  [u64];
+  [Float]            ["float"]             [OrderedFloat<f64>];
+  [Float]            ["float"]             [f64];
+  [Boolean]          ["boolean"]           [bool];
+  [Text]             ["text"]              [String];
+  [Text]             ["text"]              [ByteString];
+  [Blob]             ["blob"]              [Bytes];
+  [List]             ["list"]              [Vec<Value>];
+  [Map]              ["Map"]               [BTreeMap<Value, Value>];
+)]
+#[allow(unused_variables)]
+impl TryFrom<Value> for _To {
+    type Error = ConversionError;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::_FromNormal(normal) => Ok(normal.value.into()),
+            _ => Err(IncompatibleValueTypeError::new(&value, &[_Name]).into()),
+        }
+    }
+}
+
+impl TryFrom<Value> for () {
+    type Error = ConversionError;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Null(_) => Ok(()),
+            _ => Err(IncompatibleValueTypeError::new(&value, &["null"]).into()),
+        }
+    }
+}
+
+impl FromIterator<Value> for Value {
+    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
+    where
+        IntoIteratorT: IntoIterator<Item = Value>,
+    {
+        List::from_iter(iterator).into()
+    }
+}
+
+impl FromIterator<(Value, Value)> for Value {
+    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
+    where
+        IntoIteratorT: IntoIterator<Item = (Value, Value)>,
+    {
+        Map::from_iter(iterator).into()
+    }
+}
+
+// &Value -> native types (possible cloning)
 
 #[duplicate_item(
   _FromNormal        _Name                 _To                       _As;
   [Null]             ["null"]              [()]                      [()];
   [Float]            ["float"]             [OrderedFloat<f64>]       [normal.value.into()];
   [Boolean]          ["boolean"]           [bool]                    [normal.value];
-  [Text]             ["text"]              [String]                  [normal.value.clone()];
-  [Bytes]            ["bytes"]             [Vec<u8>]                 [normal.value.clone()];
+  [Text]             ["text"]              [String]                  [normal.value.clone().into()];
+  [Text]             ["text"]              [ByteString]              [normal.value.clone()];
+  [Blob]             ["blob"]              [Bytes]                   [normal.value.clone()];
   [List]             ["list"]              [Vec<Value>]              [normal.value.clone()];
   [Map]              ["Map"]               [BTreeMap<Value, Value>]  [normal.value.clone()];
 )]
@@ -81,12 +148,12 @@ impl TryFrom<&Value> for _To {
     }
 }
 
-// Value -> native references
+// &Value -> native references
 
 #[duplicate_item(
     _FromNormal  _Name      _To;
     [Text]       ["text"]   [str];
-    [Bytes]      ["bytes"]  [[u8]];
+    [Blob]       ["blob"]   [[u8]];
     [List]       ["list"]   [Vec<Value>];
     [Map]        ["map"]    [BTreeMap<Value, Value>];
   )]
@@ -101,7 +168,7 @@ impl<'own> TryFrom<&'own Value> for &'own _To {
     }
 }
 
-// Value -> numbers
+// &Value -> numbers
 
 #[duplicate_item(
     _To      _Name;

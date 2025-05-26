@@ -47,7 +47,7 @@ pub fn main() {
 
     // Simplest! Resolve the value into our struct
 
-    let user: User = value.resolve().unwrap().unwrap();
+    let user: User = value.resolve().expect("resolve").expect("some");
 
     utils::heading("resolved", true);
     println!("{:#?}", user);
@@ -70,14 +70,14 @@ pub fn main() {
     "mystery key 2!": null
 }]"#;
 
-    let value = Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).unwrap();
+    let value = Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).expect("parse");
 
     // Note that we can resolve directly into Vecs (and HashMaps, too)
 
     let result: ResolveResult<Vec<User>, _> = value.resolve();
 
     utils::heading("fail-fast error", false);
-    result.err().unwrap().to_cited().print_debug();
+    result.err().expect("error").to_cited().print_debug();
 
     // The "resolve" functions used above use "fail-fast" mode, meaning that we fail on the first
     // first encountered error
@@ -87,7 +87,7 @@ pub fn main() {
     // but that depends on the implementation
 
     let mut errors = Errors::new();
-    let users: Vec<User> = value.resolve_into(&mut errors).unwrap().unwrap();
+    let users: Vec<User> = value.resolve_into(&mut errors).expect("resolve").expect("some");
 
     utils::heading("partially resolved", false);
     println!("{:#?}", users);

@@ -123,7 +123,7 @@ pub enum InputFormat {
 
 impl ToString for InputFormat {
     fn to_string(&self) -> String {
-        self.to_possible_value().unwrap().get_name().into()
+        self.to_possible_value().expect("to_possible_value").get_name().into()
     }
 }
 
@@ -145,7 +145,7 @@ pub enum OutputFormat {
 
 impl ToString for OutputFormat {
     fn to_string(&self) -> String {
-        self.to_possible_value().unwrap().get_name().into()
+        self.to_possible_value().expect("to_possible_value").get_name().into()
     }
 }
 

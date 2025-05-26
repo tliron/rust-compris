@@ -1,7 +1,7 @@
 use super::super::{
     super::{
         meta::*,
-        normal::{Bytes, *},
+        normal::{Blob, *},
     },
     builder::*,
     *,
@@ -97,11 +97,11 @@ where
         }
 
         Marker::F32 => {
-            value_builder.add(Float::new(read_f32(reader)? as f64));
+            value_builder.add(Float::from(read_f32(reader)?));
         }
 
         Marker::F64 => {
-            value_builder.add(Float::new(read_f64(reader)?));
+            value_builder.add(Float::from(read_f64(reader)?));
         }
 
         Marker::Bin8 => {
@@ -225,7 +225,7 @@ where
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
     let string = String::from_utf8(buffer)?;
-    Ok(value_builder.add(Text::new(string)))
+    Ok(value_builder.add(Text::from(string)))
 }
 
 fn read_message_pack_bytes<ReadT>(
@@ -239,7 +239,7 @@ where
     trace!("bytes length: {}", length);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(Bytes::new(buffer)))
+    Ok(value_builder.add(Blob::from(buffer)))
 }
 
 fn read_message_pack_ext<ReadT>(
@@ -254,7 +254,7 @@ where
     trace!("ext type: {}", annotation);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(Bytes::new(buffer).with_annotation_integer(annotation)))
+    Ok(value_builder.add(Blob::from(buffer).with_annotation_integer(annotation)))
 }
 
 fn read_message_pack_array<ReadT>(

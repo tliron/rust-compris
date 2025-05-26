@@ -1,5 +1,5 @@
 use super::{
-    super::kv::*, boolean::*, bytes::*, float::*, integer::*, iterator::*, list::*, map::*, null::*, text::*,
+    super::kv::*, blob::*, boolean::*, float::*, integer::*, iterator::*, list::*, map::*, null::*, text::*,
     unsigned_integer::*,
 };
 
@@ -34,8 +34,8 @@ pub enum Value {
     /// Text.
     Text(Text),
 
-    /// Bytes.
-    Bytes(Bytes),
+    /// Blob.
+    Blob(Blob),
 
     /// List.
     List(List),
@@ -55,18 +55,20 @@ impl Value {
             Self::Float(_) => "Float",
             Self::Boolean(_) => "Boolean",
             Self::Text(_) => "Text",
-            Self::Bytes(_) => "Bytes",
+            Self::Blob(_) => "Blob",
             Self::List(_) => "List",
             Self::Map(_) => "Map",
         }
     }
 
+    /// True if [Nothing](Value::Nothing).
+    pub fn is_nothing(&self) -> bool {
+        matches!(self, Self::Nothing)
+    }
+
     /// True if [List] or [Map].
     pub fn is_collection(&self) -> bool {
-        match self {
-            Self::List(_) | Self::Map(_) => true,
-            _ => false,
-        }
+        matches!(self, Self::List(_) | Self::Map(_))
     }
 
     /// Gets a reference to a nested value.
@@ -139,11 +141,13 @@ impl Value {
     ///
     /// Any non-collection or missing key will cause the traversal to stop and return [None].
     ///
+    /// You can provide a [ValuePath](super::value_path::ValuePath) iterator as the argument.
+    ///
     /// Use the [traverse!](crate::traverse) macro instead if you can. It will generally
-    /// be more efficient because it doesn't require an allocated array.
-    pub fn traverse<'own, IterableT>(&self, keys: IterableT) -> Option<&Self>
+    /// be more efficient because it doesn't require an allocated iterator.
+    pub fn traverse<'own, IteratorT>(&self, keys: IteratorT) -> Option<&Self>
     where
-        IterableT: IntoIterator<Item = &'own Self>,
+        IteratorT: Iterator<Item = &'own Self>,
     {
         let mut found = self;
         for key in keys {
@@ -156,9 +160,14 @@ impl Value {
     ///
     /// Any non-collection or missing key will cause the traversal to stop and return [None].
     ///
+    /// You can provide a [ValuePath](super::value_path::ValuePath) iterator as the argument.
+    ///
     /// Use the [traverse_mut!](crate::traverse_mut) macro instead if you can. It will generally
-    /// be more efficient because it doesn't require an allocated array.
-    pub fn traverse_mut(&mut self, keys: &[Self]) -> Option<&mut Self> {
+    /// be more efficient because it doesn't require an allocated iterator.
+    pub fn traverse_mut<'own, IteratorT>(&mut self, keys: IteratorT) -> Option<&mut Self>
+    where
+        IteratorT: Iterator<Item = &'own Self>,
+    {
         let mut found = self;
         for key in keys {
             found = found.get_mut(key)?;

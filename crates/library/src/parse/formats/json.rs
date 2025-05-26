@@ -78,12 +78,12 @@ where
                 } else if let Some(number) = if try_integers { number.parse::<i64>().ok() } else { None } {
                     value_builder.add(Integer::new(number).with_location(location));
                 } else {
-                    value_builder.add(Float::new(number.parse::<f64>()?).with_location(location));
+                    value_builder.add(Float::from(number.parse::<f64>()?).with_location(location));
                 }
             } else {
                 let location = get_json_location(reader);
                 let number: f64 = reader.next_number()??;
-                value_builder.add(Float::new(number).with_location(location));
+                value_builder.add(Float::from(number).with_location(location));
             }
         }
 
@@ -94,7 +94,7 @@ where
 
         ValueType::String => {
             let location = get_json_location(reader);
-            value_builder.add(Text::new(reader.next_string()?).with_location(location));
+            value_builder.add(Text::from(reader.next_string()?).with_location(location));
         }
 
         ValueType::Array => {
@@ -115,7 +115,7 @@ where
             while reader.has_next()? {
                 // Key
                 let location = get_json_location(reader);
-                value_builder.add(Text::new(reader.next_name_owned()?).with_location(location));
+                value_builder.add(Text::from(reader.next_name_owned()?).with_location(location));
 
                 // Value
                 read_next_json(reader, value_builder, hints, try_integers, try_unsigned_integers)?;
@@ -144,9 +144,5 @@ fn get_json_location(reader: &mut impl JsonReader) -> Option<Location> {
         location.row_and_column = Some((line_pos.line as usize, Some(line_pos.column as usize)));
     };
 
-    if some {
-        Some(location)
-    } else {
-        None
-    }
+    if some { Some(location) } else { None }
 }

@@ -15,7 +15,7 @@ pub fn main() {
 
     // Parse into normal value types
 
-    let value = Parser::new(Format::YAML).parse_from_string(yaml).unwrap();
+    let value = Parser::new(Format::YAML).parse_from_string(yaml).expect("parse");
 
     utils::heading("from YAML", true);
     value.print_debug();
@@ -37,7 +37,7 @@ pub fn main() {
 
     // This reader will interpret the XJSON hints and create the correct normal value types
 
-    let value = parse::Parser::new(Format::XJSON).parse_from_string(xjson).unwrap();
+    let value = parse::Parser::new(Format::XJSON).parse_from_string(xjson).expect("parse");
 
     utils::heading("from XJSON", false);
     value.print_debug();

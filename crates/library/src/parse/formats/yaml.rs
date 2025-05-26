@@ -86,7 +86,7 @@ impl YamlReceiver {
             match tag_suffix {
                 // Failsafe schema, https://yaml.org/spec/1.2.2/#10113-generic-string
                 "str" => {
-                    return Ok(Text::new(value).with_location(Some(location)).into());
+                    return Ok(Text::from(value).with_location(Some(location)).into());
                 }
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10211-null
@@ -111,7 +111,7 @@ impl YamlReceiver {
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10214-floating-point
                 "float" => {
-                    return Ok(Float::new(Self::parse_yaml_float(&value, &location)?)
+                    return Ok(Float::from(Self::parse_yaml_float(&value, &location)?)
                         .with_location(Some(location))
                         .into());
                 }
@@ -119,7 +119,7 @@ impl YamlReceiver {
                 "binary" => {
                     // https://yaml.org/type/binary.html
                     if self.allow_legacy_types {
-                        return Ok(Bytes::new_from_base64(&value)?.with_location(Some(location)).into());
+                        return Ok(Blob::new_from_base64(&value)?.with_location(Some(location)).into());
                     } else {
                         trace!("unsupported legacy tag suffix: {}{}", tag_prefix, tag_suffix);
                     }
@@ -134,7 +134,7 @@ impl YamlReceiver {
         }
 
         // Silently treat unsupported tag prefixes as strings
-        Ok(Text::new(value).with_location(Some(location)).into())
+        Ok(Text::from(value).with_location(Some(location)).into())
     }
 
     fn parse_yaml_bare_scalar(&self, value: Cow<'_, str>, location: Location) -> Result<Value, ParseError> {
@@ -150,9 +150,9 @@ impl YamlReceiver {
         } else if let Ok(integer) = Self::parse_yaml_integer(&value, &location) {
             Ok(Integer::new(integer).with_location(Some(location)).into())
         } else if let Ok(float) = Self::parse_yaml_float(&value, &location) {
-            Ok(Float::new(float).with_location(Some(location)).into())
+            Ok(Float::from(float).with_location(Some(location)).into())
         } else {
-            Ok(Text::new(value).with_location(Some(location)).into())
+            Ok(Text::from(value).with_location(Some(location)).into())
         }
     }
 
@@ -269,11 +269,11 @@ impl<'own, 'input> SpannedEventReceiver<'input> for YamlReceiver {
             Event::Scalar(value, style, _anchor_id, tag) => {
                 if style != ScalarStyle::Plain {
                     // All non-plain scalars are strings
-                    self.value_builder.add(Text::new(value).with_location(Some(span.into())));
+                    self.value_builder.add(Text::from(value).with_location(Some(span.into())));
                 } else {
                     // Tagged plain scalar?
-                    if let Some(Tag { ref handle, ref suffix }) = tag {
-                        match self.parse_yaml_tagged_scalar(value, handle, suffix, span.into()) {
+                    if let Some(tag) = tag {
+                        match self.parse_yaml_tagged_scalar(value, &tag.handle, &tag.suffix, span.into()) {
                             Ok(value) => self.value_builder.add(value),
                             Err(error) => {
                                 // See: https://github.com/saphyr-rs/saphyr/issues/20

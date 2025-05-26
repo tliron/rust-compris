@@ -15,7 +15,7 @@ impl HasMeta for Value {
             Self::Float(float) => float.get_meta(),
             Self::Boolean(boolean) => boolean.get_meta(),
             Self::Text(text) => text.get_meta(),
-            Self::Bytes(bytes) => bytes.get_meta(),
+            Self::Blob(blob) => blob.get_meta(),
             Self::List(list) => list.get_meta(),
             Self::Map(map) => map.get_meta(),
         }
@@ -30,7 +30,7 @@ impl HasMeta for Value {
             Self::Float(float) => float.get_meta_mut(),
             Self::Boolean(boolean) => boolean.get_meta_mut(),
             Self::Text(text) => text.get_meta_mut(),
-            Self::Bytes(bytes) => bytes.get_meta_mut(),
+            Self::Blob(blob) => blob.get_meta_mut(),
             Self::List(list) => list.get_meta_mut(),
             Self::Map(map) => map.get_meta_mut(),
         }
@@ -53,7 +53,7 @@ impl Debuggable for Value {
             Self::Float(float) => float.to_located().write_debug_for(writer, context),
             Self::Boolean(boolean) => boolean.to_located().write_debug_for(writer, context),
             Self::Text(text) => text.to_located().write_debug_for(writer, context),
-            Self::Bytes(bytes) => bytes.to_located().write_debug_for(writer, context),
+            Self::Blob(blob) => blob.to_located().write_debug_for(writer, context),
             Self::List(list) => list.write_debug_for(writer, context),
             Self::Map(map) => map.write_debug_for(writer, context),
         }
@@ -70,7 +70,7 @@ impl fmt::Display for Value {
             Self::Float(float) => fmt::Display::fmt(float, formatter),
             Self::Boolean(boolean) => fmt::Display::fmt(boolean, formatter),
             Self::Text(text) => fmt::Display::fmt(text, formatter),
-            Self::Bytes(bytes) => fmt::Display::fmt(bytes, formatter),
+            Self::Blob(blob) => fmt::Display::fmt(blob, formatter),
             Self::List(list) => fmt::Display::fmt(list, formatter),
             Self::Map(map) => fmt::Display::fmt(map, formatter),
         }

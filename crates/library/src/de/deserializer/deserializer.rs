@@ -53,7 +53,7 @@ impl<'de, 'own> de::Deserializer<'de> for &'own mut Deserializer<'de> {
             Value::Float(_) => self.deserialize_f64(visitor),
             Value::Boolean(_) => self.deserialize_bool(visitor),
             Value::Text(_) => self.deserialize_str(visitor),
-            Value::Bytes(_) => self.deserialize_bytes(visitor),
+            Value::Blob(_) => self.deserialize_bytes(visitor),
             Value::List(_) => self.deserialize_seq(visitor),
             Value::Map(_) => self.deserialize_map(visitor),
         }
@@ -395,7 +395,7 @@ impl<'de, 'own> de::Deserializer<'de> for &'own mut Deserializer<'de> {
         V: de::Visitor<'de>,
     {
         match self.value {
-            Value::Text(string) => visitor.visit_str(&string.value),
+            Value::Text(text) => visitor.visit_str(&text.value),
             _ => Err(self.incompatible_type_error()),
         }
     }
@@ -405,7 +405,7 @@ impl<'de, 'own> de::Deserializer<'de> for &'own mut Deserializer<'de> {
         VisitorT: de::Visitor<'de>,
     {
         match self.value {
-            Value::Text(string) => visitor.visit_string(string.value.clone()),
+            Value::Text(text) => visitor.visit_str(&text.value),
             _ => Err(self.incompatible_type_error()),
         }
     }
@@ -415,7 +415,7 @@ impl<'de, 'own> de::Deserializer<'de> for &'own mut Deserializer<'de> {
         VisitorT: de::Visitor<'de>,
     {
         match self.value {
-            Value::Bytes(bytes) => visitor.visit_bytes(&bytes.value),
+            Value::Blob(blob) => visitor.visit_bytes(&blob.value),
             _ => Err(self.incompatible_type_error()),
         }
     }
@@ -425,7 +425,7 @@ impl<'de, 'own> de::Deserializer<'de> for &'own mut Deserializer<'de> {
         VisitorT: de::Visitor<'de>,
     {
         match self.value {
-            Value::Bytes(bytes) => visitor.visit_byte_buf(bytes.value.clone()),
+            Value::Blob(blob) => visitor.visit_bytes(&blob.value),
             _ => Err(self.incompatible_type_error()),
         }
     }

@@ -83,7 +83,7 @@ impl CLI {
             },
         };
 
-        compris::Format::try_from(&*input_format.as_str())
+        input_format.parse()
     }
 
     fn read(&self) -> Result<(Value, Format), MainError> {
@@ -109,7 +109,7 @@ impl CLI {
                 info!("output format: {}", output_format);
                 match &*output_format {
                     "debug" => None,
-                    _ => Some(compris::Format::try_from(&*output_format).unwrap()),
+                    _ => Some(output_format.parse().expect("format")),
                 }
             }
 

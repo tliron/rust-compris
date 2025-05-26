@@ -1,6 +1,6 @@
 use {
-    std::{convert::*, fmt},
-    thiserror::*,
+    kutil_std::message_error,
+    std::{convert::*, fmt, str::*},
 };
 
 //
@@ -8,7 +8,7 @@ use {
 //
 
 /// CPS format.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum Format {
     /// CBOR.
     CBOR,
@@ -32,7 +32,7 @@ pub enum Format {
 
 impl Format {
     /// String identifier for the format.
-    pub fn get_identifier(&self) -> &'static str {
+    pub fn identifier(&self) -> &'static str {
         match self {
             Self::CBOR => "cbor",
             Self::MessagePack => "messagepack",
@@ -52,25 +52,31 @@ impl Format {
     }
 }
 
-impl TryFrom<&str> for Format {
-    type Error = UnknownFormatError;
+impl Into<&'static str> for Format {
+    fn into(self) -> &'static str {
+        self.identifier()
+    }
+}
 
-    fn try_from(string: &str) -> Result<Self, Self::Error> {
-        match &*string.to_lowercase() {
+impl FromStr for Format {
+    type Err = UnknownFormatError;
+
+    fn from_str(representation: &str) -> Result<Self, Self::Err> {
+        match representation.to_lowercase().as_str() {
             "cbor" => Ok(Self::CBOR),
             "messagepack" => Ok(Self::MessagePack),
             "yaml" => Ok(Self::YAML),
             "json" => Ok(Self::JSON),
             "xjson" => Ok(Self::XJSON),
             "xml" => Ok(Self::XML),
-            _ => Err(UnknownFormatError::new(string)),
+            _ => Err(representation.into()),
         }
     }
 }
 
 impl fmt::Display for Format {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(self.get_identifier(), formatter)
+        fmt::Display::fmt(self.identifier(), formatter)
     }
 }
 
@@ -78,19 +84,4 @@ impl fmt::Display for Format {
 // UnknownFormatError
 //
 
-/// Uknown format error.
-#[derive(Debug, Error)]
-pub struct UnknownFormatError(String);
-
-impl UnknownFormatError {
-    /// Constructor.
-    pub fn new(format: &str) -> Self {
-        Self(format.into())
-    }
-}
-
-impl fmt::Display for UnknownFormatError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.0, formatter)
-    }
-}
+message_error!(UnknownFormatError, "unknown format");

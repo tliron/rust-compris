@@ -26,8 +26,8 @@ base64 = "0.22.1"
 borc = { optional = true, version = "0.6.0" }
 compris-macros = { optional = true, version = "=0.0.2" }
 duplicate = "2.0.0"
-kutil-std = "=0.0.4"
-kutil-cli = "=0.0.6"
+kutil-std = "=0.0.5"
+kutil-cli = "=0.0.7"
 num-traits = "0.2.19"
 ordered-float = "5.0.0"
 rmp = { optional = true, version = "0.8" }
@@ -47,14 +47,20 @@ serde = { version = "1.0.219", features = ["derive"] }
 
 [features]
 default = ["yaml", "json", "xml", "cbor", "messagepack"]
+## Enable YAML support.
 yaml = ["dep:saphyr-parser"]
+## Enable JSON support.
 json = ["dep:struson"]
+## Enable XML support.
 xml = []
+## Enable CBOR support.
 cbor = ["dep:borc"]
+## Enable MessagePack support.
 messagepack = ["dep:rmp"]
 
-# Not default
+## Enable macros.
 derive = ["dep:compris-macros"]
+## Enable serde support.
 serde = [
     "ordered-float/serde",
     "dep:rmp-serde",       # TODO: only when messagepack

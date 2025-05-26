@@ -22,9 +22,9 @@ keywords = ["cps"]
 
 [dependencies]
 anstream = "0.6.18"
-clap = { version = "4.5.38", features = ["derive"] }
+clap = { version = "4.5.39", features = ["derive"] }
 clap_complete_command = "0.6.1"
-kutil-cli = "=0.0.6"
+kutil-cli = "=0.0.7"
 compris = { version = "=0.0.4", features = ["serde"] }
 read-url = { version = "=0.0.4", default-features = false, features = [
     "blocking",

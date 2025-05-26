@@ -7,6 +7,7 @@ mod iterate;
 mod loadable_blob;
 mod net;
 mod option;
+mod parsed;
 mod path;
 mod primitives;
 mod value;
@@ -14,5 +15,5 @@ mod value;
 #[allow(unused_imports)]
 pub use {
     blob::*, collections::*, context::*, error::*, from_str::*, iterate::*, loadable_blob::*, net::*, option::*,
-    path::*, primitives::*, value::*,
+    parsed::*, path::*, primitives::*, value::*,
 };

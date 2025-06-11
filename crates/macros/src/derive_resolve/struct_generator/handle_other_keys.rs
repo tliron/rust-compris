@@ -14,7 +14,7 @@ impl StructGenerator {
 
                 quote! {
                     for (key, value) in &map.value {
-                        if !declared_keys.contains(&key) {
+                        if !declared_keys.contains(key.into()) {
                             #handle_null
                             if let Some(key) = ::compris::resolve::Resolve::resolve_for(key, context, ancestor, errors)? {
                                 if let Some(value) = ::compris::resolve::Resolve::resolve_for(value, context, ancestor, errors)? {
@@ -28,7 +28,7 @@ impl StructGenerator {
 
             None => quote! {
                 for key in map.value.keys() {
-                    if !declared_keys.contains(&key) {
+                    if !declared_keys.contains(key.into()) {
                         errors.give(
                             ::compris::resolve::WithCitationFor::with_citation_for(
                                 ::compris::resolve::InvalidKeyError::new(key.clone()), key, context, ancestor

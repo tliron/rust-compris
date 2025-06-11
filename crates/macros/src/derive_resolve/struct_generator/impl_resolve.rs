@@ -11,10 +11,17 @@ impl StructGenerator {
         if let Some(citations_field_name) = &self.citations_field {
             segments.push(quote! {
                 resolved.#citations_field_name.insert(
-                    ::std::string::String::new(),
+                    "".into(),
                     ::compris::cite::Citation::new_for(self, context, ancestor),
                 );
             });
+        }
+
+        let struct_name = &self.struct_name;
+        let (context, error, impl_generics) = self.generate_impl_resolve_generics();
+
+        if let Some(single_field) = &self.single_field {
+            segments.push(self.generate_handle_single_field(single_field, &context, &error));
         }
 
         for (resolve_field, key) in &self.resolve_fields {
@@ -24,9 +31,6 @@ impl StructGenerator {
         if !self.struct_attribute.ignore_other_keys {
             segments.push(self.generate_handle_other_keys());
         }
-
-        let struct_name = &self.struct_name;
-        let (context, error, impl_generics) = self.generate_impl_resolve_generics();
 
         quote! {
             #[automatically_derived]

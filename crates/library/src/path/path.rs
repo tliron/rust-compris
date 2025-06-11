@@ -1,6 +1,7 @@
 use super::{super::normal::*, route::*, segment::*};
 
 use {
+    bytestring::*,
     kutil_cli::debug::*,
     kutil_std::iter::*,
     std::{
@@ -20,7 +21,7 @@ use {
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Path {
     /// Path segments.
-    pub segments: Vec<PathSegment<String>>,
+    pub segments: Vec<PathSegment<ByteString>>,
 }
 
 impl Path {
@@ -49,7 +50,7 @@ impl Path {
     }
 
     /// Push a new map key path segment.
-    pub fn push_map_key(&mut self, key: String) {
+    pub fn push_map_key(&mut self, key: ByteString) {
         self.segments.push(PathSegment::MapKey(key));
     }
 

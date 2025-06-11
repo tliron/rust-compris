@@ -18,7 +18,7 @@ impl StructGenerator {
                     fn get_field_citation(&self, name: &str) ->
                     ::std::option::Option<&::compris::cite::Citation>
                     {
-                        self.#citations_field_name.get(&::std::string::String::from(name))
+                       self.#citations_field_name.get(name)
                     }
                 }
             })

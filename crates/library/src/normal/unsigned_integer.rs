@@ -98,7 +98,7 @@ impl Hash for UnsignedInteger {
 )]
 impl From<_From> for UnsignedInteger {
     fn from(unsigned_integer: _From) -> Self {
-        UnsignedInteger::new(unsigned_integer as u64)
+        Self::new(unsigned_integer as u64)
     }
 }
 

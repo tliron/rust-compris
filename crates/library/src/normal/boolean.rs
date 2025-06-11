@@ -42,7 +42,7 @@ impl Debuggable for Boolean {
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        context.theme.write_bare(writer, self.value)
+        context.theme.write_symbol(writer, self.value)
     }
 }
 
@@ -85,7 +85,7 @@ impl Hash for Boolean {
 
 impl From<bool> for Boolean {
     fn from(boolean: bool) -> Self {
-        Boolean::new(boolean)
+        Self::new(boolean)
     }
 }
 

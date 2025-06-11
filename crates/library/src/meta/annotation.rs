@@ -1,3 +1,5 @@
+use bytestring::*;
+
 //
 // Annotation
 //
@@ -9,5 +11,5 @@ pub enum Annotation {
     Integer(i64),
 
     /// String annotation.
-    String(String),
+    String(ByteString),
 }

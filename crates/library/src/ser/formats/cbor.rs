@@ -2,7 +2,7 @@ use super::super::*;
 
 use {
     borc::{basic::streaming::*, errors::*},
-    serde::{ser, Serialize},
+    serde::{Serialize, ser},
     std::io::Write,
     tracing::trace,
 };
@@ -30,11 +30,7 @@ impl Serializer {
             write(value, writer)?;
         }
 
-        if self.pretty {
-            Self::write_newline(writer)
-        } else {
-            Ok(())
-        }
+        if self.pretty { Self::write_newline(writer) } else { Ok(()) }
     }
 }
 

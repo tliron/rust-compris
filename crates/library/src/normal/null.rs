@@ -39,7 +39,7 @@ impl Debuggable for Null {
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        context.theme.write_bare(writer, "Null")
+        context.theme.write_symbol(writer, "Null")
     }
 }
 

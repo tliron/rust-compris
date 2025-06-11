@@ -3,6 +3,7 @@ use super::super::meta::*;
 use {
     base64::{prelude::*, *},
     bytes::*,
+    bytestring::*,
     duplicate::*,
     kutil_cli::debug::*,
     std::{borrow::*, cmp::*, fmt, hash::*, io},
@@ -31,7 +32,10 @@ impl Blob {
     }
 
     /// Constructor.
-    pub fn new_from_base64(base64: &str) -> Result<Self, DecodeError> {
+    pub fn new_from_base64<BytesT>(base64: BytesT) -> Result<Self, DecodeError>
+    where
+        BytesT: AsRef<[u8]>,
+    {
         let bytes = BASE64_STANDARD.decode(base64)?;
         Ok(Self::from(bytes))
     }
@@ -58,7 +62,7 @@ impl Debuggable for Blob {
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        context.theme.write_bare(writer, format!("{} bytes", self.value.len()))
+        context.theme.write_symbol(writer, format!("{} bytes", self.value.len()))
     }
 }
 
@@ -113,13 +117,43 @@ impl From<_From> for Blob {
 
 impl From<Cow<'_, [u8]>> for Blob {
     fn from(bytes: Cow<'_, [u8]>) -> Self {
-        Blob::from(bytes.into_owned())
+        match bytes {
+            Cow::Borrowed(bytes) => bytes.to_vec().into(),
+            Cow::Owned(bytes) => bytes.into(),
+        }
+    }
+}
+
+#[duplicate_item(
+  _From;
+  [ByteString];
+  [String];
+  [&str];
+)]
+impl From<_From> for Blob {
+    fn from(string: _From) -> Self {
+        ByteString::from(string).into_bytes().into()
+    }
+}
+
+impl From<Cow<'_, str>> for Blob {
+    fn from(string: Cow<'_, str>) -> Self {
+        match string {
+            Cow::Borrowed(string) => string.into(),
+            Cow::Owned(string) => string.into(),
+        }
     }
 }
 
 impl From<Blob> for Bytes {
     fn from(bytes: Blob) -> Self {
         bytes.value
+    }
+}
+
+impl From<Blob> for Vec<u8> {
+    fn from(bytes: Blob) -> Self {
+        bytes.value.into()
     }
 }
 

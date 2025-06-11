@@ -40,6 +40,12 @@ pub struct FieldAttribute {
     /// Cannot be used together with [FieldAttribute::ignore_null].
     pub null: Option<syn::Expr>,
 
+    /// Will try to resolve to just this field first as a "single" notation.
+    ///
+    /// Can only be used on one field.
+    #[deluxe(default)]
+    pub single: bool,
+
     /// Use this field to store keys that are unused by the fields.
     ///
     /// Can only be used on one field.
@@ -59,7 +65,13 @@ impl FieldAttribute {
     /// Whether this is a valid [FieldAttribute::citations] field.
     pub fn is_citations(&self, field: &syn::Field) -> syn::Result<bool> {
         if self.citations {
-            if self.key.is_some() || self.required || self.ignore_null || self.null.is_some() || self.other_keys {
+            if self.key.is_some()
+                || self.required
+                || self.ignore_null
+                || self.null.is_some()
+                || self.single
+                || self.other_keys
+            {
                 return Err(syn::Error::new(
                     field.span(),
                     "`resolve` attribute: can't specify other flags with `citations`",

@@ -45,7 +45,7 @@ impl Debuggable for Value {
         match self {
             Self::Nothing => {
                 context.separate(writer)?;
-                context.theme.write_bare(writer, "Nothing")
+                context.theme.write_symbol(writer, "Nothing")
             }
             Self::Null(null) => null.to_located().write_debug_for(writer, context),
             Self::Integer(integer) => integer.to_located().write_debug_for(writer, context),

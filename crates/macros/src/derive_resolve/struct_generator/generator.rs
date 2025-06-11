@@ -21,6 +21,9 @@ pub struct StructGenerator {
     /// The fields that should be resolved.
     pub resolve_fields: Vec<(Field, TokenStream)>,
 
+    /// Will try to resolve to just this optional field first as a "single" notation.
+    pub single_field: Option<Field>,
+
     /// The optional field used to store keys that are unused by the fields.
     pub other_keys_field: Option<Field>,
 
@@ -71,6 +74,20 @@ impl StructGenerator {
                                 field.span(),
                                 "`resolve` attribute: can't specify both `ignore_null` and `null`",
                             ));
+                        }
+
+                        if field_attribute.single {
+                            if generator.single_field.is_some() {
+                                return Err(syn::Error::new(
+                                    field.span(),
+                                    "`resolve` attribute: only one field may specify `single`",
+                                ));
+                            } else {
+                                generator.single_field = Some(Field {
+                                    name: field_name.to_token_stream(),
+                                    attribute: field_attribute.clone(),
+                                });
+                            }
                         }
 
                         if field_attribute.other_keys {

@@ -17,12 +17,12 @@ impl StructGenerator {
                 {
                     fn get_citation(&self) -> ::std::option::Option<&::compris::cite::Citation>
                     {
-                        self.#citations_field_name.get(&::std::string::String::new())
+                        self.#citations_field_name.get("")
                     }
 
                     fn get_citation_mut(&mut self) -> ::std::option::Option<&mut ::compris::cite::Citation>
                     {
-                        self.#citations_field_name.get_mut(&::std::string::String::new())
+                        self.#citations_field_name.get_mut("")
                     }
                 }
             })

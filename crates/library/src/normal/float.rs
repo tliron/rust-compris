@@ -100,13 +100,13 @@ impl Hash for Float {
 )]
 impl From<_From> for Float {
     fn from(float: _From) -> Self {
-        Float::new((float as f64).into())
+        Self::new((float as f64).into())
     }
 }
 
 impl From<OrderedFloat<f64>> for Float {
     fn from(float: OrderedFloat<f64>) -> Self {
-        Float::new(float)
+        Self::new(float)
     }
 }
 

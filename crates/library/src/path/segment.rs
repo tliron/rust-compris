@@ -1,4 +1,5 @@
 use {
+    bytestring::*,
     kutil_cli::debug::*,
     std::{fmt, io},
 };
@@ -71,10 +72,10 @@ where
     KeyT: fmt::Display,
 {
     /// To string keys.
-    pub fn to_string_keys(&self) -> PathSegment<String> {
+    pub fn to_string_keys(&self) -> PathSegment<ByteString> {
         match self {
             Self::ListIndex(index) => PathSegment::ListIndex(*index),
-            Self::MapKey(key) => PathSegment::MapKey(key.to_string()),
+            Self::MapKey(key) => PathSegment::MapKey(key.to_string().into()),
         }
     }
 }

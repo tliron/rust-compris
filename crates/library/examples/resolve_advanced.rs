@@ -2,6 +2,7 @@ mod utils;
 
 use {
     anstream::{print, println},
+    bytestring::*,
     compris::{cite::*, normal::*, parse::*, resolve::*, *},
     kutil_cli::debug::*,
     kutil_std::error::*,
@@ -38,7 +39,7 @@ struct User {
     // The citations field must support ".insert(String, Citation)"
     // The citation for the struct itself will be under the empty string key
     #[resolve(citations)]
-    citations: HashMap<String, Citation>,
+    citations: HashMap<ByteString, Citation>,
 }
 
 pub fn main() {

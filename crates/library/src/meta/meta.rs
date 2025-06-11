@@ -1,6 +1,6 @@
 use super::{annotation::*, location::*};
 
-use {kutil_cli::debug::*, std::fmt, std::io};
+use {bytestring::*, kutil_cli::debug::*, std::fmt, std::io};
 
 //
 // Meta
@@ -109,7 +109,7 @@ pub trait HasMeta: Sized {
     }
 
     /// Sets the annotation metadata as a string.
-    fn with_annotation_string(self, annotation: String) -> Self {
+    fn with_annotation_string(self, annotation: ByteString) -> Self {
         self.with_annotation(Some(Annotation::String(annotation)))
     }
 

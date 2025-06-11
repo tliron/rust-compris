@@ -67,6 +67,26 @@ impl From<_From> for Value {
     }
 }
 
+// Iterators -> Value
+
+impl FromIterator<Value> for Value {
+    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
+    where
+        IntoIteratorT: IntoIterator<Item = Value>,
+    {
+        List::from_iter(iterator).into()
+    }
+}
+
+impl FromIterator<(Value, Value)> for Value {
+    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
+    where
+        IntoIteratorT: IntoIterator<Item = (Value, Value)>,
+    {
+        Map::from_iter(iterator).into()
+    }
+}
+
 // Value -> native types (possible cloning)
 
 #[duplicate_item(
@@ -78,7 +98,6 @@ impl From<_From> for Value {
   [Boolean]          ["boolean"]           [bool];
   [Text]             ["text"]              [String];
   [Text]             ["text"]              [ByteString];
-  [Blob]             ["blob"]              [Bytes];
   [List]             ["list"]              [Vec<Value>];
   [Map]              ["Map"]               [BTreeMap<Value, Value>];
 )]
@@ -105,21 +124,15 @@ impl TryFrom<Value> for () {
     }
 }
 
-impl FromIterator<Value> for Value {
-    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
-    where
-        IntoIteratorT: IntoIterator<Item = Value>,
-    {
-        List::from_iter(iterator).into()
-    }
-}
+impl TryFrom<Value> for Bytes {
+    type Error = ConversionError;
 
-impl FromIterator<(Value, Value)> for Value {
-    fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
-    where
-        IntoIteratorT: IntoIterator<Item = (Value, Value)>,
-    {
-        Map::from_iter(iterator).into()
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Blob(blob) => Ok(blob.value),
+            Value::Text(text) => Ok(text.value.into_bytes()),
+            _ => Err(IncompatibleValueTypeError::new(&value, &["blob", "text"]).into()),
+        }
     }
 }
 
@@ -132,7 +145,6 @@ impl FromIterator<(Value, Value)> for Value {
   [Boolean]          ["boolean"]           [bool]                    [normal.value];
   [Text]             ["text"]              [String]                  [normal.value.clone().into()];
   [Text]             ["text"]              [ByteString]              [normal.value.clone()];
-  [Blob]             ["blob"]              [Bytes]                   [normal.value.clone()];
   [List]             ["list"]              [Vec<Value>]              [normal.value.clone()];
   [Map]              ["Map"]               [BTreeMap<Value, Value>]  [normal.value.clone()];
 )]
@@ -144,6 +156,18 @@ impl TryFrom<&Value> for _To {
         match value {
             Value::_FromNormal(normal) => Ok(_As),
             _ => Err(IncompatibleValueTypeError::new(value, &[_Name]).into()),
+        }
+    }
+}
+
+impl TryFrom<&Value> for Bytes {
+    type Error = ConversionError;
+
+    fn try_from(value: &Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Blob(blob) => Ok(blob.value.clone()),
+            Value::Text(text) => Ok(text.value.clone().into_bytes()),
+            _ => Err(IncompatibleValueTypeError::new(&value, &["blob", "text"]).into()),
         }
     }
 }

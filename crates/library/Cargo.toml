@@ -34,7 +34,7 @@ num-traits = "0.2.19"
 ordered-float = "5.0.0"
 rmp = { optional = true, version = "0.8" }
 rmp-serde = { optional = true, version = "1.3.0" }
-saphyr-parser = { optional = true, version = "0.0.5" }
+saphyr-parser = { optional = true, version = "0.0.6" }
 serde = { optional = true, version = "1.0.219" }
 serde-xml-rs = { optional = true, version = "0.8.1" }
 serde_yml = { optional = true, version = "0.0.12" }       # YAML (eventually replace with saphyr-serde?)

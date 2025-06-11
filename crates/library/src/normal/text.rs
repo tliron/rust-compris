@@ -102,13 +102,16 @@ impl Hash for Text {
 )]
 impl From<_From> for Text {
     fn from(string: _From) -> Self {
-        Text::new(string.into())
+        Self::new(string.into())
     }
 }
 
 impl From<Cow<'_, str>> for Text {
     fn from(string: Cow<'_, str>) -> Self {
-        Text::from(string.as_ref())
+        match string {
+            Cow::Borrowed(string) => string.into(),
+            Cow::Owned(string) => string.into(),
+        }
     }
 }
 

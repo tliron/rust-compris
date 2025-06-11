@@ -119,7 +119,7 @@ impl YamlReceiver {
                 "binary" => {
                     // https://yaml.org/type/binary.html
                     if self.allow_legacy_types {
-                        return Ok(Blob::new_from_base64(&value)?.with_location(Some(location)).into());
+                        return Ok(Blob::new_from_base64(value.as_ref())?.with_location(Some(location)).into());
                     } else {
                         trace!("unsupported legacy tag suffix: {}{}", tag_prefix, tag_suffix);
                     }

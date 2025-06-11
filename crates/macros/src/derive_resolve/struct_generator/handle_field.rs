@@ -9,7 +9,7 @@ impl StructGenerator {
             let quoted_field_name = field.name.to_string().to_token_stream();
             quote! {
                 resolved.#citations_field_name.insert(
-                    ::std::string::String::from(#quoted_field_name),
+                    #quoted_field_name.into(),
                     ::compris::cite::Citation::new_for(value, context, ancestor),
                 );
             }

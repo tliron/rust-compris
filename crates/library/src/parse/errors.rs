@@ -37,18 +37,22 @@ pub enum ParseError {
     ParseFloat(#[from] ParseFloatError),
 
     /// Saphyr (YAML).
+    #[cfg(feature = "yaml")]
     #[error("Saphyr YAML: {0}")]
     Saphyr(#[from] saphyr_parser::ScanError),
 
     /// Struson (JSON).
+    #[cfg(feature = "json")]
     #[error("Struson JSON: {0}")]
     Struson(#[from] struson::reader::ReaderError),
 
     /// Borc (CBOR).
+    #[cfg(feature = "cbor")]
     #[error("Borc CBOR: {0}")]
     Borc(#[from] borc::errors::DecodeError),
 
     /// RMP (MessagePack).
+    #[cfg(feature = "messagepack")]
     #[error("RMP MessagePack: {0}")]
     RMP(#[from] rmp::decode::ValueReadError),
 

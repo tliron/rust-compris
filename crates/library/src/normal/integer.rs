@@ -98,7 +98,7 @@ impl Hash for Integer {
 )]
 impl From<_From> for Integer {
     fn from(integer: _From) -> Self {
-        Integer::new(integer as i64)
+        Self::new(integer as i64)
     }
 }
 

@@ -42,6 +42,11 @@ Supported Representation Formats
 * [CBOR](https://cbor.io/)
 * [MessagePack](https://msgpack.org/)
 
+All formats are enabled by default but can be turned on selectively using
+[`default-features = false`](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features).
+
+Need more formats? We accept contributions and suggestions!
+
 Compris can parse any of these formats into its "normal" value types, which provide many
 utility functions for convenient access and transformation of the nested data.
 
@@ -53,10 +58,8 @@ useful blanket traits, a sprinkling of macros, and absolutely no `dyn`.
 The normal types also include file location information (row and column) as metadata, for
 referring back to the textual format sources (YAML, JSON, and XML).
 
-All formats are enabled by default but can be turned on selectively using
-[`default-features = false`](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features).
-
-Need more formats? We accept contributions and suggestions!
+The implementation relies on the [bytes](https://github.com/tokio-rs/bytes) and
+[bytestring](https://crates.io/crates/bytestring) libraries to ensure low-cost cloning.
 
 [Example](crates/library/examples/parse.rs).
 

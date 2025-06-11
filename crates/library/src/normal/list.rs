@@ -182,7 +182,7 @@ impl<'own> IntoIterator for &'own mut List {
 
 impl From<Vec<Value>> for List {
     fn from(vector: Vec<Value>) -> Self {
-        List::new_with(vector)
+        Self::new_with(vector)
     }
 }
 
@@ -210,9 +210,9 @@ impl<'own> From<&'own List> for &'own Vec<Value> {
 impl From<Map> for List {
     /// List where all items are themselves lists of length 2 (key-value pairs).
     fn from(map: Map) -> Self {
-        let mut list = List::new();
+        let mut list = Self::new();
         for (key, value) in map {
-            let entry = List::new_with(vec![key.clone(), value.clone()]);
+            let entry = Self::new_with(vec![key.clone(), value.clone()]);
             list.value.push(entry.into());
         }
         list

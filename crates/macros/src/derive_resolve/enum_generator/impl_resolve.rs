@@ -12,6 +12,11 @@ impl EnumGenerator {
         let human_readable_key_list = &self.human_readable_key_list;
         let (context, error, impl_generics) = self.generate_impl_resolve_generics();
 
+        let handle_single_variant = match &self.single_variant {
+            Some(single_variant) => self.generate_handle_single_variant(single_variant, &context, &error),
+            None => TokenStream::new(),
+        };
+
         for select_variant in &self.select_variants {
             segments.push(self.generate_handle_variant(select_variant));
         }
@@ -38,6 +43,8 @@ impl EnumGenerator {
                     if ancestor.is_none() {
                         ancestor = Some(self)
                     }
+
+                    #handle_single_variant
 
                     ::compris::resolve::ResolveResult::Ok(
                         match self.to_key_value_pair() {

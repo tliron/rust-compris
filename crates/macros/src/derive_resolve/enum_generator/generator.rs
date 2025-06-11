@@ -21,6 +21,9 @@ pub struct EnumGenerator {
     /// The variants that should be selected for.
     pub select_variants: Vec<Variant>,
 
+    /// Will try to resolve to just this optional variant first as a "single" notation.
+    pub single_variant: Option<Variant>,
+
     /// Human-readable variant key list.
     pub human_readable_key_list: String,
 }
@@ -45,11 +48,24 @@ impl EnumGenerator {
             syn::Data::Enum(data) => {
                 for variant in data.variants.iter_mut() {
                     if attributes_have_ident(&variant.attrs, "resolve") {
-                        if matches!(variant.fields, syn::Fields::Named(_)) {
-                            return Err(syn::Error::new(
-                                variant.ident.span(),
-                                "`Resolve`: variants with named fields are not supported",
-                            ));
+                        match &variant.fields {
+                            syn::Fields::Unnamed(fields) => {
+                                if fields.unnamed.len() != 1 {
+                                    return Err(syn::Error::new(
+                                        variant.ident.span(),
+                                        "`Resolve`: variants must have exactly 1 unnamed field",
+                                    ));
+                                }
+                            }
+
+                            syn::Fields::Named(_) => {
+                                return Err(syn::Error::new(
+                                    variant.ident.span(),
+                                    "`Resolve`: variants with named fields are not supported",
+                                ));
+                            }
+
+                            syn::Fields::Unit => {}
                         }
 
                         let variant_attribute: VariantAttribute = extract_attributes(variant)?;
@@ -59,6 +75,21 @@ impl EnumGenerator {
                             Some(key) => key.to_token_stream(),
                             None => (&variant_name.to_string()).to_token_stream(), // will add quotation marks
                         };
+
+                        if variant_attribute.single {
+                            if generator.single_variant.is_some() {
+                                return Err(syn::Error::new(
+                                    variant.ident.span(),
+                                    "`resolve` attribute: only one variant may specify `single`",
+                                ));
+                            } else {
+                                generator.single_variant = Some(Variant {
+                                    key: key.clone(),
+                                    name: variant_name.to_token_stream(),
+                                    newtype: !variant.fields.is_empty(),
+                                });
+                            }
+                        }
 
                         if !generator.human_readable_key_list.is_empty() {
                             generator.human_readable_key_list += " or ";

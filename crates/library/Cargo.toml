@@ -60,7 +60,7 @@ cbor = ["dep:borc"]
 ## Enable MessagePack support.
 messagepack = ["dep:rmp"]
 
-## Enable macros.
+## Include procedural macros for `derive`.
 derive = ["dep:compris-macros"]
 ## Enable serde support.
 serde = [

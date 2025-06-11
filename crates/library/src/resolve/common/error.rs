@@ -33,7 +33,7 @@ pub enum CommonResolveError {
 
     /// Invalid key.
     #[error("invalid key: {0}")]
-    UnknownKey(#[from] InvalidKeyError),
+    InvalidKey(#[from] InvalidKeyError),
 }
 
 impl ResolveError for CommonResolveError {}
@@ -47,7 +47,7 @@ impl Citable for CommonResolveError {
             Self::Conversion(conversion) => conversion.get_citation(),
             Self::Malformed(malformed) => malformed.get_citation(),
             Self::MissingRequiredKey(missing_required_key) => missing_required_key.get_citation(),
-            Self::UnknownKey(invalid_key) => invalid_key.get_citation(),
+            Self::InvalidKey(invalid_key) => invalid_key.get_citation(),
         }
     }
 
@@ -57,7 +57,7 @@ impl Citable for CommonResolveError {
             Self::Conversion(conversion) => conversion.get_citation_mut(),
             Self::Malformed(malformed) => malformed.get_citation_mut(),
             Self::MissingRequiredKey(missing_required_key) => missing_required_key.get_citation_mut(),
-            Self::UnknownKey(invalid_key) => invalid_key.get_citation_mut(),
+            Self::InvalidKey(invalid_key) => invalid_key.get_citation_mut(),
         }
     }
 }
@@ -73,7 +73,7 @@ impl Debuggable for CommonResolveError {
             }
             Self::Conversion(conversion) => conversion.write_debug_for(writer, context),
             Self::Malformed(malformed) => malformed.write_debug_for(writer, context),
-            Self::UnknownKey(invalid_key) => invalid_key.write_debug_for(writer, context),
+            Self::InvalidKey(invalid_key) => invalid_key.write_debug_for(writer, context),
             Self::MissingRequiredKey(missing_required_key) => missing_required_key.write_debug_for(writer, context),
         }
     }

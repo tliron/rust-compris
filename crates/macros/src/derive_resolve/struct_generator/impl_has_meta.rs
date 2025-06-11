@@ -17,12 +17,12 @@ impl StructGenerator {
                 {
                     fn get_meta(&self) -> ::std::option::Option<&::compris::meta::Meta>
                     {
-                        self.#citations_field_name.get(&::std::string::String::new())?.meta.as_ref()
+                        self.#citations_field_name.get("")?.meta.as_ref()
                     }
 
                     fn get_meta_mut(&mut self) -> ::std::option::Option<&mut ::compris::meta::Meta>
                     {
-                        self.#citations_field_name.get_mut(&::std::string::String::new())?.meta.as_mut()
+                        self.#citations_field_name.get_mut("")?.meta.as_mut()
                     }
                 }
             })

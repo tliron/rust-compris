@@ -1,6 +1,6 @@
 use super::super::{meta::*, path::*};
 
-use {kutil_cli::debug::*, std::io};
+use {bytestring::*, kutil_cli::debug::*, std::io};
 
 //
 // Citation
@@ -10,7 +10,7 @@ use {kutil_cli::debug::*, std::io};
 #[derive(Clone, Debug, Default)]
 pub struct Citation {
     /// Optional name of source.
-    pub source: Option<String>,
+    pub source: Option<ByteString>,
 
     /// Optional location in source.
     pub meta: Option<Meta>,
@@ -21,7 +21,7 @@ pub struct Citation {
 
 impl Citation {
     /// Constructor.
-    pub fn new(source: Option<String>, location: Option<Location>, path: Option<Path>) -> Self {
+    pub fn new(source: Option<ByteString>, location: Option<Location>, path: Option<Path>) -> Self {
         let meta = location.map(|location| Meta::new().with_location(Some(location)));
         Self { source, meta, path }
     }

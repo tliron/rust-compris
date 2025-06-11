@@ -177,7 +177,7 @@ impl<'own> IntoIterator for &'own mut Map {
 
 impl From<BTreeMap<Value, Value>> for Map {
     fn from(map: BTreeMap<Value, Value>) -> Self {
-        Map::new_with(map)
+        Self::new_with(map)
     }
 }
 

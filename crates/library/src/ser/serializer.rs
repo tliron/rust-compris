@@ -175,6 +175,7 @@ impl Serializer {
 
     // Utils
 
+    #[allow(dead_code)]
     pub(crate) fn write_newline<WriteT>(writer: &mut WriteT) -> Result<(), SerializeError>
     where
         WriteT: Write,
@@ -183,6 +184,7 @@ impl Serializer {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub(crate) fn base64_writer<'own, WriteT>(
         writer: &'own mut WriteT,
     ) -> base64::write::EncoderWriter<'own, base64::engine::GeneralPurpose, &'own mut WriteT>

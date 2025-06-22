@@ -45,63 +45,63 @@ where
         Marker::Reserved => {}
 
         Marker::Null => {
-            value_builder.add(Null::new());
+            value_builder.add(Null::new(), None);
         }
 
         Marker::True => {
-            value_builder.add(Boolean::new(true));
+            value_builder.add(Boolean::new(true), None);
         }
 
         Marker::False => {
-            value_builder.add(Boolean::new(false));
+            value_builder.add(Boolean::new(false), None);
         }
 
         Marker::FixNeg(integer) => {
-            value_builder.add(Integer::new(integer as i64));
+            value_builder.add(Integer::new(integer as i64), None);
         }
 
         Marker::I8 => {
-            value_builder.add(Integer::new(read_i8(reader)? as i64));
+            value_builder.add(Integer::new(read_i8(reader)? as i64), None);
         }
 
         Marker::I16 => {
-            value_builder.add(Integer::new(read_i16(reader)? as i64));
+            value_builder.add(Integer::new(read_i16(reader)? as i64), None);
         }
 
         Marker::I32 => {
-            value_builder.add(Integer::new(read_i32(reader)? as i64));
+            value_builder.add(Integer::new(read_i32(reader)? as i64), None);
         }
 
         Marker::I64 => {
-            value_builder.add(Integer::new(read_i64(reader)?));
+            value_builder.add(Integer::new(read_i64(reader)?), None);
         }
 
         Marker::FixPos(integer) => {
-            value_builder.add(UnsignedInteger::new(integer as u64));
+            value_builder.add(UnsignedInteger::new(integer as u64), None);
         }
 
         Marker::U8 => {
-            value_builder.add(UnsignedInteger::new(read_u8(reader)? as u64));
+            value_builder.add(UnsignedInteger::new(read_u8(reader)? as u64), None);
         }
 
         Marker::U16 => {
-            value_builder.add(UnsignedInteger::new(read_u16(reader)? as u64));
+            value_builder.add(UnsignedInteger::new(read_u16(reader)? as u64), None);
         }
 
         Marker::U32 => {
-            value_builder.add(UnsignedInteger::new(read_u32(reader)? as u64));
+            value_builder.add(UnsignedInteger::new(read_u32(reader)? as u64), None);
         }
 
         Marker::U64 => {
-            value_builder.add(UnsignedInteger::new(read_u64(reader)?));
+            value_builder.add(UnsignedInteger::new(read_u64(reader)?), None);
         }
 
         Marker::F32 => {
-            value_builder.add(Float::from(read_f32(reader)?));
+            value_builder.add(Float::from(read_f32(reader)?), None);
         }
 
         Marker::F64 => {
-            value_builder.add(Float::from(read_f64(reader)?));
+            value_builder.add(Float::from(read_f64(reader)?), None);
         }
 
         Marker::Bin8 => {
@@ -225,7 +225,7 @@ where
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
     let string = String::from_utf8(buffer)?;
-    Ok(value_builder.add(Text::from(string)))
+    Ok(value_builder.add(Text::from(string), None))
 }
 
 fn read_message_pack_bytes<ReadT>(
@@ -239,7 +239,7 @@ where
     trace!("bytes length: {}", length);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(Blob::from(buffer)))
+    Ok(value_builder.add(Blob::from(buffer), None))
 }
 
 fn read_message_pack_ext<ReadT>(
@@ -254,7 +254,7 @@ where
     trace!("ext type: {}", annotation);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(Blob::from(buffer).with_annotation_integer(annotation)))
+    Ok(value_builder.add(Blob::from(buffer).with_annotation_integer(annotation), None))
 }
 
 fn read_message_pack_array<ReadT>(
@@ -266,7 +266,7 @@ where
     ReadT: io::Read,
 {
     trace!("array length: {}", length);
-    value_builder.start_list();
+    value_builder.start_list(None);
     for _ in 0..length {
         read_next_message_pack(reader, value_builder)?;
     }
@@ -283,7 +283,7 @@ where
     ReadT: io::Read,
 {
     trace!("map length: {}", length);
-    value_builder.start_map();
+    value_builder.start_map(None);
     for _ in 0..length {
         read_next_message_pack(reader, value_builder)?;
         read_next_message_pack(reader, value_builder)?;

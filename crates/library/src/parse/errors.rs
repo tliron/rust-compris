@@ -20,6 +20,10 @@ pub enum ParseError {
     #[error("hint: {0}")]
     Hint(string::String),
 
+    /// Reference not found.
+    #[error("reference not found: {0}")]
+    ReferenceNotFound(usize),
+
     /// I/O.
     #[error("I/O: {0}")]
     IO(#[from] io::Error),

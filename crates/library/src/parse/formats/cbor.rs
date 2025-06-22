@@ -56,46 +56,46 @@ where
         }
 
         Event::Null => {
-            value_builder.add(Null::new().with_annotation(annotation));
+            value_builder.add(Null::new().with_annotation(annotation), None);
         }
 
         Event::Unsigned(unsigned_integer) => {
-            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation(annotation));
+            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation(annotation), None);
         }
 
         Event::Signed(integer) => {
             let integer = Event::interpret_signed_checked(integer).ok_or_else(|| DecodeError::Malformed)?;
-            value_builder.add(Integer::new(integer).with_annotation(annotation));
+            value_builder.add(Integer::new(integer).with_annotation(annotation), None);
         }
 
         Event::Float(float) => {
-            value_builder.add(Float::from(float).with_annotation(annotation));
+            value_builder.add(Float::from(float).with_annotation(annotation), None);
         }
 
         Event::Bool(boolean) => {
-            value_builder.add(Boolean::new(boolean).with_annotation(annotation));
+            value_builder.add(Boolean::new(boolean).with_annotation(annotation), None);
         }
 
         Event::TextString(string) => {
-            value_builder.add(Text::from(string).with_annotation(annotation));
+            value_builder.add(Text::from(string).with_annotation(annotation), None);
         }
 
         Event::UnknownLengthTextString => {
             let string = read_cbor_unknown_length_text_string(decoder)?;
-            value_builder.add(Text::from(string).with_annotation(annotation));
+            value_builder.add(Text::from(string).with_annotation(annotation), None);
         }
 
         Event::ByteString(bytes) => {
-            value_builder.add(Blob::from(bytes).with_annotation(annotation));
+            value_builder.add(Blob::from(bytes).with_annotation(annotation), None);
         }
 
         Event::UnknownLengthByteString => {
             let bytes = read_cbor_unknown_length_bytes(decoder)?;
-            value_builder.add(Blob::from(bytes).with_annotation(annotation));
+            value_builder.add(Blob::from(bytes).with_annotation(annotation), None);
         }
 
         Event::Array(length) => {
-            value_builder.start_list_with_annotation(annotation);
+            value_builder.start_list_with_annotation(annotation, None);
             for _ in 0..length {
                 read_next_cbor(decoder, value_builder, None)?;
             }
@@ -103,7 +103,7 @@ where
         }
 
         Event::UnknownLengthArray => {
-            value_builder.start_list_with_annotation(annotation);
+            value_builder.start_list_with_annotation(annotation, None);
             loop {
                 match decoder.next_event()? {
                     Event::Break => {
@@ -119,7 +119,7 @@ where
         }
 
         Event::Map(length) => {
-            value_builder.start_map_with_annotation(annotation);
+            value_builder.start_map_with_annotation(annotation, None);
             for _ in 0..length {
                 read_next_cbor(decoder, value_builder, None)?;
                 read_next_cbor(decoder, value_builder, None)?;
@@ -128,7 +128,7 @@ where
         }
 
         Event::UnknownLengthMap => {
-            value_builder.start_map_with_annotation(annotation);
+            value_builder.start_map_with_annotation(annotation, None);
             loop {
                 match decoder.next_event()? {
                     Event::Break => {

@@ -10,7 +10,6 @@ use {
         io::{self, IsTerminal},
         path,
     },
-    tracing::*,
 };
 
 impl CLI {
@@ -34,7 +33,7 @@ impl CLI {
 
                 let url = context.url_or_file_path(input_url)?;
 
-                info!("reading from URL: {}", url);
+                tracing::info!("reading from URL: {}", url);
 
                 let input_url_extension = {
                     if let Some(extension) = path::Path::new(input_url).extension() {
@@ -54,7 +53,7 @@ impl CLI {
                     return Err(Exit::success().into());
                 }
 
-                info!("reading from stdin");
+                tracing::info!("reading from stdin");
                 Ok((Box::new(stdin), None))
             }
         }
@@ -67,13 +66,13 @@ impl CLI {
         let input_format = match &self.input_format {
             Some(format) => {
                 let format = format.to_string();
-                info!("forced input format: {}", format);
+                tracing::info!("forced input format: {}", format);
                 format
             }
 
             None => match input_url_extension {
                 Some(format) => {
-                    info!("input format from URL extension: {}", format);
+                    tracing::info!("input format from URL extension: {}", format);
                     format.into()
                 }
 
@@ -106,7 +105,7 @@ impl CLI {
         match &self.output_format {
             Some(output_format) => {
                 let output_format = output_format.to_string();
-                info!("output format: {}", output_format);
+                tracing::info!("output format: {}", output_format);
                 match &*output_format {
                     "debug" => None,
                     _ => Some(output_format.parse().expect("format")),
@@ -114,7 +113,7 @@ impl CLI {
             }
 
             None => {
-                info!("output format set to input format: {}", input_format);
+                tracing::info!("output format set to input format: {}", input_format);
                 Some(input_format.clone())
             }
         }
@@ -123,23 +122,23 @@ impl CLI {
     fn get_writer(&self, output_format: &Option<compris::Format>) -> Box<dyn io::Write> {
         match &self.output_path {
             Some(output_path) => {
-                info!("writing to file: {}", output_path.display());
+                tracing::info!("writing to file: {}", output_path.display());
                 Box::new(io::BufWriter::new(File::create(output_path).expect("file create")))
             }
 
             None => {
                 if self.quiet {
-                    info!("writing to empty");
+                    tracing::info!("writing to empty");
                     return Box::new(io::empty());
                 } else {
                     if let Some(output_format) = &output_format {
                         if output_format.is_binary() && !self.output_base64 {
-                            info!("writing to stdout (raw)");
+                            tracing::info!("writing to stdout (raw)");
                             return Box::new(io::stdout());
                         }
                     }
 
-                    info!("writing to stdout");
+                    tracing::info!("writing to stdout");
                     Box::new(anstream::stdout())
                 }
             }

@@ -9,9 +9,9 @@ use super::super::{
 };
 
 use {
+    kutil_io::reader::*,
     saphyr_parser::{Event, Parser as SaphyrParser, Span, *},
     std::{borrow::*, io},
-    tracing::*,
 };
 
 impl Parser {
@@ -27,11 +27,9 @@ impl Parser {
         // https://github.com/saphyr-rs/saphyr/issues/17
         // https://github.com/saphyr-rs/saphyr/issues/16
 
-        let mut string = String::new();
-        reader.read_to_string(&mut string)?;
         let mut receiver =
             YamlReceiver::new(self.try_unsigned_integers, self.allow_legacy_words, self.allow_legacy_types);
-        SaphyrParser::new_from_str(&string).load(&mut receiver, false)?;
+        SaphyrParser::new_from_iter(io::BufReader::new(reader).chars()).load(&mut receiver, false)?;
         receiver.value()
     }
 }
@@ -121,16 +119,16 @@ impl YamlReceiver {
                     if self.allow_legacy_types {
                         return Ok(Blob::new_from_base64(value.as_ref())?.with_location(Some(location)).into());
                     } else {
-                        trace!("unsupported legacy tag suffix: {}{}", tag_prefix, tag_suffix);
+                        tracing::trace!("unsupported legacy tag suffix: {}{}", tag_prefix, tag_suffix);
                     }
                 }
 
                 _ => {
-                    trace!("unsupported tag suffix: {}{}", tag_prefix, tag_suffix);
+                    tracing::trace!("unsupported tag suffix: {}{}", tag_prefix, tag_suffix);
                 }
             }
         } else {
-            trace!("unsupported tag prefix: {}{}", tag_prefix, tag_suffix);
+            tracing::trace!("unsupported tag prefix: {}{}", tag_prefix, tag_suffix);
         }
 
         // Silently treat unsupported tag prefixes as strings
@@ -245,53 +243,60 @@ impl YamlReceiver {
 
 impl<'own, 'input> SpannedEventReceiver<'input> for YamlReceiver {
     fn on_event(&mut self, event: Event, span: Span) {
-        trace!("{:?} {:?}", event, span);
+        tracing::trace!("{:?} {:?}", event, span);
 
         match event {
-            Event::SequenceStart(_anchor_id, _tag) => {
+            Event::SequenceStart(anchor_id, _tag) => {
                 let span = self.last_span.unwrap_or_else(|| span);
-                self.value_builder.start_list_with_location(Some(span.into()));
+                self.value_builder.start_list_with_location(Some(span.into()), anchor(anchor_id));
             }
 
             Event::SequenceEnd => {
                 self.value_builder.end_container();
             }
 
-            Event::MappingStart(_anchor_id, _tag) => {
+            Event::MappingStart(anchor_id, _tag) => {
                 let span = self.last_span.unwrap_or_else(|| span);
-                self.value_builder.start_map_with_location(Some(span.into()));
+                self.value_builder.start_map_with_location(Some(span.into()), anchor(anchor_id));
             }
 
             Event::MappingEnd => {
                 self.value_builder.end_container();
             }
 
-            Event::Scalar(value, style, _anchor_id, tag) => {
+            Event::Scalar(value, style, anchor_id, tag) => {
                 if style != ScalarStyle::Plain {
                     // All non-plain scalars are strings
-                    self.value_builder.add(Text::from(value).with_location(Some(span.into())));
+                    self.value_builder.add(Text::from(value).with_location(Some(span.into())), anchor(anchor_id));
                 } else {
                     // Tagged plain scalar?
                     if let Some(tag) = tag {
                         match self.parse_yaml_tagged_scalar(value, &tag.handle, &tag.suffix, span.into()) {
-                            Ok(value) => self.value_builder.add(value),
+                            Ok(value) => self.value_builder.add(value, anchor(anchor_id)),
                             Err(error) => {
                                 // See: https://github.com/saphyr-rs/saphyr/issues/20
                                 self.error = Some(error.into());
-                                self.value_builder.add(Value::Nothing);
+                                self.value_builder.add(Value::Nothing, anchor(anchor_id));
                             }
                         }
                     } else {
                         // Plain and untagged scalar, so determine type heuristically
                         match self.parse_yaml_bare_scalar(value, span.into()) {
-                            Ok(value) => self.value_builder.add(value),
+                            Ok(value) => self.value_builder.add(value, anchor(anchor_id)),
                             Err(error) => {
                                 // See: https://github.com/saphyr-rs/saphyr/issues/20
                                 self.error = Some(error.into());
-                                self.value_builder.add(Value::Nothing);
+                                self.value_builder.add(Value::Nothing, anchor(anchor_id));
                             }
                         }
                     }
+                }
+            }
+
+            Event::Alias(anchor_id) => {
+                if let Err(error) = self.value_builder.add_referenced(anchor_id) {
+                    self.error = Some(error);
+                    self.value_builder.add(Value::Nothing, None);
                 }
             }
 
@@ -331,4 +336,8 @@ impl From<&Location> for Marker {
 
         Marker::new(location.index.unwrap_or(0), row, column)
     }
+}
+
+fn anchor(anchor_id: usize) -> Option<usize> {
+    if anchor_id != 0 { Some(anchor_id) } else { None }
 }

@@ -12,9 +12,9 @@ What is CPS? It's the implicit data schema underlying JSON and many other repres
 
 And yet despite being so widely used, it has been unnamed... until now. You're welcome.
 
-CPS is sometimes glossed as "JSON", but that's misleading and ultimately unhelpful because JSON is merely one representation format for the data, and is actually comparitively quite limited (e.g. implementations do not often preserve the distinction between integers and floats). So instead of saying "let's just store it as JSON", say "let's just store it as CPS", and use Compris to handle the representation. It will allow you and your users to select from several formats at runtime.
+CPS is sometimes glossed as "JSON", but that's misleading and ultimately unhelpful because JSON is merely one representation format for the data, and is actually comparatively quite limited (e.g. implementations do not often preserve the distinction between integers and floats). So instead of saying "let's just store it as JSON", say "let's just store it as CPS", and use Compris to handle the representation. It will allow you and your users to select from several formats at runtime.
 
-See [here](CPS.md) for a full descripton of CPS.
+See [here](https://github.com/tliron/rust-compris/blob/main/CPS.md) for a full descripton of CPS.
 
 Compris is pronounced "com-PREE". The name comes from shortening CompositePrimitiveSchema to ComPriS.
 
@@ -45,14 +45,14 @@ The normal types also include file location information (row and column) as meta
 
 The implementation relies on the [bytes](https://github.com/tokio-rs/bytes) and [bytestring](https://crates.io/crates/bytestring) libraries to ensure low-cost cloning.
 
-[Example](crates/library/examples/parse.rs).
+[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/parse.rs).
 
 Traverse
 --------
 
 Included are ergonomic facilities for accessing nested values by path and for presenting paths in a human-readable format.
 
-[Example](crates/library/examples/traverse.rs).
+[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/traverse.rs).
 
 Resolve
 -------
@@ -65,7 +65,7 @@ Does Compris's resolve feature sound a bit like Serde deserialization? At its si
 
 Compris's resolve is designed as a foundation for sophisticated CPS-based syntax parsers. You can even create your own procedural macros to generate specialized implementations that go beyond `#[derive(Resolve)]`. Our [source code](crates/macros) might help you get a grip on this challenging corner of Rust programming.
 
-[Basic example](crates/library/examples/resolve_basic.rs), [enum example](crates/library/examples/resolve_enum.rs), [advanced example](crates/library/examples/resolve_advanced.rs).
+[Basic example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_basic.rs), [enum example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_enum.rs), [advanced example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_advanced.rs).
 
 Serialization
 -------------
@@ -80,18 +80,18 @@ We provide serializers for all supported representation formats behind a common 
 
 This general-purpose serialization API can be used with any Rust type that supports Serde's `Serialize` trait, not just our normal types. It is thus useful if your program needs to serialize to a range of different formats and you would rather use a single crate with a single API.
 
-[Example](crates/library/examples/serialize.rs).
+[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/serialize.rs).
 
 Deserialization
 ---------------
 
 As with serialization, we provide a common API to deserialize from all supported representation formats (optional `serde` feature).
 
-However, there is a twist, as this is interally done in two phases. We *first* parse the format into Compris's normal value types and only then deserialize those to your types. This enables our full feature set, though that interim step can be considered inefficient.
+However, there is a twist, as this is internally done in two phases. We *first* parse the format into Compris's normal value types and only then deserialize those to your types. This enables our full feature set, though that interim step can be considered inefficient.
 
 But there is additional utility in the interim step. Often you will be working with Compris's normal values types, not the raw formats. Do you need to populate your own structs and enums from them? Instead of doing it manually, you can "deserialize" directly. No representation format is involved and no parsing is done. This feature merely uses Serde's deserialization mechanism to efficiently handle the data placement. Generally, the `resolve` feature mentioned above does the same and is more flexible, but if you're using types that already support Serde, then this will "just work".
 
-[Example](crates/library/examples/deserialize.rs).
+[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/deserialize.rs).
 
 CLI Tool
 --------
@@ -123,7 +123,7 @@ License
 
 Like much of the Rust ecosystem, licensed under your choice of either of
 
-* [Apache License, Version 2.0](LICENSE-APACHE)
-* [MIT license](LICENSE-MIT)
+* [Apache License, Version 2.0](https://github.com/tliron/rust-compris/blob/main/LICENSE-APACHE)
+* [MIT license](https://github.com/tliron/rust-compris/blob/main/LICENSE-MIT)
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.

@@ -8,7 +8,7 @@ use super::super::{
     *,
 };
 
-use {std::io, struson::reader::*, tracing::*};
+use {std::io, struson::reader::*};
 
 impl Parser {
     /// Parses from JSON into a normal value.
@@ -61,12 +61,12 @@ where
     JsonReaderT: JsonReader,
 {
     let value = reader.peek()?;
-    trace!("{}", value);
+    tracing::trace!("{}", value);
     match value {
         ValueType::Null => {
             let location = get_json_location(reader);
             reader.next_null()?;
-            value_builder.add(Null::new().with_location(location));
+            value_builder.add(Null::new().with_location(location), None);
         }
 
         ValueType::Number => {
@@ -74,33 +74,33 @@ where
                 let location = get_json_location(reader);
                 let number = reader.next_number_as_str()?;
                 if let Some(number) = if try_unsigned_integers { number.parse::<u64>().ok() } else { None } {
-                    value_builder.add(UnsignedInteger::new(number).with_location(location));
+                    value_builder.add(UnsignedInteger::new(number).with_location(location), None);
                 } else if let Some(number) = if try_integers { number.parse::<i64>().ok() } else { None } {
-                    value_builder.add(Integer::new(number).with_location(location));
+                    value_builder.add(Integer::new(number).with_location(location), None);
                 } else {
-                    value_builder.add(Float::from(number.parse::<f64>()?).with_location(location));
+                    value_builder.add(Float::from(number.parse::<f64>()?).with_location(location), None);
                 }
             } else {
                 let location = get_json_location(reader);
                 let number: f64 = reader.next_number()??;
-                value_builder.add(Float::from(number).with_location(location));
+                value_builder.add(Float::from(number).with_location(location), None);
             }
         }
 
         ValueType::Boolean => {
             let location = get_json_location(reader);
-            value_builder.add(Boolean::new(reader.next_bool()?).with_location(location));
+            value_builder.add(Boolean::new(reader.next_bool()?).with_location(location), None);
         }
 
         ValueType::String => {
             let location = get_json_location(reader);
-            value_builder.add(Text::from(reader.next_string()?).with_location(location));
+            value_builder.add(Text::from(reader.next_string()?).with_location(location), None);
         }
 
         ValueType::Array => {
             let location = get_json_location(reader);
             reader.begin_array()?;
-            value_builder.start_list_with_location(location);
+            value_builder.start_list_with_location(location, None);
             while reader.has_next()? {
                 read_next_json(reader, value_builder, hints, try_integers, try_unsigned_integers)?;
             }
@@ -111,11 +111,11 @@ where
         ValueType::Object => {
             let location = get_json_location(reader);
             reader.begin_object()?;
-            value_builder.start_map_with_location(location);
+            value_builder.start_map_with_location(location, None);
             while reader.has_next()? {
                 // Key
                 let location = get_json_location(reader);
-                value_builder.add(Text::from(reader.next_name_owned()?).with_location(location));
+                value_builder.add(Text::from(reader.next_name_owned()?).with_location(location), None);
 
                 // Value
                 read_next_json(reader, value_builder, hints, try_integers, try_unsigned_integers)?;

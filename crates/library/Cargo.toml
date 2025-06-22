@@ -3,7 +3,7 @@ edition = "2024"
 
 name = "compris"
 description = "Composite Primitive Schema (CPS) for Rust"
-version = "0.0.6"
+version = "0.0.7"
 rust-version = "1.86"
 
 license = "MIT OR Apache-2.0"
@@ -28,8 +28,9 @@ bytes = "1.10.1"
 bytestring = { version = "1.4.0", features = ["serde"] }
 compris-macros = { optional = true, version = "=0.0.3" }
 duplicate = "2.0.0"
-kutil-std = { version = "=0.0.5", features = ["derive"] }
 kutil-cli = "=0.0.8"
+kutil-std = { version = "=0.0.6", features = ["derive", "fast_collections"] }
+kutil-io = { optional = true, version = "=0.0.5" }
 num-traits = "0.2.19"
 ordered-float = "5.0.0"
 rmp = { optional = true, version = "0.8" }
@@ -50,7 +51,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 [features]
 default = ["yaml", "json", "xml", "cbor", "messagepack"]
 ## Enable YAML support.
-yaml = ["dep:saphyr-parser"]
+yaml = ["dep:saphyr-parser", "dep:kutil-io"]
 ## Enable JSON support.
 json = ["dep:struson"]
 ## Enable XML support.

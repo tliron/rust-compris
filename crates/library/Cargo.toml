@@ -4,7 +4,7 @@ edition = "2024"
 name = "compris"
 description = "Composite Primitive Schema (CPS) for Rust"
 version = "0.0.7"
-rust-version = "1.86"
+rust-version = "1.88"
 
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/tliron/rust-compris"
@@ -26,9 +26,9 @@ base64 = "0.22.1"
 borc = { optional = true, version = "0.6.0" }
 bytes = "1.10.1"
 bytestring = { version = "1.4.0", features = ["serde"] }
-compris-macros = { optional = true, version = "=0.0.3" }
+compris-macros = { optional = true, version = "=0.0.4" }
 duplicate = "2.0.0"
-kutil-cli = "=0.0.8"
+kutil-cli = "=0.0.9"
 kutil-std = { version = "=0.0.6", features = ["derive", "fast_collections"] }
 kutil-io = { optional = true, version = "=0.0.5" }
 num-traits = "0.2.19"
@@ -83,7 +83,7 @@ required-features = ["derive"]
 
 [[example]]
 name = "resolve_advanced"
-required-features = ["derive"]
+required-features = ["derive", "kutil-cli/derive"]
 
 [[example]]
 name = "serialize"

@@ -9,5 +9,5 @@ cd "$ROOT"
 for E in $(cargo run --example 2>&1 | grep --extended-regexp '^    ' | sort); do
 	# Note: specifying the "serde" feature is actually unneeded here
 	# seemingly because it is implicitly enabled by crates/cli/Cargo.toml
-	cargo run --example "$E" --features=derive,serde
+	cargo run --example "$E" --features=derive,kutil-cli/derive,serde
 done

@@ -1,4 +1,9 @@
-use super::super::super::{super::normal::*, cite::*, context::*, error::*, iterator::*, resolve::*, result::*};
+use super::super::super::{
+    super::{annotation::*, normal::*},
+    errors::*,
+    iterator::*,
+    resolve::*,
+};
 
 use {kutil_std::error::*, std::slice};
 
@@ -11,17 +16,19 @@ use {kutil_std::error::*, std::slice};
 /// Can be used directly on a [List].
 ///
 /// Useful for implementing [Resolve] for list-like collections, such as [Vec].
-pub struct ResolvingValueIterator<'own, IteratorT>
+pub struct ResolvingValueIterator<'own, AnnotationsT, IteratorT>
 where
-    IteratorT: Iterator<Item = &'own Value>,
+    AnnotationsT: 'own,
+    IteratorT: Iterator<Item = &'own Value<AnnotationsT>>,
 {
     /// Iterator.
     pub iterator: IteratorT,
 }
 
-impl<'own, IteratorT> ResolvingValueIterator<'own, IteratorT>
+impl<'own, AnnotationsT, IteratorT> ResolvingValueIterator<'own, AnnotationsT, IteratorT>
 where
-    IteratorT: Iterator<Item = &'own Value>,
+    AnnotationsT: 'own,
+    IteratorT: Iterator<Item = &'own Value<AnnotationsT>>,
 {
     /// Constructor.
     pub fn new(iterator: IteratorT) -> Self {
@@ -37,49 +44,38 @@ where
     }
 }
 
-impl<'own> ResolvingValueIterator<'own, slice::Iter<'own, Value>> {
+impl<'own, AnnotationsT> ResolvingValueIterator<'own, AnnotationsT, slice::Iter<'own, Value<AnnotationsT>>> {
     /// Constructor.
-    pub fn new_from<ContextT, ErrorT, ErrorRecipientT>(
-        value: &'own Value,
-        context: Option<&ContextT>,
-        ancestor: Option<&'own Value>,
+    pub fn new_from<ErrorRecipientT>(
+        value: &'own Value<AnnotationsT>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Self, ErrorT>
+    ) -> ResolveResult<Self, AnnotationsT>
     where
-        ContextT: ResolveContext,
-        ErrorT: ResolveError,
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        AnnotationsT: Annotated + Clone + Default,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
         match value {
             Value::List(list) => return Ok(Some(Self::new_for(list))),
 
-            _ => errors
-                .give(IncompatibleValueTypeError::new(value, &["list"]).with_citation_for(value, context, ancestor))?,
+            _ => errors.give(IncompatibleValueTypeError::new(value, &["list"]).with_annotations_from(value))?,
         }
 
         Ok(None)
     }
 }
 
-impl<'own, ResolvedT, ContextT, ErrorT, IteratorT> ResolvingIterator<ResolvedT, ContextT, ErrorT>
-    for ResolvingValueIterator<'own, IteratorT>
+impl<'own, ResolvedT, AnnotationsT, IteratorT> ResolvingIterator<ResolvedT, AnnotationsT>
+    for ResolvingValueIterator<'own, AnnotationsT, IteratorT>
 where
-    Value: Resolve<ResolvedT, ContextT, ErrorT>,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
-    IteratorT: Iterator<Item = &'own Value>,
+    Value<AnnotationsT>: Resolve<ResolvedT, AnnotationsT>,
+    IteratorT: Iterator<Item = &'own Value<AnnotationsT>>,
 {
-    fn resolve_next<ErrorRecipientT>(
-        &mut self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
-        errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolvedT, ErrorT>
+    fn resolve_next<ErrorRecipientT>(&mut self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
         Ok(match self.iterator.next() {
-            Some(value) => value.resolve_for(context, ancestor, errors)?,
+            Some(value) => value.resolve_with_errors(errors)?,
             None => None,
         })
     }

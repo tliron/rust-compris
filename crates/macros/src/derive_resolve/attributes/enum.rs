@@ -14,13 +14,8 @@ use deluxe::*;
 #[derive(Default, ExtractAttributes)]
 #[deluxe(attributes(resolve))]
 pub struct EnumAttribute {
-    /// The concrete type of the context.
-    ///
-    /// If not present, will use a generic type parameter.
-    pub context: Option<syn::Expr>,
-
-    /// The concrete type of the error.
-    ///
-    /// If not present, will use a generic type parameter.
-    pub error: Option<syn::Expr>,
+    /// If set will use this existing generic parameter for annotations. Otherwise will insert a
+    /// new parameter, "_AnnotationsT".
+    #[deluxe(default)]
+    pub annotations_parameter: Option<syn::Ident>,
 }

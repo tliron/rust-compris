@@ -57,7 +57,7 @@ YAML 1.2, when including the common [JSON schema](https://yaml.org/spec/1.2/spec
 
 It does lack a distinction between signed and unsigned integers. If you need full 64-bit unsigned integers, which cannot be guaranteed casting to signed integers, then it might be best to encode them as string representations, e.g. in decimal or (smaller) hex.
 
-It also does not support byte arrays, though note that YAML 1.1 did draft a [`!!binary`](https://yaml.org/type/binary.html) type. Compris can be configured to support it, but other implementations may not, so do be careful with its use. A common workaround is to encode byte arrays as Base64 strings, which is Compris's default serialization mode for **bytes** in YAML.
+It also does not support byte arrays, though note that YAML 1.1 did draft a [`!!binary`](https://yaml.org/type/binary.html) type. Compris can be configured to support it, but other implementations may not, so do be careful with its use. A common workaround is to encode byte arrays as Base64 strings, which is Compris's default serialization mode for **byte arrays** in YAML.
 
 By the way, YAML with the JSON schema is a superset of JSON. That means any YAML parser is also a JSON parser. If you need to parse both and are trying to conserve code, you can disable JSON parsing and simply treat JSON as YAML, though note that a dedicated JSON parser may be more efficient.
 
@@ -129,7 +129,7 @@ CPS and Programming Languages
 
 ### Rust
 
-Compris's normal value types all support [`Hash`](https://doc.rust-lang.org/beta/std/hash/trait.Hash.html) as well as other trait requirements for map keys, so they can be used in practically any generics-based map implementation, including sorted trees.
+Compris's normal types all support [`Hash`](https://doc.rust-lang.org/beta/std/hash/trait.Hash.html) as well as other trait requirements for map keys, so they can be used in practically any generics-based map implementation, including sorted trees.
 
 Note that we chose [`BTreeMap`](https://doc.rust-lang.org/std/collections/struct.BTreeMap.html) for our normal map implementation in order to allow maps to be used in complex keys. By contrast, [`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) does not support `Hash` and does not have deterministic order.
 

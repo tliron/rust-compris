@@ -1,50 +1,60 @@
 use super::{
-    super::kv::*, blob::*, boolean::*, float::*, integer::*, iterator::*, list::*, map::*, null::*, text::*,
+    super::{annotation::*, kv::*, path::*},
+    blob::*,
+    boolean::*,
+    debug::*,
+    float::*,
+    integer::*,
+    iterator::*,
+    list::*,
+    map::*,
+    null::*,
+    text::*,
     unsigned_integer::*,
 };
 
-use std::{cmp::*, hash::*, mem::*};
+use {bytestring::*, std::mem::*};
 
 //
 // Value
 //
 
-/// Container for a normal value.
-#[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum Value {
+/// Container for normal types.
+#[derive(Clone, Debug, Default)]
+pub enum Value<AnnotationsT> {
     /// Signifies no value.
     #[default]
     Nothing,
 
     /// Null.
-    Null(Null),
+    Null(Null<AnnotationsT>),
 
     /// Integer.
-    Integer(Integer),
+    Integer(Integer<AnnotationsT>),
 
     /// Unsigned integer.
-    UnsignedInteger(UnsignedInteger),
+    UnsignedInteger(UnsignedInteger<AnnotationsT>),
 
     /// Float.
-    Float(Float),
+    Float(Float<AnnotationsT>),
 
     /// Boolean.
-    Boolean(Boolean),
+    Boolean(Boolean<AnnotationsT>),
 
     /// Text.
-    Text(Text),
+    Text(Text<AnnotationsT>),
 
     /// Blob.
-    Blob(Blob),
+    Blob(Blob<AnnotationsT>),
 
     /// List.
-    List(List),
+    List(List<AnnotationsT>),
 
     /// Map.
-    Map(Map),
+    Map(Map<AnnotationsT>),
 }
 
-impl Value {
+impl<AnnotationsT> Value<AnnotationsT> {
     /// The value's type name.
     pub fn get_type_name(&self) -> &'static str {
         match self {
@@ -59,6 +69,11 @@ impl Value {
             Self::List(_) => "List",
             Self::Map(_) => "Map",
         }
+    }
+
+    /// Compare type.
+    pub fn same_type(&self, other: &Self) -> bool {
+        discriminant(self) == discriminant(other)
     }
 
     /// True if [Nothing](Value::Nothing).
@@ -141,12 +156,11 @@ impl Value {
     ///
     /// Any non-collection or missing key will cause the traversal to stop and return [None].
     ///
-    /// You can provide a [ValuePath](super::value_path::ValuePath) iterator as the argument.
-    ///
     /// Use the [traverse!](crate::traverse) macro instead if you can. It will generally
     /// be more efficient because it doesn't require an allocated iterator.
     pub fn traverse<'own, IteratorT>(&self, keys: IteratorT) -> Option<&Self>
     where
+        AnnotationsT: 'own,
         IteratorT: Iterator<Item = &'own Self>,
     {
         let mut found = self;
@@ -160,12 +174,11 @@ impl Value {
     ///
     /// Any non-collection or missing key will cause the traversal to stop and return [None].
     ///
-    /// You can provide a [ValuePath](super::value_path::ValuePath) iterator as the argument.
-    ///
     /// Use the [traverse_mut!](crate::traverse_mut) macro instead if you can. It will generally
     /// be more efficient because it doesn't require an allocated iterator.
     pub fn traverse_mut<'own, IteratorT>(&mut self, keys: IteratorT) -> Option<&mut Self>
     where
+        AnnotationsT: 'own,
         IteratorT: Iterator<Item = &'own Self>,
     {
         let mut found = self;
@@ -173,11 +186,6 @@ impl Value {
             found = found.get_mut(key)?;
         }
         Some(found)
-    }
-
-    /// Compare type.
-    pub fn same_type(&self, other: &Self) -> bool {
-        discriminant(self) == discriminant(other)
     }
 
     /// If the value is a [List] with length of 2, returns it as a tuple.
@@ -200,7 +208,7 @@ impl Value {
     }
 
     /// If the value is a [List], iterates its items. Otherwise just iterates itself once.
-    pub fn iterator(&self) -> ValueIterator {
+    pub fn iterator(&self) -> ValueIterator<AnnotationsT> {
         ValueIterator::new(self)
     }
 
@@ -211,11 +219,116 @@ impl Value {
     ///
     /// Note that the implementation relies on `dyn` to support two different [KeyValuePairIterator]
     /// implementations.
-    pub fn key_value_iterator<'own>(&'own self) -> Option<Box<dyn KeyValuePairIterator + 'own>> {
+    pub fn key_value_iterator<'own>(&'own self) -> Option<Box<dyn KeyValuePairIterator<AnnotationsT> + 'own>>
+    where
+        AnnotationsT: Default,
+    {
         match self {
-            Value::Map(map) => Some(Box::new(KeyValuePairIteratorForBTreeMap::new_for(&map.value))),
-            Value::List(list) => Some(Box::new(KeyValuePairIteratorForValueIterator::new_for(list))),
+            Self::Map(map) => Some(Box::new(KeyValuePairIteratorForBTreeMap::new_for(&map.value))),
+            Self::List(list) => Some(Box::new(KeyValuePairIteratorForValueIterator::new_for(list))),
             _ => None,
         }
+    }
+
+    /// Removes all [Annotations] recursively.
+    pub fn without_annotations(self) -> Value<WithoutAnnotations> {
+        match self {
+            Self::Nothing => Value::Nothing,
+            Self::Null(null) => Value::Null(null.without_annotations()),
+            Self::Integer(integer) => Value::Integer(integer.without_annotations()),
+            Self::UnsignedInteger(unsigned_integer) => Value::UnsignedInteger(unsigned_integer.without_annotations()),
+            Self::Float(float) => Value::Float(float.without_annotations()),
+            Self::Boolean(boolean) => Value::Boolean(boolean.without_annotations()),
+            Self::Text(text) => Value::Text(text.without_annotations()),
+            Self::Blob(blob) => Value::Blob(blob.without_annotations()),
+            Self::List(list) => Value::List(list.without_annotations()),
+            Self::Map(map) => Value::Map(map.without_annotations()),
+        }
+    }
+
+    /// Into different annotations.
+    pub fn into_annotated<NewAnnotationsT>(self) -> Value<NewAnnotationsT>
+    where
+        AnnotationsT: Annotated,
+        NewAnnotationsT: Annotated + Default,
+    {
+        match self {
+            Self::Nothing => Value::Nothing,
+            Self::Null(null) => Value::Null(null.into_annotated()),
+            Self::Integer(integer) => Value::Integer(integer.into_annotated()),
+            Self::UnsignedInteger(unsigned_integer) => Value::UnsignedInteger(unsigned_integer.into_annotated()),
+            Self::Float(float) => Value::Float(float.into_annotated()),
+            Self::Boolean(boolean) => Value::Boolean(boolean.into_annotated()),
+            Self::Text(text) => Value::Text(text.into_annotated()),
+            Self::Blob(blob) => Value::Blob(blob.into_annotated()),
+            Self::List(list) => Value::List(list.into_annotated()),
+            Self::Map(map) => Value::Map(map.into_annotated()),
+        }
+    }
+
+    /// Add source and [PathRepresentation] to all [Annotations] recursively.
+    pub fn annotated(mut self, source: &Option<ByteString>) -> Self
+    where
+        AnnotationsT: Annotated + Default,
+    {
+        if AnnotationsT::is_annotated() {
+            let path = self.get_annotations().and_then(|annotations| annotations.path.clone()).unwrap_or_default();
+            self.annotate_with_base_path(source, &path);
+        }
+        self
+    }
+
+    fn annotate_with_base_path(&mut self, source: &Option<ByteString>, base_path: &PathRepresentation)
+    where
+        AnnotationsT: Annotated + Default,
+    {
+        if source.is_some() {
+            if let Some(annotations) = self.get_annotations_mut() {
+                annotations.source = source.clone();
+            }
+        }
+
+        match self {
+            Self::List(list) => {
+                for (index, value) in list.value.iter_mut().enumerate() {
+                    let mut path = base_path.clone();
+                    path.push_list_index(index);
+                    value.annotate_with_base_path(source, &path);
+
+                    if let Some(annotations) = value.get_annotations_mut() {
+                        annotations.path = Some(path);
+                    }
+                }
+            }
+
+            Self::Map(map) => {
+                let mut vector = map.into_vector();
+
+                for (key, value) in vector.iter_mut() {
+                    let mut path = base_path.clone();
+                    path.push_map_key(key.to_string().into());
+
+                    key.annotate_with_base_path(source, &path);
+                    value.annotate_with_base_path(source, &path);
+
+                    if let Some(annotations) = key.get_annotations_mut() {
+                        annotations.path = Some(path.clone());
+                    }
+
+                    if let Some(annotations) = value.get_annotations_mut() {
+                        annotations.path = Some(path);
+                    }
+                }
+
+                *map = Map::from_iter(vector).with_annotations_from(map);
+            }
+
+            _ => {}
+        }
+    }
+
+    /// [Debuggable](kutil_cli::debug::Debuggable) with [Annotations].
+    pub fn annotated_debuggable(&self) -> AnnotatedDebuggableValue<AnnotationsT> {
+        AnnotatedDebuggableValue::new(self, AnnotatedDebuggableMode::Inline)
     }
 }

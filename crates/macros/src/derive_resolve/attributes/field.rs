@@ -54,17 +54,17 @@ pub struct FieldAttribute {
     #[deluxe(default)]
     pub other_keys: bool,
 
-    /// Use this field to store citations for all other fields.
+    /// Use this field to store annotations for all other fields.
     ///
     /// Can only be used on one field.
     #[deluxe(default)]
-    pub citations: bool,
+    pub annotations: bool,
 }
 
 impl FieldAttribute {
-    /// Whether this is a valid [FieldAttribute::citations] field.
-    pub fn is_citations(&self, field: &syn::Field) -> syn::Result<bool> {
-        if self.citations {
+    /// Whether this is a valid [FieldAttribute::annotations] field.
+    pub fn is_annotations(&self, field: &syn::Field) -> syn::Result<bool> {
+        if self.annotations {
             if self.key.is_some()
                 || self.required
                 || self.ignore_null
@@ -74,7 +74,7 @@ impl FieldAttribute {
             {
                 return Err(syn::Error::new(
                     field.span(),
-                    "`resolve` attribute: can't specify other flags with `citations`",
+                    "`resolve` attribute: can't specify other flags with `annotations`",
                 ));
             }
             Ok(true)

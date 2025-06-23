@@ -3,23 +3,23 @@ use super::{
     deserializer::*,
 };
 
-use serde::{de, Deserializer as _};
+use serde::{Deserializer as _, de};
 
 //
 // VariantDeserializer
 //
 
-pub(crate) struct VariantDeserializer<'de> {
-    value: &'de Value,
+pub(crate) struct VariantDeserializer<'de, AnnotationsT> {
+    value: &'de Value<AnnotationsT>,
 }
 
-impl<'de> VariantDeserializer<'de> {
-    pub fn new(value: &'de Value) -> Self {
+impl<'de, AnnotationsT> VariantDeserializer<'de, AnnotationsT> {
+    pub fn new(value: &'de Value<AnnotationsT>) -> Self {
         Self { value }
     }
 }
 
-impl<'de> de::VariantAccess<'de> for VariantDeserializer<'de> {
+impl<'de, AnnotationsT> de::VariantAccess<'de> for VariantDeserializer<'de, AnnotationsT> {
     type Error = DeserializeError;
 
     fn unit_variant(self) -> Result<(), Self::Error> {

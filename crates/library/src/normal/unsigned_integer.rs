@@ -1,44 +1,29 @@
-use super::super::meta::*;
+use {
+    super::super::annotation::*,
+    crate::{impl_normal, impl_normal_basic},
+};
 
 use {
     duplicate::*,
     kutil_cli::debug::*,
-    std::{cmp::*, fmt, hash::*, io},
+    std::{fmt, io},
 };
 
 //
 // UnsignedInteger
 //
 
-/// Normal unsigned integer value.
-#[derive(Clone, Debug, Default, Eq)]
-pub struct UnsignedInteger {
-    /// Actual value.
-    pub value: u64,
-
-    /// Metadata.
-    pub meta: Meta,
+impl_normal! {
+    /// Normal unsigned integer value.
+    ///
+    /// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
+    UnsignedInteger(u64)
 }
 
-impl UnsignedInteger {
-    /// Constructor.
-    pub fn new(unsigned_integer: u64) -> Self {
-        Self { value: unsigned_integer, ..Default::default() }
-    }
-}
+impl_normal_basic!(UnsignedInteger);
 
-impl HasMeta for UnsignedInteger {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
-
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-}
-
-impl Debuggable for UnsignedInteger {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+impl<AnnotationsT> Debuggable for UnsignedInteger<AnnotationsT> {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -51,59 +36,33 @@ impl Debuggable for UnsignedInteger {
     }
 }
 
-impl fmt::Display for UnsignedInteger {
+impl<AnnotationsT> fmt::Display for UnsignedInteger<AnnotationsT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{}u64", self.value)
-    }
-}
-
-// Delegated
-
-impl PartialEq for UnsignedInteger {
-    fn eq(&self, other: &Self) -> bool {
-        self.value.eq(&other.value)
-    }
-}
-
-impl PartialOrd for UnsignedInteger {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value.partial_cmp(&other.value)
-    }
-}
-
-impl Ord for UnsignedInteger {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.value.cmp(&other.value)
-    }
-}
-
-impl Hash for UnsignedInteger {
-    fn hash<HasherT>(&self, state: &mut HasherT)
-    where
-        HasherT: Hasher,
-    {
-        self.value.hash(state);
     }
 }
 
 // Conversion
 
 #[duplicate_item(
-  _From;
+  ToNormalT;
   [u64];
   [u32];
   [u16];
   [u8];
   [usize];
 )]
-impl From<_From> for UnsignedInteger {
-    fn from(unsigned_integer: _From) -> Self {
+impl<AnnotationsT> From<ToNormalT> for UnsignedInteger<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
+    fn from(unsigned_integer: ToNormalT) -> Self {
         Self::new(unsigned_integer as u64)
     }
 }
 
-impl From<&UnsignedInteger> for u64 {
-    fn from(unsigned_integer: &UnsignedInteger) -> Self {
+impl<AnnotationsT> From<&UnsignedInteger<AnnotationsT>> for u64 {
+    fn from(unsigned_integer: &UnsignedInteger<AnnotationsT>) -> Self {
         unsigned_integer.value
     }
 }

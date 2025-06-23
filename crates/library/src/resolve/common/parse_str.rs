@@ -1,5 +1,9 @@
 use super::{
-    super::{super::normal::*, context::*, error::*, resolve::*, result::*},
+    super::{
+        super::{annotation::*, normal::*},
+        errors::*,
+        resolve::*,
+    },
     from_str::*,
 };
 
@@ -61,21 +65,19 @@ where
     }
 }
 
-impl<ParsedT, ParseStrT, ContextT, ErrorT> Resolve<ResolveParseStr<ParsedT, ParseStrT>, ContextT, ErrorT> for Value
+impl<ParsedT, ParseStrT, AnnotationsT> Resolve<ResolveParseStr<ParsedT, ParseStrT>, AnnotationsT>
+    for Value<AnnotationsT>
 where
     ParseStrT: ParseStr<ParsedT>,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
+    AnnotationsT: Annotated + Clone + Default,
 {
-    fn resolve_for<ErrorRecipientT>(
+    fn resolve_with_errors<ErrorRecipientT>(
         &self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolveParseStr<ParsedT, ParseStrT>, ErrorT>
+    ) -> ResolveResult<ResolveParseStr<ParsedT, ParseStrT>, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        resolve_from_str(self, context, ancestor, errors)
+        resolve_from_str(self, errors)
     }
 }

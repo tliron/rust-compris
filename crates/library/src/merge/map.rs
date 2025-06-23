@@ -1,8 +1,8 @@
 use super::{super::normal::*, error::*, mode::*};
 
-use kutil_std::error::*;
+use {kutil_std::error::*, std::fmt};
 
-impl Map {
+impl<AnnotationsT> Map<AnnotationsT> {
     /// Merge another map into this map. Return true if any change happened.
     ///
     /// The merging behavior depends on the [MergeMode].
@@ -11,10 +11,11 @@ impl Map {
         other: &'own Self,
         merge_mode: &MergeMode,
         errors: &mut ErrorRecipientT,
-    ) -> Result<bool, MergeError<'own>>
+    ) -> Result<bool, MergeError<'own, AnnotationsT>>
     where
-        ErrorRecipientT: ErrorRecipient<MergeError<'own>>,
         Self: 'own,
+        AnnotationsT: Clone,
+        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotationsT>>,
     {
         let mut changed = false;
 
@@ -35,27 +36,34 @@ impl Map {
         &mut self,
         other: &'own Self,
         merge_mode: &MergeMode,
-    ) -> Result<bool, MergeError<'own>> {
+    ) -> Result<bool, MergeError<'own, AnnotationsT>>
+    where
+        AnnotationsT: Clone,
+    {
         self.merge_with_errors(other, merge_mode, &mut FailFastErrorRecipient)
     }
 
     /// Merge another map into this map. Return true if any change happened.
     ///
     /// Uses the default [MergeMode].
-    pub fn merge(&mut self, other: &Self) -> bool {
+    pub fn merge(&mut self, other: &Self) -> bool
+    where
+        AnnotationsT: Clone + fmt::Debug,
+    {
         // The default mode should never cause errors, so unwrap is safe
         self.merge_with_mode(other, &MergeMode::default()).expect("merge_with_mode")
     }
 
     fn merge_key<'own, ErrorRecipientT>(
         &mut self,
-        other_key: &'own Value,
-        other_value: &'own Value,
+        other_key: &'own Value<AnnotationsT>,
+        other_value: &'own Value<AnnotationsT>,
         merge_mode: &MergeMode,
         errors: &mut ErrorRecipientT,
-    ) -> Result<bool, MergeError<'own>>
+    ) -> Result<bool, MergeError<'own, AnnotationsT>>
     where
-        ErrorRecipientT: ErrorRecipient<MergeError<'own>>,
+        AnnotationsT: Clone,
+        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotationsT>>,
     {
         match self.value.get_mut(other_key) {
             Some(value) => {

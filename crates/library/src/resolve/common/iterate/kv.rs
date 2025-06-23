@@ -1,11 +1,8 @@
 use super::super::super::{
-    super::{kv::*, normal::*},
-    cite::*,
-    context::*,
-    error::*,
+    super::{annotation::*, kv::*, normal::*},
+    errors::*,
     iterator::*,
     resolve::*,
-    result::*,
 };
 
 use kutil_std::error::*;
@@ -23,71 +20,62 @@ use kutil_std::error::*;
 ///
 /// Useful for implementing [Resolve] for map-like collections, such as
 /// [HashMap](std::collections::HashMap).
-pub struct ResolvingKeyValuePairIterator<'own> {
+pub struct ResolvingKeyValuePairIterator<'own, AnnotationsT> {
     /// Key-value pair iterator.
-    pub iterator: Box<dyn KeyValuePairIterator + 'own>,
+    pub iterator: Box<dyn KeyValuePairIterator<AnnotationsT> + 'own>,
 }
 
-impl<'own> ResolvingKeyValuePairIterator<'own> {
+impl<'own, AnnotationsT> ResolvingKeyValuePairIterator<'own, AnnotationsT> {
     /// Constructor.
-    pub fn new(iterator: Box<dyn KeyValuePairIterator + 'own>) -> Self {
+    pub fn new(iterator: Box<dyn KeyValuePairIterator<AnnotationsT> + 'own>) -> Self {
         Self { iterator }
     }
 
     /// Constructor.
-    pub fn new_from<ContextT, ErrorT, ErrorRecipientT>(
-        value: &'own Value,
-        context: Option<&ContextT>,
-        ancestor: Option<&'own Value>,
+    pub fn new_from<ErrorRecipientT>(
+        value: &'own Value<AnnotationsT>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Self, ErrorT>
+    ) -> ResolveResult<Self, AnnotationsT>
     where
-        ContextT: ResolveContext,
-        ErrorT: ResolveError,
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        AnnotationsT: Annotated + Clone + Default,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
         match value.key_value_iterator() {
             Some(iterator) => Ok(Some(Self::new(iterator))),
 
             None => {
-                errors.give(
-                    IncompatibleValueTypeError::new(value, &["map", "list"])
-                        .with_citation_for(value, context, ancestor),
-                )?;
+                errors.give(IncompatibleValueTypeError::new(value, &["map", "list"]).with_annotations_from(value))?;
                 Ok(None)
             }
         }
     }
 }
 
-impl<'own, KeyT, ValueT, ContextT, ErrorT> ResolvingIterator<(KeyT, ValueT), ContextT, ErrorT>
-    for ResolvingKeyValuePairIterator<'own>
+impl<'own, KeyT, ValueT, AnnotationsT> ResolvingIterator<(KeyT, ValueT), AnnotationsT>
+    for ResolvingKeyValuePairIterator<'own, AnnotationsT>
 where
-    Value: Resolve<KeyT, ContextT, ErrorT>,
-    Value: Resolve<ValueT, ContextT, ErrorT>,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
+    Value<AnnotationsT>: Resolve<KeyT, AnnotationsT>,
+    Value<AnnotationsT>: Resolve<ValueT, AnnotationsT>,
+    AnnotationsT: Annotated + Default,
 {
     fn resolve_next<ErrorRecipientT>(
         &mut self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<(KeyT, ValueT), ErrorT>
+    ) -> ResolveResult<(KeyT, ValueT), AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
         // Repeat until we get a non-error
         loop {
             match self.iterator.next() {
                 Ok(next) => {
                     return Ok(match next {
-                        Some(pair) => pair.resolve_for(context, ancestor, errors)?,
+                        Some(pair) => pair.resolve_with_errors(errors)?,
                         None => None,
                     });
                 }
 
-                Err((error, cause)) => errors.give(error.with_citation_for(cause, context, ancestor))?,
+                Err((error, cause)) => errors.give(error.with_annotations_from(cause))?,
             }
         }
     }

@@ -37,59 +37,60 @@ All formats are enabled by default but can be turned on selectively using
 
 Need more formats? We accept contributions and suggestions!
 
+Parsing and Normal Types
+------------------------
+
 Compris can parse any of these formats into its "normal" value types, which provide many utility functions for convenient access and transformation of the nested data.
 
-To an extent, the basic normal "Value" type serves as an equivalent to the "any-type" variables that are at the core of dynamically typed languages, such as Python and JavaScript. Except that in Compris it's entirely static: a simple enum with very little generics, lots of useful blanket traits, a sprinkling of macros, and absolutely no `dyn`.
+The normal "Value" type serves as an equivalent to the "any-type" variables that are at the core of dynamically typed languages, such as Python and JavaScript. Except that in Compris it's entirely static: a simple enum with very little generics, lots of useful blanket traits, a sprinkling of macros, and absolutely no `dyn`.
 
-The normal types also include file location information (row and column) as metadata, for referring back to the textual format sources (YAML, JSON, and XML).
+Each normal value can include "annotations", such as source filename and span in file (row and column), which can be used for citing textual sources (YAML, JSON, and XML). This allows Compris to provide very detailed error messages for higher-level grammars, IDEs, etc. The annotations feature is enabled via a generic parameter to avoid paying for it when not needed.
 
-The implementation relies on the [bytes](https://github.com/tokio-rs/bytes) and [bytestring](https://crates.io/crates/bytestring) libraries to ensure low-cost cloning.
+Finally, normal types rely on the [bytes](https://github.com/tokio-rs/bytes) and [bytestring](https://crates.io/crates/bytestring) libraries to ensure low-cost cloning.
 
 [Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/parse.rs).
 
-Traverse
---------
+Traversal
+---------
 
 Included are ergonomic facilities for accessing nested values by path and for presenting paths in a human-readable format.
 
 [Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/traverse.rs).
 
-Resolve
--------
+Resolving
+---------
 
-Convert the normal value types to your own types.
+Compris and convert the normal types to your own custom types.
 
-The API is simple but extensible, making use of a `#[derive(Resolve)]` procedural macro (with the `derive` feature) that generates resolution code for you while also allowing you to implement your own semantics with your own context and error types. Errors can provide citation information allowing for detailed and useful syntax error reports. For example, an IDE could parse the citation and highlight all the errors where they occur in the source files.
+The API is simple but extensible, making use of a `#[derive(Resolve)]` procedural macro (with the `derive` feature) that generates the resolving code for you while also allowing you to implement your own semantics.
 
-Does Compris's resolve feature sound a bit like Serde deserialization? At its simplest, it can provide the same results (and we do support Serde, too; see below). However, Compris's resolve is more flexible in that it allows for accumulating errors (instead of failing on the first error, like Serde), as well as configurable handling of nulls and undeclared fields. It even lets you to provide your own custom context type.
-
-Compris's resolve is designed as a foundation for sophisticated CPS-based syntax parsers. You can even create your own procedural macros to generate specialized implementations that go beyond `#[derive(Resolve)]`. Our [source code](crates/macros) might help you get a grip on this challenging corner of Rust programming.
+Compris's resolve is designed as a foundation for sophisticated CPS-based syntax parsers. You can even create your own procedural macros to generate specialized implementations that go beyond `#[derive(Resolve)]`.
 
 [Basic example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_basic.rs), [enum example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_enum.rs), [advanced example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_advanced.rs).
 
-Serialization
--------------
+> Does the resolve feature sound a bit like Serde deserialization? At its simplest, they both provide the same results (and Compris does support Serde, too; see below). However, resolve is more flexible and efficient in that it allows for accumulating annotated errors (instead of failing on the first error, like Serde), as well as configurable handling of nulls and undeclared fields.
 
-Compris's normal value types can be serialized via [Serde](https://serde.rs/) (optional `serde` feature).
+Serde Serialization
+-------------------
 
-We also allow you to attach "serialization modes" that allow some control over seralization behavior. For example, `FloatSerializationMode::AsI64IfFractionless` will try to convert floats to integers when possible. This would happen *only* for serialization, on-the-fly, and does not modify your in-memory data.
+Compris provides a common serializer API for [Serde](https://serde.rs/) (with the `serde` feature), which allows the format to be selected at runtime. For the textual formats, Compris also supports pretty printing for human readability, including colorization for terminals. For the binary formats, Compris supports optional Base64 encoding.
 
-Serialization modes are great for optimizing or fixing your data for limited (or broken) consumers, but they can also work around the limitations of YAML and JSON. In particular, we introduce an "XJSON" serialization mode, which allows JSON to support all of CPS. Compris can also parse and deserialize XJSON. Read more about XJSON [here](CPS.md).
+This general-purpose serialization API can be used with any Rust type that supports Serde's `Serialize` trait, not only our normal types. It is thus useful if your program needs to serialize to a range of different formats and you would rather use a single crate with a single API.
 
-We provide serializers for all supported representation formats behind a common API so that they can be selected at runtime. For the textual formats, we support pretty printing for human readability, including colorization for terminals. For the binary formats, we support optional Base64 encoding.
+This API additionally supports ["serialization modes"](https://docs.rs/compris/latest/compris/ser/struct.SerializationMode.html) that allow some control over serialization behavior. For example, `FloatSerializationMode::AsI64IfWhole` will try to convert floats to integers if they are whole numbers. This would happen *only* for serialization, on-the-fly, and does not modify your in-memory data.
 
-This general-purpose serialization API can be used with any Rust type that supports Serde's `Serialize` trait, not just our normal types. It is thus useful if your program needs to serialize to a range of different formats and you would rather use a single crate with a single API.
+Serialization modes are useful for optimizing or fixing your data for limited (or broken) consumers, but they can also work around the limitations of YAML and JSON. In particular, Compris introduces an "XJSON" serialization mode, which allows JSON to support all of CPS via standard "hints". Compris can also parse and deserialize XJSON. Read more about XJSON [here](https://github.com/tliron/rust-compris/blob/main/CPS.md#xjson).
 
 [Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/serialize.rs).
 
-Deserialization
----------------
+Serde Deserialization
+---------------------
 
-As with serialization, we provide a common API to deserialize from all supported representation formats (optional `serde` feature).
+As with serialization, Compris provides a common API to deserialize from all supported representation formats (optional `serde` feature).
 
-However, there is a twist, as this is internally done in two phases. We *first* parse the format into Compris's normal value types and only then deserialize those to your types. This enables our full feature set, though that interim step can be considered inefficient.
+However, there is a twist, as this is internally done in two phases. We *first* parse the format into Compris's normal types and only then deserialize those to your `Deserialize` types. This enables the full feature set of Compris.
 
-But there is additional utility in the interim step. Often you will be working with Compris's normal values types, not the raw formats. Do you need to populate your own structs and enums from them? Instead of doing it manually, you can "deserialize" directly. No representation format is involved and no parsing is done. This feature merely uses Serde's deserialization mechanism to efficiently handle the data placement. Generally, the `resolve` feature mentioned above does the same and is more flexible, but if you're using types that already support Serde, then this will "just work".
+For example, if you want to feed a `Deserialize` type with data, but don't want to have to through a representation format and a parser, then you can model the data using Compris normal types. The `resolve` feature (see above) can do this, too, and should generally be more efficient than going through Serde, but if you're using types that already support Serde then this will "just work".
 
 [Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/deserialize.rs).
 

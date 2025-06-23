@@ -1,5 +1,5 @@
 use {
-    compris::{UnknownFormatError, parse::*, ser::*},
+    compris::{parse::*, ser::*, *},
     kutil_cli::run::*,
     read_url::*,
     std::io,
@@ -14,8 +14,8 @@ use {
 #[derive(Debug, Error)]
 pub enum MainError {
     /// Exit.
-    #[error("exit: {0}")]
-    Exit(#[from] Exit),
+    #[error("{0}")]
+    Exit(#[from] ExitError),
 
     /// I/O.
     #[error("I/O: {0}")]
@@ -38,8 +38,14 @@ pub enum MainError {
     Url(#[from] UrlError),
 }
 
-impl HasExit for MainError {
-    fn get_exit(&self) -> Option<&Exit> {
-        if let MainError::Exit(exit) = self { Some(exit) } else { None }
+impl RunError for MainError {
+    fn handle(&self) -> (bool, u8) {
+        (
+            false,
+            match self {
+                MainError::Exit(exit) => exit.code,
+                _ => 1,
+            },
+        )
     }
 }

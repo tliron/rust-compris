@@ -1,4 +1,7 @@
-use super::super::meta::*;
+use {
+    super::super::annotation::*,
+    crate::{impl_normal, impl_normal_basic},
+};
 
 use {
     base64::{prelude::*, *},
@@ -6,34 +9,29 @@ use {
     bytestring::*,
     duplicate::*,
     kutil_cli::debug::*,
-    std::{borrow::*, cmp::*, fmt, hash::*, io},
+    std::{borrow::*, fmt, io},
 };
 
 //
-// Bytes
+// Blob
 //
 
-/// Normal bytes value.
-///
-/// Relies on [Bytes] for zero-copy cloning.
-#[derive(Clone, Debug, Default, Eq)]
-pub struct Blob {
-    /// Actual value.
-    pub value: Bytes,
-
-    /// Metadata.
-    pub meta: Meta,
+impl_normal! {
+    /// Normal blob value.
+    ///
+    /// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
+    ///
+    /// Note that the value is a [Bytes] in order to support zero-copy cloning.
+    Blob(Bytes)
 }
 
-impl Blob {
-    /// Constructor.
-    pub fn new(bytes: Bytes) -> Self {
-        Self { value: bytes, ..Default::default() }
-    }
+impl_normal_basic!(Blob);
 
+impl<AnnotationsT> Blob<AnnotationsT> {
     /// Constructor.
     pub fn new_from_base64<BytesT>(base64: BytesT) -> Result<Self, DecodeError>
     where
+        AnnotationsT: Default,
         BytesT: AsRef<[u8]>,
     {
         let bytes = BASE64_STANDARD.decode(base64)?;
@@ -46,18 +44,8 @@ impl Blob {
     }
 }
 
-impl HasMeta for Blob {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
-
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-}
-
-impl Debuggable for Blob {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+impl<AnnotationsT> Debuggable for Blob<AnnotationsT> {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -66,56 +54,33 @@ impl Debuggable for Blob {
     }
 }
 
-impl fmt::Display for Blob {
+impl<AnnotationsT> fmt::Display for Blob<AnnotationsT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{} bytes", self.value.len())
-    }
-}
-
-// Delegated
-
-impl PartialEq for Blob {
-    fn eq(&self, other: &Self) -> bool {
-        self.value.eq(&other.value)
-    }
-}
-
-impl PartialOrd for Blob {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value.partial_cmp(&other.value)
-    }
-}
-
-impl Ord for Blob {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.value.cmp(&other.value)
-    }
-}
-
-impl Hash for Blob {
-    fn hash<HasherT>(&self, state: &mut HasherT)
-    where
-        HasherT: Hasher,
-    {
-        self.value.hash(state);
     }
 }
 
 // Conversion
 
 #[duplicate_item(
-  _From;
+  ToNormalT;
   [Bytes];
   [Vec<u8>];
   [&'static [u8]];
 )]
-impl From<_From> for Blob {
-    fn from(bytes: _From) -> Self {
+impl<AnnotationsT> From<ToNormalT> for Blob<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
+    fn from(bytes: ToNormalT) -> Self {
         Blob::new(bytes.into())
     }
 }
 
-impl From<Cow<'_, [u8]>> for Blob {
+impl<AnnotationsT> From<Cow<'_, [u8]>> for Blob<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
     fn from(bytes: Cow<'_, [u8]>) -> Self {
         match bytes {
             Cow::Borrowed(bytes) => bytes.to_vec().into(),
@@ -125,18 +90,24 @@ impl From<Cow<'_, [u8]>> for Blob {
 }
 
 #[duplicate_item(
-  _From;
+  FromT;
   [ByteString];
   [String];
   [&str];
 )]
-impl From<_From> for Blob {
-    fn from(string: _From) -> Self {
+impl<AnnotationsT> From<FromT> for Blob<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
+    fn from(string: FromT) -> Self {
         ByteString::from(string).into_bytes().into()
     }
 }
 
-impl From<Cow<'_, str>> for Blob {
+impl<AnnotationsT> From<Cow<'_, str>> for Blob<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
     fn from(string: Cow<'_, str>) -> Self {
         match string {
             Cow::Borrowed(string) => string.into(),
@@ -145,20 +116,20 @@ impl From<Cow<'_, str>> for Blob {
     }
 }
 
-impl From<Blob> for Bytes {
-    fn from(bytes: Blob) -> Self {
-        bytes.value
+impl<AnnotationsT> From<Blob<AnnotationsT>> for Bytes {
+    fn from(blob: Blob<AnnotationsT>) -> Self {
+        blob.value
     }
 }
 
-impl From<Blob> for Vec<u8> {
-    fn from(bytes: Blob) -> Self {
-        bytes.value.into()
+impl<AnnotationsT> From<Blob<AnnotationsT>> for Vec<u8> {
+    fn from(blob: Blob<AnnotationsT>) -> Self {
+        blob.value.into()
     }
 }
 
-impl<'own> From<&'own Blob> for &'own [u8] {
-    fn from(bytes: &'own Blob) -> Self {
-        &bytes.value
+impl<'own, AnnotationsT> From<&'own Blob<AnnotationsT>> for &'own [u8] {
+    fn from(blob: &'own Blob<AnnotationsT>) -> Self {
+        &blob.value
     }
 }

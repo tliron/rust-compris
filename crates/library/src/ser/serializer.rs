@@ -1,5 +1,5 @@
 use super::{
-    super::{normal::*, *},
+    super::{annotation::*, normal::*, *},
     errors::*,
     modal::*,
     mode::*,
@@ -101,14 +101,15 @@ impl Serializer {
     }
 
     /// Serializes the provided value to the writer according to [Serializer::format](Serializer).
-    pub fn write_modal<WriteT>(
+    pub fn write_modal<WriteT, AnnotationsT>(
         &self,
-        value: &Value,
+        value: &Value<AnnotationsT>,
         mode: &SerializationMode,
         writer: &mut WriteT,
     ) -> Result<(), SerializeError>
     where
         WriteT: Write,
+        AnnotationsT: Annotated + Clone + Default,
     {
         let value = value.modal(mode, self);
         self.write(&value, writer)
@@ -124,12 +125,15 @@ impl Serializer {
     }
 
     /// Serializes the provided value to the file according to [Serializer::format](Serializer).
-    pub fn write_to_file_modal(
+    pub fn write_to_file_modal<AnnotationsT>(
         &self,
-        value: &Value,
+        value: &Value<AnnotationsT>,
         mode: &SerializationMode,
         path: &path::Path,
-    ) -> Result<(), SerializeError> {
+    ) -> Result<(), SerializeError>
+    where
+        AnnotationsT: Annotated + Clone + Default,
+    {
         let value = value.modal(mode, self);
         self.write_to_file(&value, path)
     }
@@ -143,7 +147,14 @@ impl Serializer {
     }
 
     /// Serializes the provided value to [stdout] according to [Serializer::format](Serializer).
-    pub fn print_modal(&self, value: &Value, mode: &SerializationMode) -> Result<(), SerializeError> {
+    pub fn print_modal<AnnotationsT>(
+        &self,
+        value: &Value<AnnotationsT>,
+        mode: &SerializationMode,
+    ) -> Result<(), SerializeError>
+    where
+        AnnotationsT: Annotated + Clone + Default,
+    {
         let value = value.modal(mode, self);
         self.print(&value)
     }
@@ -168,7 +179,14 @@ impl Serializer {
     /// Convenience function to serialize to a string.
     ///
     /// See [Serializer::write].
-    pub fn stringify_modal(&self, value: &Value, mode: &SerializationMode) -> Result<ByteString, SerializeError> {
+    pub fn stringify_modal<AnnotationsT>(
+        &self,
+        value: &Value<AnnotationsT>,
+        mode: &SerializationMode,
+    ) -> Result<ByteString, SerializeError>
+    where
+        AnnotationsT: Annotated + Clone + Default,
+    {
         let value = value.modal(mode, self);
         self.stringify(&value)
     }

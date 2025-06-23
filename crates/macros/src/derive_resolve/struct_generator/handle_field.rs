@@ -4,14 +4,23 @@ use {proc_macro2::*, quote::*};
 
 impl StructGenerator {
     /// Generate field handler.
-    pub fn generate_handle_field(&self, field: &Field, key: &TokenStream) -> TokenStream {
-        let handle_citation = if let Some(citations_field_name) = &self.citations_field {
+    pub fn generate_handle_field(
+        &self,
+        field: &Field,
+        key: &TokenStream,
+        annotations_parameter: &TokenStream,
+    ) -> TokenStream {
+        let handle_annotations = if let Some(annotations_field_name) = &self.annotations_field {
             let quoted_field_name = field.name.to_string().to_token_stream();
             quote! {
-                resolved.#citations_field_name.insert(
-                    #quoted_field_name.into(),
-                    ::compris::cite::Citation::new_for(value, context, ancestor),
-                );
+                if #annotations_parameter::is_annotated()
+                    && let ::std::option::Option::Some(annotations) = ::compris::annotation::Annotated::get_annotations(value)
+                {
+                    resolved.#annotations_field_name.insert(
+                        #quoted_field_name.into(),
+                        annotations.clone(),
+                    );
+                }
             }
         } else {
             TokenStream::new()
@@ -23,8 +32,9 @@ impl StructGenerator {
             quote! {
                 else {
                     errors.give(
-                        ::compris::resolve::WithCitationFor::with_citation_for(
-                            ::compris::resolve::MissingRequiredKeyError::new(key), self, context, ancestor
+                        ::compris::annotation::Annotated::with_annotations_from(
+                            ::compris::resolve::MissingRequiredKeyError::new(key),
+                            self,
                         )
                     )?;
                 }
@@ -38,10 +48,9 @@ impl StructGenerator {
         quote! {
             let key = #key;
             if let ::std::option::Option::Some(value) = self.into_get(key) {
-                #handle_citation
+                #handle_annotations
                 #handle_null
-                if let ::std::option::Option::Some(value) =
-                ::compris::resolve::Resolve::resolve_for(value, context, ancestor, errors)? {
+                if let ::std::option::Option::Some(value) = ::compris::resolve::Resolve::resolve_with_errors(value, errors)? {
                     resolved.#field_name = value;
                 }
             }

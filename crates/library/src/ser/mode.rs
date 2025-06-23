@@ -10,14 +10,14 @@ pub struct SerializationMode {
     /// Serialization mode for integers.
     pub integer: IntegerSerializationMode,
 
-    /// Serialization mode for unsigned integer.
+    /// Serialization mode for unsigned integers.
     pub unsigned_integer: UnsignedIntegerSerializationMode,
 
     /// Serialization mode for floats.
     pub float: FloatSerializationMode,
 
-    /// Serialization mode for bytes.
-    pub bytes: BytesSerializationMode,
+    /// Serialization mode for blobs.
+    pub blob: BlobSerializationMode,
 
     /// Serialization mode for maps.
     pub map: MapSerializationMode,
@@ -38,7 +38,7 @@ impl SerializationMode {
     ///
     /// * [BytesSerializationMode::StringifyBase64]
     pub fn for_yaml() -> Self {
-        Self { bytes: BytesSerializationMode::StringifyBase64(None), ..Default::default() }
+        Self { blob: BlobSerializationMode::StringifyBase64(None), ..Default::default() }
     }
 
     /// Default serialization mode for JSON.
@@ -47,7 +47,7 @@ impl SerializationMode {
     /// * [MapSerializationMode::SerializeKeysIfNonText]
     pub fn for_json() -> Self {
         Self {
-            bytes: BytesSerializationMode::StringifyBase64(None),
+            blob: BlobSerializationMode::StringifyBase64(None),
             map: MapSerializationMode::SerializeKeysIfNonText,
             ..Default::default()
         }
@@ -64,7 +64,7 @@ impl SerializationMode {
         Self {
             integer: IntegerSerializationMode::Stringify(Some(hints.integer)),
             unsigned_integer: UnsignedIntegerSerializationMode::Stringify(Some(hints.unsigned_integer)),
-            bytes: BytesSerializationMode::StringifyBase64(Some(hints.bytes)),
+            blob: BlobSerializationMode::StringifyBase64(Some(hints.bytes)),
             map: MapSerializationMode::AsSeqIfNonTextKey(Some(hints.map)),
             ..Default::default()
         }
@@ -78,25 +78,25 @@ impl SerializationMode {
 /// Integer serialization mode.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum IntegerSerializationMode {
-    /// Integers serialized as i64 (the default).
+    /// Integers are serialized as i64 (the default).
     #[default]
     AsI64,
 
-    /// Integers serialized as u64 if they are non-negative.
-    /// Otherwise serialized as i64.
+    /// Integers are serialized as u64 if they are non-negative. Otherwise serialized as i64.
     AsU64IfNonNegative,
 
-    /// Integers serialized as f64.
+    /// Integers are serialized as f64.
     ///
     /// If information would be lost will cause a serialization error.
     AsF64,
 
     /// Stringify integers in decimal.
     ///
-    /// If a hint is provided, then the string will be wrapped in a single-key map
-    /// with the hint as the key. This map ignores the [MapSerializationMode].
+    /// If a hint is provided, then the string will be wrapped in a single-key map with the hint as
+    /// the key. This map ignores the [MapSerializationMode].
     ///
-    /// Can be deserialized by [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
+    /// Can be deserialized by
+    /// [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
     Stringify(Option<String>),
 }
 
@@ -117,24 +117,24 @@ impl IntegerSerializationMode {
 /// Unsigned integer serialization mode.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum UnsignedIntegerSerializationMode {
-    /// Unsigned integers serialized as u64 (the default).
+    /// Unsigned integers are serialized as u64 (the default).
     #[default]
     AsU64,
 
-    /// Unsigned integers serialized as i64.
+    /// Unsigned integers are serialized as i64.
     ///
     /// If information would be lost will cause a serialization error.
     AsI64,
 
-    /// Unsigned integers serialized as floats.
+    /// Unsigned integers are serialized as floats.
     ///
     /// If information would be lost will cause a serialization error.
     AsF64,
 
     /// Stringify unsigned integers in decimal.
     ///
-    /// If a hint is provided, then the string will be wrapped in a single-key map
-    /// with the hint as the key. This map ignores the [MapSerializationMode].
+    /// If a hint is provided, then the string will be wrapped in a single-key map with the hint as
+    /// the key. This map ignores the [MapSerializationMode].
     ///
     /// Can be deserialized by [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
     Stringify(Option<String>),
@@ -157,26 +157,26 @@ impl UnsignedIntegerSerializationMode {
 /// Float serialization mode.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum FloatSerializationMode {
-    /// Floats serialized as f64 (the default).
+    /// Floats are serialized as f64 (the default).
     #[default]
     AsF64,
 
-    /// Floats serialized as i64 (after [f64::trunc]).
+    /// Floats are serialized as i64 (after [f64::trunc]).
     ///
     /// If information would be lost will cause a serialization error.
     AsI64,
 
-    /// Floats serialized as integers if they have no fraction and will not lose information
-    /// by conversion.
-    /// Otherwise serialized as floats.
-    AsI64IfFractionless,
+    /// Floats are serialized as integers if they have no fraction and will not lose information by
+    /// conversion. Otherwise serialized as floats.
+    AsI64IfWhole,
 
     /// Stringify floats in decimal.
     ///
-    /// If a hint is provided, then the string will be wrapped in a single-key map
-    /// with the hint as the key. This map ignores the [MapSerializationMode].
+    /// If a hint is provided, then the string will be wrapped in a single-key map with the hint as
+    /// the key. This map ignores the [MapSerializationMode].
     ///
-    /// Can be deserialized by [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
+    /// Can be deserialized by
+    /// [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
     Stringify(Option<String>),
 }
 
@@ -184,29 +184,30 @@ impl FloatSerializationMode {
     /// Whether floats could potentially be serialized as integers.
     pub fn might_be_integer(&self) -> bool {
         match self {
-            FloatSerializationMode::AsI64 | FloatSerializationMode::AsI64IfFractionless => true,
+            FloatSerializationMode::AsI64 | FloatSerializationMode::AsI64IfWhole => true,
             _ => false,
         }
     }
 }
 
 //
-// BytesSerializationMode
+// BlobSerializationMode
 //
 
-/// Bytes serialization mode.
+/// Blob serialization mode.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub enum BytesSerializationMode {
-    /// Bytes serialized as bytes (the default).
+pub enum BlobSerializationMode {
+    /// Blobs are serialized as bytes (the default).
     #[default]
     AsBytes,
 
-    /// Stringify bytes as Base64.
+    /// Stringify blobs as Base64.
     ///
-    /// If a hint is provided, then the string will be wrapped in a single-key map
-    /// with the hint as the key. This map ignores the [MapSerializationMode].
+    /// If a hint is provided, then the string will be wrapped in a single-key map with the hint as
+    /// the key. This map ignores the [MapSerializationMode].
     ///
-    /// Can be deserialized by [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
+    /// Can be deserialized by
+    /// [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
     StringifyBase64(Option<String>),
 }
 
@@ -217,30 +218,31 @@ pub enum BytesSerializationMode {
 /// Map serialization mode.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum MapSerializationMode {
-    /// Maps serialized as maps (the default).
+    /// Maps are serialized as maps (the default).
     #[default]
     AsMap,
 
-    /// Maps serialized as sequences of key-value pairs.
+    /// Maps are serialized as sequences of key-value pairs.
     ///
-    /// If a hint is provided, then the list will be wrapped in a single-key map
-    /// with the hint as the key. This map ignores the [MapSerializationMode].
+    /// If a hint is provided, then the sequence will be wrapped in a single-key map with the hint
+    /// as the key. This map ignores the [MapSerializationMode].
     ///
-    /// Can be deserialized by [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
+    /// Can be deserialized by
+    /// [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
     AsSeq(Option<String>),
 
-    /// Maps serialized as sequences of key-value pairs only if one of the map keys is not
-    /// [Text](super::super::normal::Text).
-    /// Otherwise serialized as maps.
+    /// Maps are serialized as sequences of key-value pairs *only if* there is a key that is *not*
+    /// [Text](super::super::normal::Text). Otherwise serialized as maps.
     ///
-    /// If a hint is provided, then the list will be wrapped in a single-key map
-    /// with the hint as the key. This map ignores the [MapSerializationMode].
+    /// If a hint is provided, then the sequence will be wrapped in a single-key map with the hint
+    /// as the key. This map ignores the [MapSerializationMode].
     ///
-    /// Can be deserialized by [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
+    /// Can be deserialized by
+    /// [Value::to_hinted_value](super::super::normal::Value::to_hinted_value).
     AsSeqIfNonTextKey(Option<String>),
 
-    /// [Serializer::stringify](super::serializer::Serializer::stringify) all map
-    /// keys before serialization.
+    /// [Serializer::stringify](super::serializer::Serializer::stringify) all map keys before
+    /// serialization.
     ///
     /// Deserialization would thus require parsing these serialized keys as embedded documents.
     ///
@@ -248,9 +250,9 @@ pub enum MapSerializationMode {
     /// for YAML and JSON.
     SerializeKeys,
 
-    /// [Serializer::stringify](super::serializer::Serializer::stringify) map
-    /// keys that are not [Text](super::super::normal::Text) before serialization.
-    /// [Text](super::super::normal::Text) keys will be serialized normally.
+    /// [Serializer::stringify](super::serializer::Serializer::stringify) map keys that are not
+    /// [Text](super::super::normal::Text) before serialization. [Text](super::super::normal::Text)
+    /// keys will be serialized normally.
     ///
     /// Deserialization would thus require parsing the serialized keys as embedded documents.
     ///

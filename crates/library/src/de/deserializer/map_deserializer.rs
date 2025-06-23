@@ -9,13 +9,13 @@ use {serde::de, std::collections::*};
 // MapDeserializer
 //
 
-pub(crate) struct MapDeserializer<'de> {
-    iterator: btree_map::Iter<'de, Value, Value>,
-    current_entry: Option<(&'de Value, &'de Value)>,
+pub(crate) struct MapDeserializer<'de, AnnotationsT> {
+    iterator: btree_map::Iter<'de, Value<AnnotationsT>, Value<AnnotationsT>>,
+    current_entry: Option<(&'de Value<AnnotationsT>, &'de Value<AnnotationsT>)>,
 }
 
-impl<'de> MapDeserializer<'de> {
-    pub(crate) fn new(map: &'de Map) -> Self {
+impl<'de, AnnotationsT> MapDeserializer<'de, AnnotationsT> {
+    pub(crate) fn new(map: &'de Map<AnnotationsT>) -> Self {
         Self { iterator: map.value.iter(), current_entry: None }
     }
 
@@ -24,7 +24,7 @@ impl<'de> MapDeserializer<'de> {
     }
 }
 
-impl<'de> de::MapAccess<'de> for MapDeserializer<'de> {
+impl<'de, AnnotationsT> de::MapAccess<'de> for MapDeserializer<'de, AnnotationsT> {
     type Error = DeserializeError;
 
     fn next_key_seed<SeedT>(&mut self, seed: SeedT) -> Result<Option<SeedT::Value>, Self::Error>

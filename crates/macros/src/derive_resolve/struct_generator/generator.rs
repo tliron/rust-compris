@@ -27,8 +27,8 @@ pub struct StructGenerator {
     /// The optional field used to store keys that are unused by the fields.
     pub other_keys_field: Option<Field>,
 
-    /// The optional field used to store citations for all other fields.
-    pub citations_field: Option<TokenStream>,
+    /// The optional field used to store annotations for all other fields.
+    pub annotations_field: Option<TokenStream>,
 
     /// All keys used by all resolved fields.
     pub declared_keys: Vec<TokenStream>,
@@ -41,10 +41,9 @@ impl StructGenerator {
 
         let mut stream = generator.generate_impl_resolve();
 
-        if generator.citations_field.is_some() {
-            stream.extend(generator.generate_impl_citable());
-            stream.extend(generator.generate_impl_citable_fields());
-            stream.extend(generator.generate_impl_has_meta());
+        if generator.annotations_field.is_some() {
+            stream.extend(generator.generate_impl_annotated());
+            // stream.extend(generator.generate_impl_citable_fields());
         }
 
         Ok(stream)
@@ -105,14 +104,14 @@ impl StructGenerator {
                             }
                         }
 
-                        if field_attribute.is_citations(field)? {
-                            if generator.citations_field.is_some() {
+                        if field_attribute.is_annotations(field)? {
+                            if generator.annotations_field.is_some() {
                                 return Err(syn::Error::new(
                                     field.span(),
                                     "`resolve` attribute: only one field may specify `citations`",
                                 ));
                             } else {
-                                generator.citations_field = Some(field_name.to_token_stream());
+                                generator.annotations_field = Some(field_name.to_token_stream());
                                 continue;
                             }
                         }

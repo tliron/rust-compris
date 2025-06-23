@@ -1,44 +1,29 @@
-use super::super::meta::*;
+use {
+    super::super::annotation::*,
+    crate::{impl_normal, impl_normal_basic},
+};
 
 use {
     duplicate::*,
     kutil_cli::debug::*,
-    std::{cmp::*, fmt, hash::*, io},
+    std::{fmt, io},
 };
 
 //
 // Integer
 //
 
-/// Normal integer value.
-#[derive(Clone, Debug, Default, Eq)]
-pub struct Integer {
-    /// Actual value.
-    pub value: i64,
-
-    /// Metadata.
-    pub meta: Meta,
+impl_normal! {
+    /// Normal integer value.
+    ///
+    /// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
+    Integer(i64)
 }
 
-impl Integer {
-    /// Constructor.
-    pub fn new(integer: i64) -> Self {
-        Self { value: integer, ..Default::default() }
-    }
-}
+impl_normal_basic!(Integer);
 
-impl HasMeta for Integer {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
-    }
-
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
-    }
-}
-
-impl Debuggable for Integer {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+impl<AnnotationsT> Debuggable for Integer<AnnotationsT> {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -51,59 +36,33 @@ impl Debuggable for Integer {
     }
 }
 
-impl fmt::Display for Integer {
+impl<AnnotationsT> fmt::Display for Integer<AnnotationsT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{}i64", self.value)
-    }
-}
-
-// Delegated
-
-impl PartialEq for Integer {
-    fn eq(&self, other: &Self) -> bool {
-        self.value.eq(&other.value)
-    }
-}
-
-impl PartialOrd for Integer {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value.partial_cmp(&other.value)
-    }
-}
-
-impl Ord for Integer {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.value.cmp(&other.value)
-    }
-}
-
-impl Hash for Integer {
-    fn hash<HasherT>(&self, state: &mut HasherT)
-    where
-        HasherT: Hasher,
-    {
-        self.value.hash(state);
     }
 }
 
 // Conversions
 
 #[duplicate_item(
-  _From;
+  ToNormalT;
   [i64];
   [i32];
   [i16];
   [i8];
   [isize];
 )]
-impl From<_From> for Integer {
-    fn from(integer: _From) -> Self {
+impl<AnnotationsT> From<ToNormalT> for Integer<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
+    fn from(integer: ToNormalT) -> Self {
         Self::new(integer as i64)
     }
 }
 
-impl From<&Integer> for i64 {
-    fn from(integer: &Integer) -> Self {
+impl<AnnotationsT> From<&Integer<AnnotationsT>> for i64 {
+    fn from(integer: &Integer<AnnotationsT>) -> Self {
         integer.value
     }
 }

@@ -16,10 +16,10 @@ impl StructGenerator {
 
                     if insert {
                         quote! {
-                            if let ::compris::normal::Value::Null(_) = value {
-                                if let Some(key) = ::compris::resolve::Resolve::resolve_for(key, context, ancestor, errors)? {
-                                    resolved.#field_name.insert(key, #null);
-                                }
+                            if let ::compris::normal::Value::Null(_) = value
+                                && let Some(key) = ::compris::resolve::Resolve::resolve_with_errors(key, errors)?
+                            {
+                                resolved.#field_name.insert(key, #null);
                             } else
                         }
                     } else {

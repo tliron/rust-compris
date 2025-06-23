@@ -1,7 +1,7 @@
 mod node;
 mod path;
-mod route;
+mod representation;
 mod segment;
 
 #[allow(unused_imports)]
-pub use {node::*, path::*, route::*, segment::*};
+pub use {node::*, path::*, representation::*, segment::*};

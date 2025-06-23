@@ -1,4 +1,8 @@
-use super::super::{super::normal::*, cite::*, context::*, error::*, resolve::*, result::*};
+use super::super::{
+    super::{annotation::*, normal::*},
+    errors::*,
+    resolve::*,
+};
 
 use {
     kutil_std::error::*,
@@ -6,18 +10,15 @@ use {
 };
 
 /// Resolve a [Value] into a [FromStr].
-pub fn resolve_from_str<FromStrT, ContextT, ErrorT, ErrorRecipientT>(
-    value: &Value,
-    context: Option<&ContextT>,
-    ancestor: Option<&Value>,
+pub fn resolve_from_str<FromStrT, AnnotationsT, ErrorRecipientT>(
+    value: &Value<AnnotationsT>,
     errors: &mut ErrorRecipientT,
-) -> ResolveResult<FromStrT, ErrorT>
+) -> ResolveResult<FromStrT, AnnotationsT>
 where
     FromStrT: FromStr,
     FromStrT::Err: fmt::Display,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
-    ErrorRecipientT: ErrorRecipient<ErrorT>,
+    AnnotationsT: Annotated + Clone + Default,
+    ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
 {
     Ok(match value {
         Value::Text(text) => match text.value.parse() {
@@ -26,15 +27,14 @@ where
             Err(error) => {
                 errors.give(
                     MalformedError::new(&tynm::type_name::<FromStrT>(), &error.to_string())
-                        .with_citation_for(value, context, ancestor),
+                        .with_annotations_from(value),
                 )?;
                 None
             }
         },
 
         _ => {
-            errors
-                .give(IncompatibleValueTypeError::new(value, &["text"]).with_citation_for(value, context, ancestor))?;
+            errors.give(IncompatibleValueTypeError::new(value, &["text"]).with_annotations_from(value))?;
             None
         }
     })
@@ -44,21 +44,18 @@ where
 #[macro_export]
 macro_rules! impl_resolve_from_str {
     ( $type:ident ) => {
-        impl<ContextT, ErrorT> $crate::resolve::Resolve<$type, ContextT, ErrorT> for $crate::normal::Value
+        impl<AnnotationsT> $crate::resolve::Resolve<$type, AnnotationsT> for $crate::normal::Value<AnnotationsT>
         where
-            ContextT: $crate::resolve::ResolveContext,
-            ErrorT: $crate::resolve::ResolveError,
+            AnnotationsT: $crate::annotation::Annotated + ::std::clone::Clone + ::std::default::Default,
         {
-            fn resolve_for<ErrorRecipientT>(
+            fn resolve_with_errors<ErrorRecipientT>(
                 &self,
-                context: ::std::option::Option<&ContextT>,
-                ancestor: ::std::option::Option<&$crate::normal::Value>,
                 errors: &mut ErrorRecipientT,
-            ) -> $crate::resolve::ResolveResult<$type, ErrorT>
+            ) -> $crate::resolve::ResolveResult<$type, AnnotationsT>
             where
-                ErrorRecipientT: ::kutil_std::error::ErrorRecipient<ErrorT>,
+                ErrorRecipientT: ::kutil_std::error::ErrorRecipient<$crate::resolve::ResolveError<AnnotationsT>>,
             {
-                $crate::resolve::resolve_from_str(self, context, ancestor, errors)
+                $crate::resolve::resolve_from_str(self, errors)
             }
         }
     };
@@ -104,22 +101,19 @@ where
     }
 }
 
-impl<FromStrT, ContextT, ErrorT> Resolve<ResolveFromStr<FromStrT>, ContextT, ErrorT> for Value
+impl<FromStrT, AnnotationsT> Resolve<ResolveFromStr<FromStrT>, AnnotationsT> for Value<AnnotationsT>
 where
     FromStrT: FromStr,
     FromStrT::Err: fmt::Display,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
+    AnnotationsT: Annotated + Clone + Default,
 {
-    fn resolve_for<ErrorRecipientT>(
+    fn resolve_with_errors<ErrorRecipientT>(
         &self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolveFromStr<FromStrT>, ErrorT>
+    ) -> ResolveResult<ResolveFromStr<FromStrT>, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        resolve_from_str(self, context, ancestor, errors).map(|resolved| resolved.map(ResolveFromStr::new))
+        resolve_from_str(self, errors).map(|resolved| resolved.map(ResolveFromStr::new))
     }
 }

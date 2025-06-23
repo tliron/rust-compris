@@ -10,13 +10,13 @@ use serde::de;
 // EnumDeserializer
 //
 
-pub(crate) struct EnumDeserializer<'de> {
-    key: &'de Value,
-    value: &'de Value,
+pub(crate) struct EnumDeserializer<'de, AnnotationsT> {
+    key: &'de Value<AnnotationsT>,
+    value: &'de Value<AnnotationsT>,
 }
 
-impl<'de> EnumDeserializer<'de> {
-    pub(crate) fn new(map: &'de Map) -> Result<Self, DeserializeError> {
+impl<'de, AnnotationsT> EnumDeserializer<'de, AnnotationsT> {
+    pub(crate) fn new(map: &'de Map<AnnotationsT>) -> Result<Self, DeserializeError> {
         if map.value.len() == 1 {
             let (key, value) = map.value.iter().next().expect("non-empty");
             Ok(Self { key, value })
@@ -26,9 +26,9 @@ impl<'de> EnumDeserializer<'de> {
     }
 }
 
-impl<'de> de::EnumAccess<'de> for EnumDeserializer<'de> {
+impl<'de, AnnotationsT> de::EnumAccess<'de> for EnumDeserializer<'de, AnnotationsT> {
     type Error = DeserializeError;
-    type Variant = VariantDeserializer<'de>;
+    type Variant = VariantDeserializer<'de, AnnotationsT>;
 
     fn variant_seed<SeedT>(self, seed: SeedT) -> Result<(SeedT::Value, Self::Variant), Self::Error>
     where

@@ -12,18 +12,18 @@ use serde::de;
 // Deserializer
 //
 
-/// Serde deserializer for Compris normal value types.
+/// Serde deserializer for Compris normal types.
 ///
 /// Will convert number types only if information is not lost. Otherwise, will return an error.
 ///
 /// See [NumCast::from](num_traits::cast::NumCast::from).
-pub struct Deserializer<'own> {
-    value: &'own Value,
+pub struct Deserializer<'own, AnnotationsT> {
+    value: &'own Value<AnnotationsT>,
 }
 
-impl<'own> Deserializer<'own> {
+impl<'own, AnnotationsT> Deserializer<'own, AnnotationsT> {
     /// Constructor
-    pub fn new(value: &'own Value) -> Self {
+    pub fn new(value: &'own Value<AnnotationsT>) -> Self {
         Self { value }
     }
 
@@ -38,7 +38,7 @@ impl<'own> Deserializer<'own> {
 
 // See: https://serde.rs/impl-deserializer.html
 
-impl<'de, 'own> de::Deserializer<'de> for &'own mut Deserializer<'de> {
+impl<'de, 'own, AnnotationsT> de::Deserializer<'de> for &'own mut Deserializer<'de, AnnotationsT> {
     type Error = DeserializeError;
 
     fn deserialize_any<VisitorT>(self, visitor: VisitorT) -> Result<VisitorT::Value, Self::Error>

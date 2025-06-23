@@ -1,4 +1,4 @@
-use super::{super::normal::*, common::*, result::*};
+use super::errors::*;
 
 use kutil_std::error::*;
 
@@ -7,37 +7,27 @@ use kutil_std::error::*;
 //
 
 /// Resolve one type into another.
-pub trait Resolve<ResolvedT, ContextT = CommonResolveContext, ErrorT = CommonResolveError> {
+pub trait Resolve<ResolvedT, AnnotationsT> {
     /// Resolve one type into another.
     ///
-    /// In the case of an error, implementations should report errors using [ErrorRecipient::give].
+    /// Errors can be reported as usual by [Err] *but also* by the [ErrorRecipient]. Callers should
+    /// thus check that `errors` is empty even when the function returns [Ok].
     ///
-    /// Only if [give](ErrorRecipient::give) itself fails should they return an error here, which allows
-    /// for a fail-fast mode. They should not otherwise return an error.
-    ///
-    /// The optional context and ancestor arguments can be used both for resolution and for adding more
-    /// details to errors.
-    fn resolve_for<ErrorRecipientT>(
+    /// The function may return [Some] partially resolved result even if there are errors.
+    fn resolve_with_errors<ErrorRecipientT>(
         &self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolvedT, ErrorT>
+    ) -> ResolveResult<ResolvedT, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>;
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>;
 
-    /// Resolve one type into another with a provided [ErrorRecipient].
-    fn resolve_into<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, ErrorT>
-    where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
-    {
-        self.resolve_for(None, None, errors)
-    }
-
-    /// Resolve one type into another while failing on the first encountered error.
+    /// Resolve one type into another.
     ///
-    /// Uses [FailFastErrorRecipient].
-    fn resolve(&self) -> ResolveResult<ResolvedT, ErrorT> {
-        self.resolve_into(&mut FailFastErrorRecipient)
+    /// Unlike [resolve](Resolve::resolve) will fail on the first encountered error and will return
+    /// [ResolveError::None] instead of [None].
+    ///
+    /// If you want all the errors use [resolve](Resolve::resolve) instead.
+    fn resolve(&self) -> Result<ResolvedT, ResolveError<AnnotationsT>> {
+        self.resolve_with_errors(&mut FailFastErrorRecipient)?.ok_or(ResolveError::None)
     }
 }

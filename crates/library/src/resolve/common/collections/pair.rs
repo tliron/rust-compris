@@ -1,32 +1,30 @@
-use super::super::super::{super::normal::*, resolve::*, result::*};
+use super::super::super::{super::normal::*, errors::*, resolve::*};
 
 use kutil_std::error::*;
 
 // Resolve two values at once
 // Useful for key-value pairs of maps
 
-impl<FirstT, SecondT, ContextT, ErrorT> Resolve<(FirstT, SecondT), ContextT, ErrorT> for (&Value, &Value)
+impl<FirstT, SecondT, AnnotationsT> Resolve<(FirstT, SecondT), AnnotationsT>
+    for (&Value<AnnotationsT>, &Value<AnnotationsT>)
 where
-    Value: Resolve<FirstT, ContextT, ErrorT> + Resolve<SecondT, ContextT, ErrorT>,
+    Value<AnnotationsT>: Resolve<FirstT, AnnotationsT> + Resolve<SecondT, AnnotationsT>,
 {
-    fn resolve_for<ErrorRecipientT>(
-        &self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
-        errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<(FirstT, SecondT), ErrorT>
+    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<(FirstT, SecondT), AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        let first = self.0.resolve_for(context, ancestor, errors)?;
-        let second = self.1.resolve_for(context, ancestor, errors)?;
+        let first = self.0.resolve_with_errors(errors)?;
+        let second = self.1.resolve_with_errors(errors)?;
 
-        if let Some(first) = first {
-            if let Some(second) = second {
-                return Ok(Some((first, second)));
-            }
-        }
-
-        Ok(None)
+        Ok(
+            if let Some(first) = first
+                && let Some(second) = second
+            {
+                Some((first, second))
+            } else {
+                None
+            },
+        )
     }
 }

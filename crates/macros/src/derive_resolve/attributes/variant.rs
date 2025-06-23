@@ -10,7 +10,7 @@ use deluxe::*;
 /// #[derive(Resolve)]
 /// enum MyEnum {
 ///   #[resolve(...)] // this
-///   my_variant(Value)
+///   MyVariant(...)
 /// }
 /// ```
 #[derive(Clone, ExtractAttributes)]

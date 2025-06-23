@@ -10,7 +10,6 @@ use {
 
 // We can #[derive(Resolve)] for enums, too
 #[derive(Debug, Resolve)]
-#[resolve(context = CommonResolveContext, error = CommonResolveError)]
 #[allow(dead_code)]
 enum Data {
     // We must use #[derive(resolve)] for variants we want to support
@@ -33,17 +32,16 @@ enum Data {
 }
 
 pub fn main() {
-    let value = normal_map![("content", "my content")];
-    let data: Data = value.resolve().expect("resolve").expect("some");
+    let value = without_annotations!(normal_map![("content", "my content")]);
+    let data: Data = value.resolve().expect("resolve");
 
     utils::heading("resolved content", true);
     println!("{:#?}", data);
 
     // For unit variants the value of the key is ignored
-    // (we can set it be Variant::Null)
 
-    let value = normal_map![("empty", normal::Null::new())];
-    let data: Data = value.resolve().expect("resolve").expect("some");
+    let value = without_annotations!(normal_map![("empty", ())]);
+    let data: Data = value.resolve().expect("resolve");
 
     utils::heading("resolved empty", false);
     println!("{:#?}", data);

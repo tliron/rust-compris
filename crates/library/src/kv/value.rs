@@ -1,6 +1,6 @@
 use super::{super::normal::*, iterator::*};
 
-use std::collections::*;
+use kutil_std::collections::*;
 
 //
 // KeyValuePairIteratorForValueIterator
@@ -12,41 +12,48 @@ use std::collections::*;
 /// of length 2 (key-value pairs).
 ///
 /// Keeps track of keys and will report errors if it encounters duplicates.
-pub struct KeyValuePairIteratorForValueIterator<'own, IteratorT>
+pub struct KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotationsT>
 where
-    IteratorT: Iterator<Item = &'own Value>,
+    InnerT: Iterator<Item = &'own Value<AnnotationsT>>,
 {
-    /// Value iterator.
-    pub iterator: IteratorT,
+    /// Inner iterator.
+    pub inner: InnerT,
 
     /// Accumulated keys.
-    pub keys: HashSet<&'own Value>,
+    pub keys: FastHashSet<&'own Value<AnnotationsT>>,
 }
 
-impl<'own, IteratorT> KeyValuePairIteratorForValueIterator<'own, IteratorT>
+impl<'own, InnerT, AnnotationsT> KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotationsT>
 where
-    IteratorT: Iterator<Item = &'own Value>,
+    InnerT: Iterator<Item = &'own Value<AnnotationsT>>,
 {
     /// Constructor.
-    pub fn new(iterator: IteratorT) -> Self {
-        Self { iterator, keys: HashSet::new() }
+    pub fn new(inner: InnerT) -> Self {
+        Self { inner, keys: FastHashSet::new() }
     }
 
     /// Constructor.
     pub fn new_for<IterableT>(iterable: IterableT) -> Self
     where
-        IterableT: IntoIterator<IntoIter = IteratorT>,
+        IterableT: IntoIterator<IntoIter = InnerT>,
     {
         Self::new(iterable.into_iter())
     }
 }
 
-impl<'own, IteratorT> KeyValuePairIterator for KeyValuePairIteratorForValueIterator<'own, IteratorT>
+impl<'own, InnerT, AnnotationsT> KeyValuePairIterator<AnnotationsT>
+    for KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotationsT>
 where
-    IteratorT: Iterator<Item = &'own Value>,
+    InnerT: Iterator<Item = &'own Value<AnnotationsT>>,
+    AnnotationsT: Default,
 {
-    fn next(&mut self) -> Result<Option<(&'own Value, &'own Value)>, (MalformedError, &Value)> {
-        if let Some(item) = self.iterator.next() {
+    fn next(
+        &mut self,
+    ) -> Result<
+        Option<(&'own Value<AnnotationsT>, &'own Value<AnnotationsT>)>,
+        (MalformedError<AnnotationsT>, &Value<AnnotationsT>),
+    > {
+        if let Some(item) = self.inner.next() {
             if let Some((key, value)) = item.to_pair() {
                 if self.keys.contains(key) {
                     return Err((MalformedError::new("key-value pair", "key is not unique"), key));

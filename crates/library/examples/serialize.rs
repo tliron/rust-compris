@@ -16,11 +16,11 @@ struct User {
 pub fn main() {
     // See examples/literal.rs
 
-    let value = normal_list![
+    let value = without_annotations!(normal_list![
         normal_list![-1, "element", 1.5],
         normal_map![("key1", "value1"), (123.45, "value2")],
         normal_map![(compris::normal_map![("complex_key", "complex_value")], "value3")]
-    ];
+    ]);
 
     // Note: "pretty" for CBOR just means adding a newline at the end
 

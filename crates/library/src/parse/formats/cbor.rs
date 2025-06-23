@@ -1,5 +1,5 @@
 use super::super::{
-    super::{meta::*, normal::*},
+    super::{annotation::*, normal::*},
     builder::*,
     *,
 };
@@ -12,14 +12,15 @@ use {
 };
 
 impl Parser {
-    /// Parses from CBOR into a normal value.
+    /// Parses CBOR into a [Value].
     ///
     /// Is affected by [Parser::base64](super::super::Parser).
-    pub fn parse_cbor<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ParseError>
+    pub fn parse_cbor<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
     where
         ReadT: io::Read,
+        AnnotationsT: Annotated + Clone + Default,
     {
-        let mut value_builder = ValueBuilder::new();
+        let mut value_builder = ValueBuilder::new(self.source.clone());
         if self.base64 {
             let reader = DecoderReader::new(reader, &BASE64_STANDARD);
             let mut decoder = Decoder::new(reader);
@@ -34,13 +35,14 @@ impl Parser {
 
 // Utils
 
-fn read_next_cbor<ReadT>(
+fn read_next_cbor<ReadT, AnnotationsT>(
     decoder: &mut Decoder<ReadT>,
-    value_builder: &mut ValueBuilder,
-    annotation: Option<Annotation>,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
+    label: Option<Label>,
 ) -> Result<bool, ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
     let event = decoder.next_event()?;
     trace!("{:?}", event);
@@ -52,50 +54,50 @@ where
 
         Event::Tag(tag) => {
             // https://www.rfc-editor.org/rfc/rfc8949.html#name-tagging-of-items
-            return read_next_cbor(decoder, value_builder, Some(Annotation::Integer(tag as i64)));
+            return read_next_cbor(decoder, value_builder, Some(Label::Integer(tag as i64)));
         }
 
         Event::Null => {
-            value_builder.add(Null::new().with_annotation(annotation), None);
+            value_builder.add(Null::default().with_label(label), None);
         }
 
         Event::Unsigned(unsigned_integer) => {
-            value_builder.add(UnsignedInteger::new(unsigned_integer).with_annotation(annotation), None);
+            value_builder.add(UnsignedInteger::new(unsigned_integer).with_label(label), None);
         }
 
         Event::Signed(integer) => {
             let integer = Event::interpret_signed_checked(integer).ok_or_else(|| DecodeError::Malformed)?;
-            value_builder.add(Integer::new(integer).with_annotation(annotation), None);
+            value_builder.add(Integer::new(integer).with_label(label), None);
         }
 
         Event::Float(float) => {
-            value_builder.add(Float::from(float).with_annotation(annotation), None);
+            value_builder.add(Float::from(float).with_label(label), None);
         }
 
         Event::Bool(boolean) => {
-            value_builder.add(Boolean::new(boolean).with_annotation(annotation), None);
+            value_builder.add(Boolean::new(boolean).with_label(label), None);
         }
 
         Event::TextString(string) => {
-            value_builder.add(Text::from(string).with_annotation(annotation), None);
+            value_builder.add(Text::from(string).with_label(label), None);
         }
 
         Event::UnknownLengthTextString => {
             let string = read_cbor_unknown_length_text_string(decoder)?;
-            value_builder.add(Text::from(string).with_annotation(annotation), None);
+            value_builder.add(Text::from(string).with_label(label), None);
         }
 
         Event::ByteString(bytes) => {
-            value_builder.add(Blob::from(bytes).with_annotation(annotation), None);
+            value_builder.add(Blob::from(bytes).with_label(label), None);
         }
 
         Event::UnknownLengthByteString => {
             let bytes = read_cbor_unknown_length_bytes(decoder)?;
-            value_builder.add(Blob::from(bytes).with_annotation(annotation), None);
+            value_builder.add(Blob::from(bytes).with_label(label), None);
         }
 
         Event::Array(length) => {
-            value_builder.start_list_with_annotation(annotation, None);
+            value_builder.start_list_with_label(label, None);
             for _ in 0..length {
                 read_next_cbor(decoder, value_builder, None)?;
             }
@@ -103,7 +105,7 @@ where
         }
 
         Event::UnknownLengthArray => {
-            value_builder.start_list_with_annotation(annotation, None);
+            value_builder.start_list_with_label(label, None);
             loop {
                 match decoder.next_event()? {
                     Event::Break => {
@@ -119,7 +121,7 @@ where
         }
 
         Event::Map(length) => {
-            value_builder.start_map_with_annotation(annotation, None);
+            value_builder.start_map_with_label(label, None);
             for _ in 0..length {
                 read_next_cbor(decoder, value_builder, None)?;
                 read_next_cbor(decoder, value_builder, None)?;
@@ -128,7 +130,7 @@ where
         }
 
         Event::UnknownLengthMap => {
-            value_builder.start_map_with_annotation(annotation, None);
+            value_builder.start_map_with_label(label, None);
             loop {
                 match decoder.next_event()? {
                     Event::Break => {

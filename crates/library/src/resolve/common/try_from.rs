@@ -1,4 +1,8 @@
-use super::super::{super::normal::*, cite::*, context::*, error::*, resolve::*, result::*};
+use super::super::{
+    super::{annotation::*, normal::*},
+    errors::*,
+    resolve::*,
+};
 
 use {
     kutil_std::error::*,
@@ -6,20 +10,17 @@ use {
 };
 
 /// Resolve a [Value] into a [TryFrom] via an intermediate.
-pub fn resolve_try_from<TryFromT, IntermediateT, ContextT, ErrorT, ErrorRecipientT>(
-    value: &Value,
-    context: Option<&ContextT>,
-    ancestor: Option<&Value>,
+pub fn resolve_try_from<TryFromT, IntermediateT, AnnotationsT, ErrorRecipientT>(
+    value: &Value<AnnotationsT>,
     errors: &mut ErrorRecipientT,
-) -> ResolveResult<TryFromT, ErrorT>
+) -> ResolveResult<TryFromT, AnnotationsT>
 where
-    for<'value> &'value Value: TryInto<IntermediateT>,
-    for<'value> <&'value Value as TryInto<IntermediateT>>::Error: fmt::Debug,
+    for<'value> &'value Value<AnnotationsT>: TryInto<IntermediateT>,
+    for<'value> <&'value Value<AnnotationsT> as TryInto<IntermediateT>>::Error: fmt::Debug,
     TryFromT: TryFrom<IntermediateT>,
     TryFromT::Error: fmt::Display,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
-    ErrorRecipientT: ErrorRecipient<ErrorT>,
+    AnnotationsT: Annotated + Clone + Default,
+    ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
 {
     let intermediate: IntermediateT = value.try_into().unwrap();
 
@@ -28,8 +29,7 @@ where
 
         Err(error) => {
             errors.give(
-                MalformedError::new(&tynm::type_name::<TryFromT>(), &error.to_string())
-                    .with_citation_for(value, context, ancestor),
+                MalformedError::new(&tynm::type_name::<TryFromT>(), &error.to_string()).with_annotations_from(value),
             )?;
             None
         }
@@ -78,25 +78,22 @@ where
     }
 }
 
-impl<TryFromT, IntermediateT, ContextT, ErrorT> Resolve<ResolveTryFrom<TryFromT, IntermediateT>, ContextT, ErrorT>
-    for Value
+impl<TryFromT, IntermediateT, AnnotationsT> Resolve<ResolveTryFrom<TryFromT, IntermediateT>, AnnotationsT>
+    for Value<AnnotationsT>
 where
-    for<'value> &'value Value: TryInto<IntermediateT>,
-    for<'value> <&'value Value as TryInto<IntermediateT>>::Error: fmt::Debug,
+    for<'value> &'value Value<AnnotationsT>: TryInto<IntermediateT>,
+    for<'value> <&'value Value<AnnotationsT> as TryInto<IntermediateT>>::Error: fmt::Debug,
     TryFromT: TryFrom<IntermediateT>,
     TryFromT::Error: fmt::Display,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
+    AnnotationsT: Annotated + Clone + Default,
 {
-    fn resolve_for<ErrorRecipientT>(
+    fn resolve_with_errors<ErrorRecipientT>(
         &self,
-        context: Option<&ContextT>,
-        ancestor: Option<&Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolveTryFrom<TryFromT, IntermediateT>, ErrorT>
+    ) -> ResolveResult<ResolveTryFrom<TryFromT, IntermediateT>, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        resolve_try_from(self, context, ancestor, errors).map(|resolved| resolved.map(ResolveTryFrom::new))
+        resolve_try_from(self, errors).map(|resolved| resolved.map(ResolveTryFrom::new))
     }
 }

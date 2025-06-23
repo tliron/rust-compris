@@ -1,3 +1,21 @@
+/// Cast to a [Value](super::super::normal::Value) with
+/// [Annotations](super::super::annotation::Annotations).
+#[macro_export]
+macro_rules! with_annotations (
+    () => ( $crate::normal::Value::Nothing<$crate::annotation::WithAnnotations> );
+
+    ( $value:expr ) => ( ($value) as $crate::normal::Value<$crate::annotation::WithAnnotations> );
+);
+
+/// Cast to a [Value](super::super::normal::Value) without
+/// [Annotations](super::super::annotation::Annotations).
+#[macro_export]
+macro_rules! without_annotations (
+    () => ( $crate::normal::Value::Nothing<$crate::annotation::WithoutAnnotations> );
+
+    ( $value:expr ) => ( ($value) as $crate::normal::Value<$crate::annotation::WithoutAnnotations> );
+);
+
 /// Creates a [Value](super::super::normal::Value) from a bare primitive expression.
 #[macro_export]
 macro_rules! normal (
@@ -17,7 +35,7 @@ macro_rules! normal_list (
 
     ( $( $value:expr ),+ $( , )? ) => (
         $crate::normal::Value::List(
-            $crate::normal::List::new_with(
+            $crate::normal::List::new(
                 vec![ $( $crate::normal!( $value ) ),+ ]
             )
         )

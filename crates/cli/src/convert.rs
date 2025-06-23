@@ -2,11 +2,11 @@ use super::{cli::*, errors::*};
 
 use {
     clap::*,
-    compris::{normal::Value, ser::*, *},
+    compris::{annotation::*, normal::*, ser::*, *},
     kutil_cli::{debug::*, run::*},
     read_url::*,
     std::{
-        fs::File,
+        fs::*,
         io::{self, IsTerminal},
         path,
     },
@@ -15,7 +15,7 @@ use {
 impl CLI {
     /// Convert.
     pub fn convert(&self) -> Result<(), MainError> {
-        let (content, input_format) = self.read()?;
+        let (content, input_format) = self.read::<WithAnnotations>()?;
         self.write(content, input_format)
     }
 
@@ -36,8 +36,10 @@ impl CLI {
                 tracing::info!("reading from URL: {}", url);
 
                 let input_url_extension = {
-                    if let Some(extension) = path::Path::new(input_url).extension() {
-                        if let Some(extension) = extension.to_str() { Some(extension.into()) } else { None }
+                    if let Some(extension) = path::Path::new(input_url).extension()
+                        && let Some(extension) = extension.to_str()
+                    {
+                        Some(extension.into())
                     } else {
                         None
                     }
@@ -50,7 +52,7 @@ impl CLI {
                 let stdin = io::stdin();
                 if stdin.is_terminal() {
                     CLI::command().print_help()?;
-                    return Err(Exit::success().into());
+                    return Err(ExitError::success().into());
                 }
 
                 tracing::info!("reading from stdin");
@@ -85,7 +87,10 @@ impl CLI {
         input_format.parse()
     }
 
-    fn read(&self) -> Result<(Value, Format), MainError> {
+    fn read<AnnotationsT>(&self) -> Result<(Value<AnnotationsT>, Format), MainError>
+    where
+        AnnotationsT: Annotated + Clone + Default,
+    {
         let (mut reader, input_url_extension) = self.get_reader()?;
         let input_format = self.get_input_format(&input_url_extension)?;
 
@@ -131,11 +136,12 @@ impl CLI {
                     tracing::info!("writing to empty");
                     return Box::new(io::empty());
                 } else {
-                    if let Some(output_format) = &output_format {
-                        if output_format.is_binary() && !self.output_base64 {
-                            tracing::info!("writing to stdout (raw)");
-                            return Box::new(io::stdout());
-                        }
+                    if let Some(output_format) = &output_format
+                        && output_format.is_binary()
+                        && !self.output_base64
+                    {
+                        tracing::info!("writing to stdout (raw)");
+                        return Box::new(io::stdout());
                     }
 
                     tracing::info!("writing to stdout");
@@ -145,7 +151,10 @@ impl CLI {
         }
     }
 
-    fn write(&self, content: Value, input_format: compris::Format) -> Result<(), MainError> {
+    fn write<AnnotationsT>(&self, content: Value<AnnotationsT>, input_format: compris::Format) -> Result<(), MainError>
+    where
+        AnnotationsT: Annotated + Clone + Default,
+    {
         let output_format = self.get_output_format(&input_format);
         let mut writer = self.get_writer(&output_format);
 

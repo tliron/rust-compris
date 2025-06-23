@@ -1,12 +1,12 @@
 use super::super::{
-    super::{meta::*, normal::*},
+    super::{annotation::*, normal::*},
     modal::*,
     mode::*,
 };
 
 use serde::ser::*;
 
-impl Serialize for Integer {
+impl<AnnotationsT> Serialize for Integer<AnnotationsT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -15,7 +15,10 @@ impl Serialize for Integer {
     }
 }
 
-impl SerializeModal for Integer {
+impl<AnnotationsT> SerializeModal for Integer<AnnotationsT>
+where
+    AnnotationsT: Annotated + Clone + Default,
+{
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,
@@ -37,8 +40,8 @@ impl SerializeModal for Integer {
                         // Avoid endless recursion!
                         serializer.serialize_u64(unsigned_integer)
                     } else {
-                        UnsignedInteger::new(unsigned_integer)
-                            .with_meta(self.meta.clone())
+                        UnsignedInteger::<AnnotationsT>::new(unsigned_integer)
+                            .with_annotations_from(self)
                             .serialize_modal(serializer, mode)
                     }
                 }
@@ -51,7 +54,7 @@ impl SerializeModal for Integer {
                     // Avoid endless recursion!
                     serializer.serialize_f64(float)
                 } else {
-                    Float::from(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                    Float::<AnnotationsT>::from(float).with_annotations_from(self).serialize_modal(serializer, mode)
                 }
             }
 

@@ -2,29 +2,45 @@ mod utils;
 
 use {
     anstream::{print, println},
-    bytestring::*,
-    compris::{cite::*, normal::*, parse::*, resolve::*, *},
+    compris::{annotation::*, normal::*, parse::*, resolve::*, *},
     kutil_cli::debug::*,
-    kutil_std::error::*,
-    std::collections::*,
+    std::{collections::*, fmt},
 };
 
 // See first: examples/resolve_basic.rs
 
-#[derive(Debug, Default, Resolve)]
+#[derive(Debuggable, Default, Resolve)]
+// By default #[derive(Resolve)] will add a generic parameter for annotations
+// But if we want to define and use it in our type then we must specify it via #[resolve(annotations_parameter=...)]
+// We're also adding our own generic parameter, ExtraT, just to show that it is possible
+#[resolve(annotations_parameter=AnnotationsT)]
 #[allow(dead_code)]
-struct User {
+struct User<AnnotationsT, ExtraT>
+where
+    AnnotationsT: fmt::Debug,
+    ExtraT: Default + fmt::Debug,
+{
     #[resolve(required)]
+    #[debuggable(style(string))]
     name: String,
 
     #[resolve]
+    #[debuggable(style(number))]
     credit: i32,
 
     #[resolve(required, key = "enabled")]
+    #[debuggable(style(symbol))]
     is_enabled: bool,
 
     #[resolve(null = Some("no group".into()))]
+    #[debuggable(option, style(string))]
     group: Option<String>,
+
+    // Here we use the generic annotations parameter we defined and specified
+    // (Value resolves into itself)
+    #[resolve]
+    #[debuggable(option, as(debuggable))]
+    metadata: Option<Value<AnnotationsT>>,
 
     // By default unknown keys cause errors
     // But we can resolve and collate them instead
@@ -33,20 +49,26 @@ struct User {
     // Both key and value will be resolved upon insertion
     // You can use other "resolve" attributes on this field, too, like "null", "ignore_null", etc.
     #[resolve(other_keys, null = -100)]
+    #[debuggable(iter(kv), key_style(string), style(number))]
     other: HashMap<String, i64>,
 
-    // Another neat trick: you can collate all field citations
-    // The citations field must support ".insert(String, Citation)"
-    // The citation for the struct itself will be under the empty string key
-    #[resolve(citations)]
-    citations: HashMap<ByteString, Citation>,
+    // Our generic field
+    #[debuggable(skip)]
+    extra: ExtraT,
+
+    // And for our final trick: you can collate all field annotations to a field
+    // This will also generate implementations of `Annotated` and `AnnotatedFields` for this struct
+    #[resolve(annotations)]
+    #[debuggable(skip)]
+    annotations: FieldAnnotations,
 }
 
 pub fn main() {
     let json = r#"[{
     "name": "Tal",
     "credit": "wrong type",
-    "group": null
+    "group": null,
+    "metadata": {"anything": "we want"}
 }, {
     "name": "Shiri",
     "credit": 123,
@@ -55,34 +77,41 @@ pub fn main() {
     "mystery key 2!": null
 }]"#;
 
-    let value = Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).expect("parse");
+    let value = with_annotations!(
+        Parser::new(Format::JSON)
+            .with_source("json".into())
+            .with_try_integers(true)
+            .parse_from_string(json)
+            .expect("parse")
+    );
 
-    // Unlike resolve_basic.rs, here need generic parameters because our derived implementation is generic
-    // (It's quite a verbose syntax here, but in real-world uses the types would probably be inferred)
-
-    let mut errors = Errors::new();
-    let users =
-        <Value as Resolve<Vec<User>, CommonResolveContext, CommonResolveError>>::resolve_into(&value, &mut errors)
-            .expect("resolve")
-            .expect("some");
+    let mut errors = ResolveErrors::new();
+    let users: Vec<User<_, isize>> =
+        value.resolve_with_errors(&mut errors).expect("errors should be accumulated").expect("some");
 
     utils::heading("partially resolved", true);
-    println!("{:#?}", users);
-
-    if !errors.is_empty() {
-        utils::heading("accumulated errors", false);
-        errors.to_cited().print_debug();
+    for user in &users {
+        user.print_debug();
     }
 
-    utils::heading("citations", false);
+    if !errors.is_empty() {
+        println!();
+        errors.annotated_debuggables(Some("accumulated errors".into())).print_debug();
+    }
+
+    utils::heading("annotations", false);
     for (index, user) in users.iter().enumerate() {
         println!("User[{}]: ", index);
-        for (field_name, citation) in &user.citations {
+
+        // We'll convert to BTreeMap so it will be sorted
+        let annotations: BTreeMap<_, _> = user.annotations.iter().collect();
+
+        for (field_name, annotation) in annotations {
             print!("  ");
             if !field_name.is_empty() {
                 print!("{}: ", field_name);
             }
-            citation.print_debug();
+            annotation.print_debug();
         }
     }
 }

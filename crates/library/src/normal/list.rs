@@ -1,12 +1,13 @@
-use super::{super::meta::*, map::*, value::*};
+use {
+    super::{super::annotation::*, debug::*, map::*, value::*},
+    crate::impl_normal,
+};
 
 use {
     kutil_cli::debug::*,
     kutil_std::iter::*,
     std::{
-        cmp::*,
         fmt::{self, Write},
-        hash::*,
         io, slice, vec,
     },
 };
@@ -15,41 +16,30 @@ use {
 // List
 //
 
-/// Normal list value.
-#[derive(Clone, Debug, Default, Eq)]
-pub struct List {
-    /// Actual value.
-    pub value: Vec<Value>,
-
-    /// Metadata.
-    pub meta: Meta,
+impl_normal! {
+    /// Normal list value.
+    ///
+    /// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
+    List(Vec<Value<AnnotationsT>>)
 }
 
-impl List {
-    /// Constructor.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Constructor.
-    pub fn new_with(vector: Vec<Value>) -> Self {
-        Self { value: vector, ..Default::default() }
-    }
-
+impl<AnnotationsT> List<AnnotationsT> {
     /// Constructor.
     pub fn new_from<IterableT>(iterable: IterableT) -> Self
     where
-        IterableT: IntoIterator<Item = Value>,
+        AnnotationsT: Default,
+        IterableT: IntoIterator<Item = Value<AnnotationsT>>,
     {
-        Self::new_with(Vec::from_iter(iterable))
+        Self::new(Vec::from_iter(iterable))
     }
 
     /// Constructor.
     pub fn new_from_clone<'own, IterableT>(iterable: IterableT) -> Self
     where
-        IterableT: IntoIterator<Item = &'own Value>,
+        AnnotationsT: 'own + Clone + Default,
+        IterableT: IntoIterator<Item = &'own Value<AnnotationsT>>,
     {
-        let mut list = Self::new();
+        let mut list = Self::default();
         for item in iterable {
             list.value.push(item.clone());
         }
@@ -57,15 +47,21 @@ impl List {
     }
 
     /// Constructor.
-    pub fn new_with_capacity(capacity: usize) -> Self {
-        Self { value: Vec::with_capacity(capacity), ..Default::default() }
+    pub fn new_with_capacity(capacity: usize) -> Self
+    where
+        AnnotationsT: Default,
+    {
+        Self::new(Vec::with_capacity(capacity))
     }
 
     /// Push a clone of the value only if the list doesn't contain it.
     /// Return true if successful.
     ///
     /// Useful for treating the list like a set (though it's an inefficient one).
-    pub fn push_unique_clone(&mut self, item: &Value) -> bool {
+    pub fn push_unique_clone(&mut self, item: &Value<AnnotationsT>) -> bool
+    where
+        AnnotationsT: Clone,
+    {
         if self.value.contains(item) {
             false
         } else {
@@ -77,7 +73,7 @@ impl List {
     /// If the list has a length of 2, returns it as a tuple.
     ///
     /// Useful when using the list as a key-value pair for a map.
-    pub fn to_pair(&self) -> Option<(&Value, &Value)> {
+    pub fn to_pair(&self) -> Option<(&Value<AnnotationsT>, &Value<AnnotationsT>)> {
         match self.value.len() {
             2 => {
                 let mut iterator = self.value.iter();
@@ -86,20 +82,39 @@ impl List {
             _ => None,
         }
     }
-}
 
-impl HasMeta for List {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
+    /// Removes all [Annotations] recursively.
+    pub fn without_annotations(self) -> List<WithoutAnnotations> {
+        let new_list: Vec<_> = self.value.into_iter().map(|value| value.without_annotations()).collect();
+        new_list.into()
     }
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
+    /// Into different annotations.
+    pub fn into_annotated<NewAnnotationsT>(self) -> List<NewAnnotationsT>
+    where
+        AnnotationsT: Annotated,
+        NewAnnotationsT: Annotated + Default,
+    {
+        let vector: Vec<_> = self.value.into_iter().map(|value| value.into_annotated()).collect();
+        let new_list = List::new(vector);
+        if AnnotationsT::is_annotated()
+            && NewAnnotationsT::is_annotated()
+            && let Some(annotations) = self.annotations.get_annotations()
+        {
+            new_list.with_annotations(annotations.clone())
+        } else {
+            new_list
+        }
+    }
+
+    /// [Debuggable] with [Annotations].
+    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableList<AnnotationsT> {
+        AnnotatedDebuggableList::new(self, mode)
     }
 }
 
-impl Debuggable for List {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+impl<AnnotationsT> Debuggable for List<AnnotationsT> {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -107,7 +122,7 @@ impl Debuggable for List {
     }
 }
 
-impl fmt::Display for List {
+impl<AnnotationsT> fmt::Display for List<AnnotationsT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_char('[')?;
 
@@ -122,37 +137,8 @@ impl fmt::Display for List {
     }
 }
 
-// Delegated
-
-impl PartialEq for List {
-    fn eq(&self, other: &Self) -> bool {
-        self.value.eq(&other.value)
-    }
-}
-
-impl PartialOrd for List {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.value.partial_cmp(&other.value)
-    }
-}
-
-impl Ord for List {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.value.cmp(&other.value)
-    }
-}
-
-impl Hash for List {
-    fn hash<HasherT>(&self, state: &mut HasherT)
-    where
-        HasherT: Hasher,
-    {
-        self.value.hash(state);
-    }
-}
-
-impl IntoIterator for List {
-    type Item = Value;
+impl<AnnotationsT> IntoIterator for List<AnnotationsT> {
+    type Item = Value<AnnotationsT>;
     type IntoIter = vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -160,18 +146,18 @@ impl IntoIterator for List {
     }
 }
 
-impl<'own> IntoIterator for &'own List {
-    type Item = &'own Value;
-    type IntoIter = slice::Iter<'own, Value>;
+impl<'own, AnnotationsT> IntoIterator for &'own List<AnnotationsT> {
+    type Item = &'own Value<AnnotationsT>;
+    type IntoIter = slice::Iter<'own, Value<AnnotationsT>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.value.iter()
     }
 }
 
-impl<'own> IntoIterator for &'own mut List {
-    type Item = &'own mut Value;
-    type IntoIter = slice::IterMut<'own, Value>;
+impl<'own, AnnotationsT> IntoIterator for &'own mut List<AnnotationsT> {
+    type Item = &'own mut Value<AnnotationsT>;
+    type IntoIter = slice::IterMut<'own, Value<AnnotationsT>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.value.iter_mut()
@@ -180,39 +166,48 @@ impl<'own> IntoIterator for &'own mut List {
 
 // Conversions
 
-impl From<Vec<Value>> for List {
-    fn from(vector: Vec<Value>) -> Self {
-        Self::new_with(vector)
+impl<AnnotationsT> From<Vec<Value<AnnotationsT>>> for List<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
+    fn from(vector: Vec<Value<AnnotationsT>>) -> Self {
+        Self::new(vector)
     }
 }
 
-impl FromIterator<Value> for List {
+impl<AnnotationsT> FromIterator<Value<AnnotationsT>> for List<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
     fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
     where
-        IntoIteratorT: IntoIterator<Item = Value>,
+        IntoIteratorT: IntoIterator<Item = Value<AnnotationsT>>,
     {
         Vec::from_iter(iterator).into()
     }
 }
 
-impl From<List> for Vec<Value> {
-    fn from(list: List) -> Self {
+impl<AnnotationsT> From<List<AnnotationsT>> for Vec<Value<AnnotationsT>> {
+    fn from(list: List<AnnotationsT>) -> Self {
         list.value
     }
 }
 
-impl<'own> From<&'own List> for &'own Vec<Value> {
-    fn from(list: &'own List) -> Self {
+impl<'own, AnnotationsT> From<&'own List<AnnotationsT>> for &'own Vec<Value<AnnotationsT>> {
+    fn from(list: &'own List<AnnotationsT>) -> Self {
         &list.value
     }
 }
 
-impl From<Map> for List {
+impl<AnnotationsT> From<Map<AnnotationsT>> for List<AnnotationsT>
+where
+    AnnotationsT: Clone + Default,
+{
     /// List where all items are themselves lists of length 2 (key-value pairs).
-    fn from(map: Map) -> Self {
-        let mut list = Self::new();
+    fn from(map: Map<AnnotationsT>) -> Self {
+        let mut list = Self::default();
         for (key, value) in map {
-            let entry = Self::new_with(vec![key.clone(), value.clone()]);
+            let entry = Self::new(vec![key.clone(), value.clone()]);
             list.value.push(entry.into());
         }
         list

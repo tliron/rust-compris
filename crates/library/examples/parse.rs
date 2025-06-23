@@ -14,12 +14,13 @@ pub fn main() {
   key2: value2
 - {complex_key: complex_value}: 123456"#;
 
-    // Parse into normal value types
+    // Parse into normal types
 
-    let value = Parser::new(Format::YAML).parse_from_string(yaml).expect("parse");
+    let value =
+        with_annotations!(Parser::new(Format::YAML).with_source("yaml".into()).parse_from_string(yaml).expect("parse"));
 
     utils::heading("from YAML", true);
-    value.print_debug();
+    value.annotated_debuggable().print_debug_with_format(DebugFormat::Verbose);
 
     let xjson = r#"[
   {
@@ -36,10 +37,12 @@ pub fn main() {
   {"$$hint.int": ["an escaped hint", null, 1, 2, 3]}
 ]"#;
 
-    // This reader will interpret the XJSON hints and create the correct normal value types
+    // This reader will interpret the XJSON hints and create the correct normal types
 
-    let value = parse::Parser::new(Format::XJSON).parse_from_string(xjson).expect("parse");
+    let value = with_annotations!(
+        parse::Parser::new(Format::XJSON).with_source("xjson".into()).parse_from_string(xjson).expect("parse")
+    );
 
     utils::heading("from XJSON", false);
-    value.print_debug();
+    value.annotated_debuggable().print_debug_with_format(DebugFormat::Verbose);
 }

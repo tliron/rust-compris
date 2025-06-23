@@ -1,6 +1,7 @@
 use super::super::{normal::*, *};
 
 use {
+    serde::de,
     std::{fmt, io},
     thiserror::*,
 };
@@ -47,17 +48,17 @@ pub enum DeserializeError {
 
 impl DeserializeError {
     /// Incompatible type.
-    pub fn incompatible_type(value: &Value) -> DeserializeError {
+    pub fn incompatible_type<AnnotationsT>(value: &Value<AnnotationsT>) -> DeserializeError {
         Self::IncompatibleType(value.get_type_name())
     }
 
     /// Incompatible value.
-    pub fn incompatible_value(value: &Value) -> DeserializeError {
+    pub fn incompatible_value<AnnotationsT>(value: &Value<AnnotationsT>) -> DeserializeError {
         Self::IncompatibleValue(format!("{}", value))
     }
 }
 
-impl serde::de::Error for DeserializeError {
+impl de::Error for DeserializeError {
     fn custom<DisplayableT>(message: DisplayableT) -> Self
     where
         DisplayableT: fmt::Display,

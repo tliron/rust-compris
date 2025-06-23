@@ -32,11 +32,7 @@ impl Serializer {
         json_stream_writer.serialize_value(&value)?;
         json_stream_writer.finish_document()?;
 
-        if self.pretty {
-            Self::write_newline(writer)
-        } else {
-            Ok(())
-        }
+        if self.pretty { Self::write_newline(writer) } else { Ok(()) }
     }
 }
 
@@ -65,42 +61,42 @@ where
 {
     type WriterResult = JsonWriterT::WriterResult;
 
-    fn begin_object(&mut self) -> Result<(), io::Error> {
+    fn begin_object(&mut self) -> io::Result<()> {
         trace!("begin_object");
         self.writer.begin_object()
     }
 
-    fn end_object(&mut self) -> Result<(), io::Error> {
+    fn end_object(&mut self) -> io::Result<()> {
         trace!("end_object");
         self.writer.end_object()
     }
 
-    fn begin_array(&mut self) -> Result<(), io::Error> {
+    fn begin_array(&mut self) -> io::Result<()> {
         trace!("begin_array");
         self.writer.begin_array()
     }
 
-    fn end_array(&mut self) -> Result<(), io::Error> {
+    fn end_array(&mut self) -> io::Result<()> {
         trace!("end_array");
         self.writer.end_array()
     }
 
-    fn name(&mut self, name: &str) -> Result<(), io::Error> {
+    fn name(&mut self, name: &str) -> io::Result<()> {
         trace!("name {}", name);
         self.writer.name(name)
     }
 
-    fn null_value(&mut self) -> Result<(), io::Error> {
+    fn null_value(&mut self) -> io::Result<()> {
         trace!("null_value");
         self.writer.null_value()
     }
 
-    fn bool_value(&mut self, value: bool) -> Result<(), io::Error> {
+    fn bool_value(&mut self, value: bool) -> io::Result<()> {
         trace!("bool_value {}", value);
         self.writer.bool_value(value)
     }
 
-    fn string_value(&mut self, value: &str) -> Result<(), io::Error> {
+    fn string_value(&mut self, value: &str) -> io::Result<()> {
         trace!("string_value {}", value);
         self.writer.string_value(value)
     }
@@ -115,7 +111,7 @@ where
         self.writer.number_value_from_string(value)
     }
 
-    fn number_value<N: FiniteNumber>(&mut self, value: N) -> Result<(), io::Error> {
+    fn number_value<N: FiniteNumber>(&mut self, value: N) -> io::Result<()> {
         trace!("number_value");
         self.writer.number_value(value)
     }

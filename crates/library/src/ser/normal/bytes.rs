@@ -2,7 +2,7 @@ use super::super::{super::normal::*, modal::*, mode::*};
 
 use serde::ser::*;
 
-impl Serialize for Blob {
+impl<AnnotationsT> Serialize for Blob<AnnotationsT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -11,7 +11,7 @@ impl Serialize for Blob {
     }
 }
 
-impl SerializeModal for Blob {
+impl<AnnotationsT> SerializeModal for Blob<AnnotationsT> {
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,
@@ -20,10 +20,10 @@ impl SerializeModal for Blob {
     where
         SerializerT: Serializer,
     {
-        match &mode.bytes {
-            BytesSerializationMode::AsBytes => serializer.serialize_bytes(&*self.value),
+        match &mode.blob {
+            BlobSerializationMode::AsBytes => serializer.serialize_bytes(&*self.value),
 
-            BytesSerializationMode::StringifyBase64(hint) => {
+            BlobSerializationMode::StringifyBase64(hint) => {
                 let string = self.to_base64();
                 match hint {
                     None => serializer.serialize_str(&string),

@@ -1,12 +1,12 @@
 use super::super::{
-    super::{meta::*, normal::*},
+    super::{annotation::*, normal::*},
     modal::*,
     mode::*,
 };
 
 use serde::ser::*;
 
-impl Serialize for UnsignedInteger {
+impl<AnnotationsT> Serialize for UnsignedInteger<AnnotationsT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -15,7 +15,10 @@ impl Serialize for UnsignedInteger {
     }
 }
 
-impl SerializeModal for UnsignedInteger {
+impl<AnnotationsT> SerializeModal for UnsignedInteger<AnnotationsT>
+where
+    AnnotationsT: Annotated + Clone + Default,
+{
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,
@@ -35,14 +38,14 @@ impl SerializeModal for UnsignedInteger {
                     // Avoid endless recursion!
                     serializer.serialize_i64(integer)
                 } else {
-                    Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                    Integer::<AnnotationsT>::new(integer).with_annotations_from(self).serialize_modal(serializer, mode)
                 }
             }
 
             UnsignedIntegerSerializationMode::AsF64 => {
                 let float: f64 = num_traits::cast(self.value)
                     .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.value)))?;
-                Float::from(float).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                Float::<AnnotationsT>::from(float).with_annotations_from(self).serialize_modal(serializer, mode)
             }
 
             UnsignedIntegerSerializationMode::Stringify(hint) => {

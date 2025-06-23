@@ -1,5 +1,10 @@
 use super::super::{
-    super::{super::normal::*, context::*, error::*, iterator::*, resolve::*, result::*},
+    super::{
+        super::{annotation::*, normal::*},
+        errors::*,
+        iterator::*,
+        resolve::*,
+    },
     iterate::*,
 };
 
@@ -8,30 +13,23 @@ use {
     std::{collections::*, hash::*},
 };
 
-impl<KeyT, ValueT, ContextT, ErrorT> Resolve<BTreeMap<KeyT, ValueT>, ContextT, ErrorT> for Value
+impl<KeyT, ValueT, AnnotationsT> Resolve<BTreeMap<KeyT, ValueT>, AnnotationsT> for Value<AnnotationsT>
 where
     KeyT: Hash + Eq + Ord,
-    Value: Resolve<KeyT, ContextT, ErrorT> + Resolve<ValueT, ContextT, ErrorT>,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
+    Value<AnnotationsT>: Resolve<KeyT, AnnotationsT> + Resolve<ValueT, AnnotationsT>,
+    AnnotationsT: Annotated + Clone + Default,
 {
-    fn resolve_for<'own, ErrorRecipientT>(
+    fn resolve_with_errors<'own, ErrorRecipientT>(
         &'own self,
-        context: Option<&ContextT>,
-        mut ancestor: Option<&'own Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<BTreeMap<KeyT, ValueT>, ErrorT>
+    ) -> ResolveResult<BTreeMap<KeyT, ValueT>, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        if ancestor.is_none() {
-            ancestor = Some(self)
-        }
-
         let mut resolved = BTreeMap::new();
 
-        if let Some(mut iterator) = ResolvingKeyValuePairIterator::new_from(self, context, ancestor, errors)? {
-            while let Some((key, value)) = iterator.resolve_next(context, ancestor, errors)? {
+        if let Some(mut iterator) = ResolvingKeyValuePairIterator::new_from(self, errors)? {
+            while let Some((key, value)) = iterator.resolve_next(errors)? {
                 resolved.insert(key, value);
             }
         }

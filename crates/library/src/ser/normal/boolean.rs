@@ -2,7 +2,7 @@ use super::super::super::normal::*;
 
 use serde::ser::*;
 
-impl Serialize for Boolean {
+impl<AnnotationsT> Serialize for Boolean<AnnotationsT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,

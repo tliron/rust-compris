@@ -1,7 +1,7 @@
 use super::super::{
     super::{
+        annotation::*,
         hints::*,
-        meta::*,
         normal::{Value, *},
     },
     builder::*,
@@ -11,38 +11,45 @@ use super::super::{
 use {std::io, struson::reader::*};
 
 impl Parser {
-    /// Parses from JSON into a normal value.
+    /// Parses JSON into a [Value].
     ///
     /// Is affected by [Parser::try_integers](super::super::Parser)
     /// and [Parser::try_unsigned_integers](super::super::Parser).
-    pub fn parse_json<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ParseError>
+    pub fn parse_json<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
     where
         ReadT: io::Read,
+        AnnotationsT: Annotated + Clone + Default,
     {
         self.parse_json_with_hints(reader, None)
     }
 
-    /// Parses from XJSON into a normal value.
+    /// Parses XJSON into a [Value].
     ///
     /// Is affected by [Parser::try_integers](super::super::Parser)
     /// and [Parser::try_unsigned_integers](super::super::Parser).
-    pub fn parse_xjson<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ParseError>
+    pub fn parse_xjson<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
     where
         ReadT: io::Read,
+        AnnotationsT: Annotated + Clone + Default,
     {
         self.parse_json_with_hints(reader, Some(&Hints::xjson()))
     }
 
-    /// Parses from JSON into a normal value.
+    /// Parses JSON into a [Value].
     ///
     /// Is affected by [Parser::try_integers](super::super::Parser)
     /// and [Parser::try_unsigned_integers](super::super::Parser).
-    pub fn parse_json_with_hints<ReadT>(&self, reader: &mut ReadT, hints: Option<&Hints>) -> Result<Value, ParseError>
+    pub fn parse_json_with_hints<ReadT, AnnotationsT>(
+        &self,
+        reader: &mut ReadT,
+        hints: Option<&Hints>,
+    ) -> Result<Value<AnnotationsT>, ParseError>
     where
         ReadT: io::Read,
+        AnnotationsT: Annotated + Clone + Default,
     {
         let mut reader = JsonStreamReader::new(reader);
-        let mut value_builder = ValueBuilder::new();
+        let mut value_builder = ValueBuilder::new(self.source.clone());
         read_next_json(&mut reader, &mut value_builder, hints, self.try_integers, self.try_unsigned_integers)?;
         Ok(value_builder.value())
     }
@@ -50,57 +57,64 @@ impl Parser {
 
 // Utils
 
-fn read_next_json<JsonReaderT>(
+fn read_next_json<JsonReaderT, AnnotationsT>(
     reader: &mut JsonReaderT,
-    value_builder: &mut ValueBuilder,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
     hints: Option<&Hints>,
     try_integers: bool,
     try_unsigned_integers: bool,
 ) -> Result<(), ParseError>
 where
     JsonReaderT: JsonReader,
+    AnnotationsT: Annotated + Clone + Default,
 {
+    let get_span = if AnnotationsT::is_annotated() {
+        |reader: &mut JsonReaderT| -> Option<Span> { get_json_span(reader) }
+    } else {
+        |_reader: &mut JsonReaderT| -> Option<Span> { None }
+    };
+
     let value = reader.peek()?;
     tracing::trace!("{}", value);
     match value {
         ValueType::Null => {
-            let location = get_json_location(reader);
+            let span = get_span(reader);
             reader.next_null()?;
-            value_builder.add(Null::new().with_location(location), None);
+            value_builder.add(Null::default().with_span(span), None);
         }
 
         ValueType::Number => {
             if try_integers || try_unsigned_integers {
-                let location = get_json_location(reader);
+                let span = get_span(reader);
                 let number = reader.next_number_as_str()?;
                 if let Some(number) = if try_unsigned_integers { number.parse::<u64>().ok() } else { None } {
-                    value_builder.add(UnsignedInteger::new(number).with_location(location), None);
+                    value_builder.add(UnsignedInteger::new(number).with_span(span), None);
                 } else if let Some(number) = if try_integers { number.parse::<i64>().ok() } else { None } {
-                    value_builder.add(Integer::new(number).with_location(location), None);
+                    value_builder.add(Integer::new(number).with_span(span), None);
                 } else {
-                    value_builder.add(Float::from(number.parse::<f64>()?).with_location(location), None);
+                    value_builder.add(Float::from(number.parse::<f64>()?).with_span(span), None);
                 }
             } else {
-                let location = get_json_location(reader);
+                let span = get_span(reader);
                 let number: f64 = reader.next_number()??;
-                value_builder.add(Float::from(number).with_location(location), None);
+                value_builder.add(Float::from(number).with_span(span), None);
             }
         }
 
         ValueType::Boolean => {
-            let location = get_json_location(reader);
-            value_builder.add(Boolean::new(reader.next_bool()?).with_location(location), None);
+            let span = get_span(reader);
+            value_builder.add(Boolean::new(reader.next_bool()?).with_span(span), None);
         }
 
         ValueType::String => {
-            let location = get_json_location(reader);
-            value_builder.add(Text::from(reader.next_string()?).with_location(location), None);
+            let span = get_span(reader);
+            value_builder.add(Text::from(reader.next_str()?).with_span(span), None);
         }
 
         ValueType::Array => {
-            let location = get_json_location(reader);
+            let span = get_span(reader);
             reader.begin_array()?;
-            value_builder.start_list_with_location(location, None);
+            value_builder.start_list_with_span(span, None);
             while reader.has_next()? {
                 read_next_json(reader, value_builder, hints, try_integers, try_unsigned_integers)?;
             }
@@ -109,13 +123,13 @@ where
         }
 
         ValueType::Object => {
-            let location = get_json_location(reader);
+            let span = get_span(reader);
             reader.begin_object()?;
-            value_builder.start_map_with_location(location, None);
+            value_builder.start_map_with_span(span, None);
             while reader.has_next()? {
                 // Key
-                let location = get_json_location(reader);
-                value_builder.add(Text::from(reader.next_name_owned()?).with_location(location), None);
+                let span = get_span(reader);
+                value_builder.add(Text::from(reader.next_name()?).with_span(span), None);
 
                 // Value
                 read_next_json(reader, value_builder, hints, try_integers, try_unsigned_integers)?;
@@ -128,21 +142,23 @@ where
     Ok(())
 }
 
-fn get_json_location(reader: &mut impl JsonReader) -> Option<Location> {
-    let mut location = Location::default();
+// Note that Struson only provides the start of the span
+fn get_json_span(reader: &mut impl JsonReader) -> Option<Span> {
+    let mut span = Span::default();
     let mut some = false;
 
     let position = reader.current_position(false);
 
     if let Some(data_pos) = position.data_pos {
         some = true;
-        location.index = Some(data_pos as usize);
+        span.start.index = Some(data_pos as usize);
     }
 
     if let Some(line_pos) = position.line_pos {
         some = true;
-        location.row_and_column = Some((line_pos.line as usize, Some(line_pos.column as usize)));
+        span.start.row = Some(line_pos.line as usize);
+        span.start.column = Some(line_pos.column as usize);
     };
 
-    if some { Some(location) } else { None }
+    if some { Some(span) } else { None }
 }

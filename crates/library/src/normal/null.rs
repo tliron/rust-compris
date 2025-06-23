@@ -1,4 +1,4 @@
-use super::super::meta::*;
+use super::super::annotation::*;
 
 use {
     kutil_cli::debug::*,
@@ -10,31 +10,60 @@ use {
 //
 
 /// Normal null value.
-#[derive(Clone, Debug, Default, Eq)]
-pub struct Null {
-    /// Metadata.
-    pub meta: Meta,
+///
+/// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
+#[derive(Clone, Debug)]
+pub struct Null<AnnotationsT> {
+    /// Annotations.
+    pub annotations: AnnotationsT,
 }
 
-impl Null {
-    /// Constructor.
-    pub fn new() -> Self {
-        Self::default()
+impl<AnnotationsT> Null<AnnotationsT> {
+    /// Removes all [Annotations].
+    pub fn without_annotations(self) -> Null<WithoutAnnotations> {
+        Null::default()
+    }
+
+    /// Into different annotations.
+    pub fn into_annotated<NewAnnotationsT>(self) -> Null<NewAnnotationsT>
+    where
+        AnnotationsT: Annotated,
+        NewAnnotationsT: Annotated + Default,
+    {
+        if AnnotationsT::is_annotated()
+            && NewAnnotationsT::is_annotated()
+            && let Some(annotations) = self.annotations.get_annotations()
+        {
+            Null::default().with_annotations(annotations.clone())
+        } else {
+            Null::default()
+        }
     }
 }
 
-impl HasMeta for Null {
-    fn get_meta(&self) -> Option<&Meta> {
-        Some(&self.meta)
+impl<AnnotationsT> Annotated for Null<AnnotationsT>
+where
+    AnnotationsT: Annotated,
+{
+    fn is_annotated() -> bool {
+        AnnotationsT::is_annotated()
     }
 
-    fn get_meta_mut(&mut self) -> Option<&mut Meta> {
-        Some(&mut self.meta)
+    fn get_annotations(&self) -> Option<&Annotations> {
+        self.annotations.get_annotations()
+    }
+
+    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
+        self.annotations.get_annotations_mut()
+    }
+
+    fn set_annotations(&mut self, annotations: Annotations) {
+        self.annotations.set_annotations(annotations);
     }
 }
 
-impl Debuggable for Null {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> Result<(), io::Error>
+impl<AnnotationsT> Debuggable for Null<AnnotationsT> {
+    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -43,7 +72,16 @@ impl Debuggable for Null {
     }
 }
 
-impl fmt::Display for Null {
+impl<AnnotationsT> Default for Null<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
+    fn default() -> Self {
+        Self { annotations: AnnotationsT::default() }
+    }
+}
+
+impl<AnnotationsT> fmt::Display for Null<AnnotationsT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt("Null", formatter)
     }
@@ -51,25 +89,27 @@ impl fmt::Display for Null {
 
 // Basics
 
-impl PartialEq for Null {
+impl<AnnotationsT> PartialEq for Null<AnnotationsT> {
     fn eq(&self, _other: &Self) -> bool {
         true
     }
 }
 
-impl PartialOrd for Null {
+impl<AnnotationsT> Eq for Null<AnnotationsT> {}
+
+impl<AnnotationsT> PartialOrd for Null<AnnotationsT> {
     fn partial_cmp(&self, _other: &Self) -> Option<Ordering> {
         Some(Ordering::Equal)
     }
 }
 
-impl Ord for Null {
+impl<AnnotationsT> Ord for Null<AnnotationsT> {
     fn cmp(&self, _other: &Self) -> Ordering {
         Ordering::Equal
     }
 }
 
-impl Hash for Null {
+impl<AnnotationsT> Hash for Null<AnnotationsT> {
     fn hash<HasherT>(&self, state: &mut HasherT)
     where
         HasherT: Hasher,
@@ -80,14 +120,17 @@ impl Hash for Null {
 
 // Conversions
 
-impl From<()> for Null {
+impl<AnnotationsT> From<()> for Null<AnnotationsT>
+where
+    AnnotationsT: Default,
+{
     fn from(_: ()) -> Self {
-        Self::new()
+        Self::default()
     }
 }
 
-impl From<Null> for () {
-    fn from(_: Null) -> Self {
+impl<AnnotationsT> From<Null<AnnotationsT>> for () {
+    fn from(_: Null<AnnotationsT>) -> Self {
         ()
     }
 }

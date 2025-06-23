@@ -1,11 +1,15 @@
 mod utils;
 
-use {anstream::println, compris::*, kutil_cli::debug::*};
+use {
+    anstream::println,
+    compris::{annotation::*, normal::*, *},
+    kutil_cli::debug::*,
+};
 
 pub fn main() {
     // See examples/literal.rs
 
-    let value = normal_list![
+    let value: Value<Annotations> = normal_list![
         normal_list![-1, "element", 1.5],
         normal_map![("key1", "value1"), ("key2", normal_list![-3, "another element", 1.6])],
         normal_map![(normal_map![("complex_key", "complex_value")], 123456)]

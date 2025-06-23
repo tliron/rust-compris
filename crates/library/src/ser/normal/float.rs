@@ -1,12 +1,12 @@
 use super::super::{
-    super::{meta::*, normal::*},
+    super::{annotation::*, normal::*},
     modal::*,
     mode::*,
 };
 
 use serde::ser::*;
 
-impl Serialize for Float {
+impl<AnnotationsT> Serialize for Float<AnnotationsT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -15,7 +15,10 @@ impl Serialize for Float {
     }
 }
 
-impl SerializeModal for Float {
+impl<AnnotationsT> SerializeModal for Float<AnnotationsT>
+where
+    AnnotationsT: Annotated + Clone + Default,
+{
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,
@@ -36,11 +39,11 @@ impl SerializeModal for Float {
                     // Avoid endless recursion!
                     serializer.serialize_i64(integer)
                 } else {
-                    Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                    Integer::<AnnotationsT>::new(integer).with_annotations_from(self).serialize_modal(serializer, mode)
                 }
             }
 
-            FloatSerializationMode::AsI64IfFractionless => {
+            FloatSerializationMode::AsI64IfWhole => {
                 if self.value.fract() == 0.0 {
                     match num_traits::cast(self.value) {
                         Some(integer) => {
@@ -48,7 +51,9 @@ impl SerializeModal for Float {
                                 // Avoid endless recursion!
                                 serializer.serialize_i64(integer)
                             } else {
-                                Integer::new(integer).with_meta(self.meta.clone()).serialize_modal(serializer, mode)
+                                Integer::<AnnotationsT>::new(integer)
+                                    .with_annotations_from(self)
+                                    .serialize_modal(serializer, mode)
                             }
                         }
 

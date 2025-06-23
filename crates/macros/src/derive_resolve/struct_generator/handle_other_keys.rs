@@ -6,20 +6,21 @@ impl StructGenerator {
     /// Generate other keys handler.
     pub fn generate_handle_other_keys(&self) -> TokenStream {
         // Optimization possibility: a key that was resolved successfully in the field segments
-        // above is aready known to be known, we don't need to retest it here
-        let handle_other_keys = match self.other_keys_field {
-            Some(ref field) => {
-                let field_name = &field.name;
-                let handle_null = Self::generate_handle_null(&field, true);
+        // above is already known to be known, we don't need to retest it here
+
+        let handle_other_keys = match &self.other_keys_field {
+            Some(other_keys_field) => {
+                let other_keys_field_name = &other_keys_field.name;
+                let handle_null = Self::generate_handle_null(other_keys_field, true);
 
                 quote! {
                     for (key, value) in &map.value {
                         if !declared_keys.contains(key.into()) {
                             #handle_null
-                            if let Some(key) = ::compris::resolve::Resolve::resolve_for(key, context, ancestor, errors)? {
-                                if let Some(value) = ::compris::resolve::Resolve::resolve_for(value, context, ancestor, errors)? {
-                                    resolved.#field_name.insert(key, value);
-                                }
+                            if let Some(key) = ::compris::resolve::Resolve::resolve_with_errors(key, errors)?
+                                && let Some(value) = ::compris::resolve::Resolve::resolve_with_errors(value, errors)?
+                            {
+                                resolved.#other_keys_field_name.insert(key, value);
                             }
                         }
                     }
@@ -30,8 +31,9 @@ impl StructGenerator {
                 for key in map.value.keys() {
                     if !declared_keys.contains(key.into()) {
                         errors.give(
-                            ::compris::resolve::WithCitationFor::with_citation_for(
-                                ::compris::resolve::InvalidKeyError::new(key.clone()), key, context, ancestor
+                            ::compris::annotation::Annotated::with_annotations_from(
+                                ::compris::resolve::InvalidKeyError::new(key.clone()),
+                                key,
                             )
                         )?;
                     }

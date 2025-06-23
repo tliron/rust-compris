@@ -1,19 +1,25 @@
-use super::super::{super::normal::*, resolve::*, result::*};
+use super::super::{
+    super::{annotation::*, normal::*},
+    errors::*,
+    resolve::*,
+};
 
 use kutil_std::error::*;
 
 // Resolving a value into a value means cloning it
 
-impl<ContextT, ErrorT> Resolve<Value, ContextT, ErrorT> for Value {
-    fn resolve_for<ErrorRecipientT>(
+impl<ResolvedAnnotationsT, AnnotationsT> Resolve<Value<ResolvedAnnotationsT>, AnnotationsT> for Value<AnnotationsT>
+where
+    ResolvedAnnotationsT: Annotated + Default,
+    AnnotationsT: Annotated + Clone,
+{
+    fn resolve_with_errors<ErrorRecipientT>(
         &self,
-        _context: Option<&ContextT>,
-        _ancestor: Option<&Value>,
         _errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Value, ErrorT>
+    ) -> ResolveResult<Value<ResolvedAnnotationsT>, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        Ok(Some(self.clone()))
+        Ok(Some(self.clone().into_annotated()))
     }
 }

@@ -1,8 +1,13 @@
-use super::super::{super::normal::*, modal::*, mode::*, serializer::Serializer as ComprisSerializer};
+use super::super::{
+    super::{annotation::*, normal::*},
+    modal::*,
+    mode::*,
+    serializer::Serializer as ComprisSerializer,
+};
 
 use {serde::ser::*, tracing::trace};
 
-impl Serialize for Map {
+impl<AnnotationsT> Serialize for Map<AnnotationsT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -15,7 +20,10 @@ impl Serialize for Map {
     }
 }
 
-impl SerializeModalRescursive for Map {
+impl<AnnotationsT> SerializeModalRescursive for Map<AnnotationsT>
+where
+    AnnotationsT: Annotated + Clone + Default,
+{
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,

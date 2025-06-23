@@ -1,6 +1,6 @@
 use super::super::{
     super::{
-        meta::*,
+        annotation::*,
         normal::{Blob, *},
     },
     builder::*,
@@ -15,14 +15,15 @@ use {
 };
 
 impl Parser {
-    /// Parses from MessagePack into a normal value.
+    /// Parses MessagePack into a [Value].
     ///
     /// Is affected by [Parser::base64](super::super::Parser).
-    pub fn parse_message_pack<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ParseError>
+    pub fn parse_message_pack<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
     where
         ReadT: io::Read,
+        AnnotationsT: Annotated + Clone + Default,
     {
-        let mut value_builder = ValueBuilder::new();
+        let mut value_builder = ValueBuilder::new(self.source.clone());
         if self.base64 {
             let mut reader = DecoderReader::new(reader, &BASE64_STANDARD);
             read_next_message_pack(&mut reader, &mut value_builder)?;
@@ -35,9 +36,13 @@ impl Parser {
 
 // Utils
 
-fn read_next_message_pack<ReadT>(reader: &mut ReadT, value_builder: &mut ValueBuilder) -> Result<(), ParseError>
+fn read_next_message_pack<ReadT, AnnotationsT>(
+    reader: &mut ReadT,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
+) -> Result<(), ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
     let marker = read_marker(reader)?;
     trace!("{:?}", marker);
@@ -45,7 +50,7 @@ where
         Marker::Reserved => {}
 
         Marker::Null => {
-            value_builder.add(Null::new(), None);
+            value_builder.add(Null::default(), None);
         }
 
         Marker::True => {
@@ -139,46 +144,46 @@ where
         }
 
         Marker::FixExt1 => {
-            let annotation = read_i8(reader)? as i64;
-            read_message_pack_ext(reader, value_builder, 1, annotation)?;
+            let label = read_i8(reader)? as i64;
+            read_message_pack_ext(reader, value_builder, 1, label)?;
         }
 
         Marker::FixExt2 => {
-            let annotation = read_i8(reader)? as i64;
-            read_message_pack_ext(reader, value_builder, 2, annotation)?;
+            let label = read_i8(reader)? as i64;
+            read_message_pack_ext(reader, value_builder, 2, label)?;
         }
 
         Marker::FixExt4 => {
-            let annotation = read_i8(reader)? as i64;
-            read_message_pack_ext(reader, value_builder, 4, annotation)?;
+            let label = read_i8(reader)? as i64;
+            read_message_pack_ext(reader, value_builder, 4, label)?;
         }
 
         Marker::FixExt8 => {
-            let annotation = read_i8(reader)? as i64;
-            read_message_pack_ext(reader, value_builder, 8, annotation)?;
+            let label = read_i8(reader)? as i64;
+            read_message_pack_ext(reader, value_builder, 8, label)?;
         }
 
         Marker::FixExt16 => {
-            let annotation = read_i8(reader)? as i64;
-            read_message_pack_ext(reader, value_builder, 16, annotation)?;
+            let label = read_i8(reader)? as i64;
+            read_message_pack_ext(reader, value_builder, 16, label)?;
         }
 
         Marker::Ext8 => {
-            let annotation = read_i8(reader)? as i64;
+            let label = read_i8(reader)? as i64;
             let length = read_u8(reader)? as usize;
-            read_message_pack_ext(reader, value_builder, length, annotation)?;
+            read_message_pack_ext(reader, value_builder, length, label)?;
         }
 
         Marker::Ext16 => {
-            let annotation = read_i8(reader)? as i64;
+            let label = read_i8(reader)? as i64;
             let length = read_u16(reader)? as usize;
-            read_message_pack_ext(reader, value_builder, length, annotation)?;
+            read_message_pack_ext(reader, value_builder, length, label)?;
         }
 
         Marker::Ext32 => {
-            let annotation = read_i8(reader)? as i64;
+            let label = read_i8(reader)? as i64;
             let length = read_u32(reader)? as usize;
-            read_message_pack_ext(reader, value_builder, length, annotation)?;
+            read_message_pack_ext(reader, value_builder, length, label)?;
         }
 
         Marker::FixArray(length) => {
@@ -213,13 +218,14 @@ where
     Ok(())
 }
 
-fn read_message_pack_string<ReadT>(
+fn read_message_pack_string<ReadT, AnnotationsT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
     trace!("string length: {}", length);
     let mut buffer = vec![0; length];
@@ -228,13 +234,14 @@ where
     Ok(value_builder.add(Text::from(string), None))
 }
 
-fn read_message_pack_bytes<ReadT>(
+fn read_message_pack_bytes<ReadT, AnnotationsT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
     trace!("bytes length: {}", length);
     let mut buffer = vec![0; length];
@@ -242,28 +249,30 @@ where
     Ok(value_builder.add(Blob::from(buffer), None))
 }
 
-fn read_message_pack_ext<ReadT>(
+fn read_message_pack_ext<ReadT, AnnotationsT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
     length: usize,
-    annotation: i64,
+    label: i64,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
-    trace!("ext type: {}", annotation);
+    trace!("ext type: {}", label);
     let mut buffer = vec![0; length];
     reader.read_exact_buf(&mut buffer)?;
-    Ok(value_builder.add(Blob::from(buffer).with_annotation_integer(annotation), None))
+    Ok(value_builder.add(Blob::from(buffer).with_label(Some(Label::Integer(label))), None))
 }
 
-fn read_message_pack_array<ReadT>(
+fn read_message_pack_array<ReadT, AnnotationsT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
     trace!("array length: {}", length);
     value_builder.start_list(None);
@@ -274,13 +283,14 @@ where
     Ok(())
 }
 
-fn read_message_pack_map<ReadT>(
+fn read_message_pack_map<ReadT, AnnotationsT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder,
+    value_builder: &mut ValueBuilder<AnnotationsT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
+    AnnotationsT: Annotated + Clone + Default,
 {
     trace!("map length: {}", length);
     value_builder.start_map(None);

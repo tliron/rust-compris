@@ -31,10 +31,10 @@ J'ai compris!
 mod format;
 mod macros;
 
-/// Citing the source.
-pub mod cite;
+/// Annotation.
+pub mod annotation;
 
-/// General-purpose serde deserialization plus support for normal value types.
+/// General-purpose serde deserialization. Also supports normal types.
 #[cfg(feature = "serde")]
 pub mod de;
 
@@ -44,30 +44,27 @@ pub mod hints;
 /// Iterate key-value pairs.
 pub mod kv;
 
-/// Metadata.
-pub mod meta;
-
 /// Merging.
 pub mod merge;
 
-/// Normal values.
+/// Normal types.
 pub mod normal;
 
-/// Paths.
-pub mod path;
-
-/// Parse various formats into normal value types.
+/// Parse various formats into normal types.
 pub mod parse;
 
-/// Resolve normal value types into other types.
+/// Path.
+pub mod path;
+
+/// Resolve normal types into other types.
 pub mod resolve;
 
-/// General-purpose serde serialization plus support for normal value types.
+/// General-purpose serde serialization plus support for normal types.
 #[cfg(feature = "serde")]
 pub mod ser;
 
-/// Tags for [Debuggable](kutil_cli::debug::Debuggable).
-pub mod tag;
+// /// Tags for [Debuggable](kutil_cli::debug::Debuggable).
+// pub mod tag;
 
 #[allow(unused_imports)]
 pub use format::*;

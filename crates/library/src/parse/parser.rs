@@ -1,18 +1,21 @@
 use super::{
-    super::{normal::*, *},
-    errors::*,
+    super::{annotation::*, format::*, normal::*},
+    error::*,
 };
 
-use std::io;
+use {bytestring::*, std::io};
 
 //
 // Parser
 //
 
-/// Parses various formats into normal value types.
+/// Parses various formats into [Value].
 pub struct Parser {
     /// Format.
     pub format: Format,
+
+    /// Source.
+    pub source: Option<ByteString>,
 
     /// Try to parse numbers as integers (for JSON only). Defaults to false.
     pub try_integers: bool,
@@ -35,6 +38,7 @@ impl Parser {
     pub fn new(format: Format) -> Self {
         Self {
             format,
+            source: None,
             try_integers: false,
             try_unsigned_integers: false,
             allow_legacy_words: false,
@@ -46,6 +50,12 @@ impl Parser {
     /// Set format.
     pub fn with_format(mut self, format: Format) -> Self {
         self.format = format;
+        self
+    }
+
+    /// Set source.
+    pub fn with_source(mut self, source: ByteString) -> Self {
+        self.source = Some(source);
         self
     }
 
@@ -89,10 +99,11 @@ impl Parser {
         self
     }
 
-    /// Parses into a normal value according to [Parser::format](Parser).
-    pub fn parse<ReadT>(&self, reader: &mut ReadT) -> Result<Value, ParseError>
+    /// Parses into a [Value] according to [Parser::format](Parser).
+    pub fn parse<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
     where
         ReadT: io::Read,
+        AnnotationsT: Annotated + Clone + Default,
     {
         match &self.format {
             #[cfg(feature = "cbor")]
@@ -124,8 +135,11 @@ impl Parser {
         }
     }
 
-    /// Parses into a normal value according to [Parser::format](Parser).
-    pub fn parse_from_string(&self, string: &str) -> Result<Value, ParseError> {
+    /// Parses into a [Value] according to [Parser::format](Parser).
+    pub fn parse_from_string<AnnotationsT>(&self, string: &str) -> Result<Value<AnnotationsT>, ParseError>
+    where
+        AnnotationsT: Annotated + Clone + Default,
+    {
         self.parse(&mut string.as_bytes())
     }
 }

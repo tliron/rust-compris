@@ -2,18 +2,13 @@ mod utils;
 
 use {
     anstream::println,
-    compris::{cite::*, parse::*, resolve::*, *},
+    compris::{annotation::*, parse::*, resolve::*, *},
     kutil_cli::debug::*,
-    kutil_std::error::*,
 };
 
 // Note that #[derive(Resolve)] requires an implementation of the Default trait,
 // which we here get from #[derive(Default)]
 #[derive(Debug, Default, Resolve)]
-// We are here setting the context and error to CommonResolveContext and CommonResolveError
-// If we don't explicitly set either or both, #[derive(Resolve)] will generate generic code
-// (which is useful if you want your struct to be resolvable in various parsing environments)
-#[resolve(context = CommonResolveContext, error = CommonResolveError)]
 // To avoid compiler warnings
 #[allow(dead_code)]
 struct User {
@@ -47,11 +42,13 @@ struct User {
 pub fn main() {
     // See examples/literal.rs
 
-    let value = normal_map![("name", "Tal"), ("credit", 800), ("enabled", true), ("group", "moderators")];
+    let value =
+        without_annotations!(normal_map![("name", "Tal"), ("credit", 800), ("enabled", true), ("group", "moderators")]);
 
     // Simplest! Resolve the value into our struct
+    // ("fail fast" means that we will fail on the first error and return it)
 
-    let user: User = value.resolve().expect("resolve").expect("some");
+    let user: User = value.resolve().expect("resolve");
 
     utils::heading("resolved", true);
     println!("{:#?}", user);
@@ -60,9 +57,9 @@ pub fn main() {
     // We can resolve for just the field tagged as "single" (in this case it's the `name` field)
     // (a.k.a. "short notation")
 
-    let value = normal!("Tal");
+    let value = without_annotations!(normal!("Tal"));
 
-    let user: User = value.resolve().expect("resolve").expect("some");
+    let user: User = value.resolve().expect("resolve");
 
     utils::heading("resolved (single)", false);
     println!("{:#?}", user);
@@ -70,8 +67,8 @@ pub fn main() {
     // Now let's intentionally cause errors by not specifying required fields, using wrong value
     // types, and specifying unsupported keys
 
-    // We'll also parse JSON first in order to demonstrate citation informaton for the error message
-    // (there's are no citations for the literal values above)
+    // We'll also parse JSON first in order to demonstrate annotations for the error message
+    // (there's are no annotations for the literal values above)
 
     let json = r#"[{
     "name": "Tal",
@@ -85,31 +82,29 @@ pub fn main() {
     "mystery key 2!": null
 }]"#;
 
-    let value = Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).expect("parse");
+    let value =
+        with_annotations!(Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).expect("parse"));
 
     // Note that we can resolve directly into Vecs (and HashMaps, too)
 
-    let result: ResolveResult<Vec<User>, _> = value.resolve();
+    let result: Result<Vec<User>, _> = value.resolve();
 
     utils::heading("fail-fast error", false);
-    result.err().expect("error").to_cited().print_debug();
+    result.err().expect("error").annotated_debuggable().print_debug();
 
-    // The "resolve" functions call above use "fail-fast" mode, meaning that we fail on the
-    // first encountered error
-
-    // Alternatively, we can call "resolve_into" to accumulate all the errors without failing
+    // Instead of failing fast, we can call "resolve_with_errors" to accumulate all the errors *without* failing
     // Note that we might still get a partially-resolved result even when there are accumulated errors,
     // but that behavior depends on the resolver implementations
 
-    let mut errors = Errors::new();
-    let users: Vec<User> = value.resolve_into(&mut errors).expect("resolve").expect("some");
+    let mut errors = ResolveErrors::new();
+    let users: Vec<User> = value.resolve_with_errors(&mut errors).expect("errors should be accumulated").expect("some");
 
     utils::heading("partially resolved", false);
     println!("{:#?}", users);
 
     if !errors.is_empty() {
-        utils::heading("accumulated errors", false);
-        errors.to_cited().print_debug();
+        println!();
+        errors.annotated_debuggables(Some("accumulated errors".into())).print_debug();
     }
 
     // Continue to examples/resolve_advanced.rs to learn more

@@ -1,5 +1,10 @@
 use super::super::{
-    super::{super::normal::*, context::*, error::*, iterator::*, resolve::*, result::*},
+    super::{
+        super::{annotation::*, normal::*},
+        errors::*,
+        iterator::*,
+        resolve::*,
+    },
     iterate::*,
 };
 
@@ -7,29 +12,22 @@ use {kutil_std::error::*, std::collections::*};
 
 // Uses push_back
 
-impl<ItemT, ContextT, ErrorT> Resolve<VecDeque<ItemT>, ContextT, ErrorT> for Value
+impl<ItemT, AnnotationsT> Resolve<VecDeque<ItemT>, AnnotationsT> for Value<AnnotationsT>
 where
-    Value: Resolve<ItemT, ContextT, ErrorT>,
-    ContextT: ResolveContext,
-    ErrorT: ResolveError,
+    Value<AnnotationsT>: Resolve<ItemT, AnnotationsT>,
+    AnnotationsT: Annotated + Clone + Default,
 {
-    fn resolve_for<'own, ErrorRecipientT>(
+    fn resolve_with_errors<'own, ErrorRecipientT>(
         &'own self,
-        context: Option<&ContextT>,
-        mut ancestor: Option<&'own Value>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<VecDeque<ItemT>, ErrorT>
+    ) -> ResolveResult<VecDeque<ItemT>, AnnotationsT>
     where
-        ErrorRecipientT: ErrorRecipient<ErrorT>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
     {
-        if ancestor.is_none() {
-            ancestor = Some(self)
-        }
-
         let mut resolved = VecDeque::new();
 
-        if let Some(mut iterator) = ResolvingValueIterator::new_from(self, context, ancestor, errors)? {
-            while let Some(item) = iterator.resolve_next(context, ancestor, errors)? {
+        if let Some(mut iterator) = ResolvingValueIterator::new_from(self, errors)? {
+            while let Some(item) = iterator.resolve_next(errors)? {
                 resolved.push_back(item);
             }
         }

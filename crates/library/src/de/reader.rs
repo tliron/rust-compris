@@ -13,31 +13,31 @@ impl parse::Parser {
     /// Deserialize.
     ///
     /// Will convert number types only if information is not lost. Otherwise, will return an error.
-    pub fn deserialize<ReadT, DeserializedT, AnnotationsT>(
+    pub fn deserialize<ReadT, DeserializedT, AnnotatedT>(
         &mut self,
         reader: &mut ReadT,
     ) -> Result<DeserializedT, DeserializeError>
     where
         ReadT: Read,
         DeserializedT: de::DeserializeOwned,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
-        let value = self.parse::<_, AnnotationsT>(reader)?;
+        let value = self.parse::<_, AnnotatedT>(reader)?;
         value.deserialize()
     }
 
     /// Deserialize.
     ///
     /// Will convert number types only if information is not lost. Otherwise, will return an error.
-    pub fn deserialize_from_string<DeserializedT, AnnotationsT>(
+    pub fn deserialize_from_string<DeserializedT, AnnotatedT>(
         &mut self,
         string: &str,
     ) -> Result<DeserializedT, DeserializeError>
     where
         DeserializedT: de::DeserializeOwned,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
-        let value = self.parse_from_string::<AnnotationsT>(string)?;
+        let value = self.parse_from_string::<AnnotatedT>(string)?;
         value.deserialize()
     }
 }

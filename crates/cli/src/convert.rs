@@ -87,9 +87,9 @@ impl CLI {
         input_format.parse()
     }
 
-    fn read<AnnotationsT>(&self) -> Result<(Value<AnnotationsT>, Format), MainError>
+    fn read<AnnotatedT>(&self) -> Result<(Value<AnnotatedT>, Format), MainError>
     where
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         let (mut reader, input_url_extension) = self.get_reader()?;
         let input_format = self.get_input_format(&input_url_extension)?;
@@ -151,9 +151,9 @@ impl CLI {
         }
     }
 
-    fn write<AnnotationsT>(&self, content: Value<AnnotationsT>, input_format: compris::Format) -> Result<(), MainError>
+    fn write<AnnotatedT>(&self, content: Value<AnnotatedT>, input_format: compris::Format) -> Result<(), MainError>
     where
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         let output_format = self.get_output_format(&input_format);
         let mut writer = self.get_writer(&output_format);

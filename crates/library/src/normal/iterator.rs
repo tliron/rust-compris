@@ -7,26 +7,26 @@ use std::slice;
 //
 
 /// If the value is a [List](super::list::List), iterates its items. Otherwise just iterates itself once.
-pub enum ValueIterator<'own, AnnotationsT> {
+pub enum ValueIterator<'own, AnnotatedT> {
     /// Iterator.
-    Iterator(slice::Iter<'own, Value<AnnotationsT>>),
+    Iterator(slice::Iter<'own, Value<AnnotatedT>>),
 
     /// Value.
-    Value(&'own Value<AnnotationsT>, bool),
+    Value(&'own Value<AnnotatedT>, bool),
 }
 
-impl<'own, AnnotationsT> ValueIterator<'own, AnnotationsT> {
+impl<'own, AnnotatedT> ValueIterator<'own, AnnotatedT> {
     /// Constructor.
-    pub fn new(value: &'own Value<AnnotationsT>) -> Self {
+    pub fn new(value: &'own Value<AnnotatedT>) -> Self {
         match value {
-            Value::List(list) => Self::Iterator(list.value.iter()),
+            Value::List(list) => Self::Iterator(list.inner.iter()),
             _ => Self::Value(value, false),
         }
     }
 }
 
-impl<'own, AnnotationsT> Iterator for ValueIterator<'own, AnnotationsT> {
-    type Item = &'own Value<AnnotationsT>;
+impl<'own, AnnotatedT> Iterator for ValueIterator<'own, AnnotatedT> {
+    type Item = &'own Value<AnnotatedT>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {

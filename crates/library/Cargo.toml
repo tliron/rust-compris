@@ -28,7 +28,7 @@ bytes = "1.10.1"
 bytestring = { version = "1.4.0", features = ["serde"] }
 compris-macros = { optional = true, version = "=0.0.4" }
 duplicate = "2.0.0"
-kutil-cli = "=0.0.9"
+kutil-cli = { version = "=0.0.9", features = ["derive"] }
 kutil-std = { version = "=0.0.6", features = ["derive", "fast_collections"] }
 kutil-io = { optional = true, version = "=0.0.5" }
 num-traits = "0.2.19"

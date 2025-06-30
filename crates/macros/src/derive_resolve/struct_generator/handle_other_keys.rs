@@ -14,7 +14,7 @@ impl StructGenerator {
                 let handle_null = Self::generate_handle_null(other_keys_field, true);
 
                 quote! {
-                    for (key, value) in &map.value {
+                    for (key, value) in &map.inner {
                         if !declared_keys.contains(key.into()) {
                             #handle_null
                             if let Some(key) = ::compris::resolve::Resolve::resolve_with_errors(key, errors)?
@@ -28,7 +28,7 @@ impl StructGenerator {
             }
 
             None => quote! {
-                for key in map.value.keys() {
+                for key in map.inner.keys() {
                     if !declared_keys.contains(key.into()) {
                         errors.give(
                             ::compris::annotation::Annotated::with_annotations_from(

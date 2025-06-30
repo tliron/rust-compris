@@ -22,7 +22,7 @@ pub struct StructAttribute {
     pub ignore_other_keys: bool,
 
     /// If set will use this existing generic parameter for annotations. Otherwise will insert a
-    /// new parameter, "_AnnotationsT".
+    /// new parameter, "_AnnotatedT".
     #[deluxe(default)]
-    pub annotations_parameter: Option<syn::Ident>,
+    pub annotated_parameter: Option<syn::Ident>,
 }

@@ -29,7 +29,7 @@ macro_rules! normal (
 macro_rules! normal_list (
     () => (
         $crate::normal::Value::List(
-            $crate::normal::List::new()
+            $crate::normal::List::default()
         )
     );
 
@@ -47,7 +47,7 @@ macro_rules! normal_list (
 macro_rules! normal_map (
     () => (
         $crate::normal::Value::Map(
-            $crate::normal::Map::new()
+            $crate::normal::Map::default()
         )
     );
 

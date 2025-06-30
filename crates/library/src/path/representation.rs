@@ -37,12 +37,12 @@ impl PathRepresentation {
     /// Important: For our purposes here, the identities of the provided values are
     /// the *pointers* represented by the references. Thus a clone of a value or an
     /// otherwise equal value will *not* be considered identical.
-    pub fn find<'own, AnnotationsT>(
-        ancestor: &'own Value<AnnotationsT>,
-        descendent: &'own Value<AnnotationsT>,
+    pub fn find<'own, AnnotatedT>(
+        ancestor: &'own Value<AnnotatedT>,
+        descendent: &'own Value<AnnotatedT>,
     ) -> Option<Self>
     where
-        AnnotationsT: Default,
+        AnnotatedT: Default,
     {
         let route = Path::find(ancestor, descendent)?;
         let path = route.into_representation();

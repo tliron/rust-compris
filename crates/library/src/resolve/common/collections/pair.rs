@@ -5,14 +5,16 @@ use kutil_std::error::*;
 // Resolve two values at once
 // Useful for key-value pairs of maps
 
-impl<FirstT, SecondT, AnnotationsT> Resolve<(FirstT, SecondT), AnnotationsT>
-    for (&Value<AnnotationsT>, &Value<AnnotationsT>)
+impl<FirstT, SecondT, AnnotatedT> Resolve<(FirstT, SecondT), AnnotatedT> for (&Value<AnnotatedT>, &Value<AnnotatedT>)
 where
-    Value<AnnotationsT>: Resolve<FirstT, AnnotationsT> + Resolve<SecondT, AnnotationsT>,
+    Value<AnnotatedT>: Resolve<FirstT, AnnotatedT> + Resolve<SecondT, AnnotatedT>,
 {
-    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<(FirstT, SecondT), AnnotationsT>
+    fn resolve_with_errors<ErrorRecipientT>(
+        &self,
+        errors: &mut ErrorRecipientT,
+    ) -> ResolveResult<(FirstT, SecondT), AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         let first = self.0.resolve_with_errors(errors)?;
         let second = self.1.resolve_with_errors(errors)?;

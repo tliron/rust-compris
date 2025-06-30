@@ -7,11 +7,11 @@ use kutil_std::error::*;
 //
 
 /// Resolve result.
-pub type ResolveResult<ResolvedT, AnnotationsT> = Result<Option<ResolvedT>, ResolveError<AnnotationsT>>;
+pub type ResolveResult<ResolvedT, AnnotatedT> = Result<Option<ResolvedT>, ResolveError<AnnotatedT>>;
 
 //
 // ResolveErrors
 //
 
 /// Resolve [Errors].
-pub type ResolveErrors<AnnotationsT> = Errors<ResolveError<AnnotationsT>>;
+pub type ResolveErrors<AnnotatedT> = Errors<ResolveError<AnnotatedT>>;

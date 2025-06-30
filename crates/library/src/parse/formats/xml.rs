@@ -4,7 +4,7 @@ use std::io;
 
 impl Parser {
     /// Parses XML into a [Value].
-    pub fn read_xml<ReadT, AnnotationsT>(&self, _reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn read_xml<ReadT, AnnotatedT>(&self, _reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
     {

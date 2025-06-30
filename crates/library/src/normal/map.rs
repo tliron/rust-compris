@@ -27,22 +27,22 @@ impl_normal! {
     /// Normal map value.
     ///
     /// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
-    Map(BTreeMap<Value<AnnotationsT>, Value<AnnotationsT>>)
+    Map(BTreeMap<Value<AnnotatedT>, Value<AnnotatedT>>)
 }
 
-impl<AnnotationsT> Map<AnnotationsT> {
+impl<AnnotatedT> Map<AnnotatedT> {
     /// Constructor.
     pub fn new_from<IterableT>(iterable: IterableT) -> Self
     where
-        AnnotationsT: Default,
-        IterableT: IntoIterator<Item = (Value<AnnotationsT>, Value<AnnotationsT>)>,
+        AnnotatedT: Default,
+        IterableT: IntoIterator<Item = (Value<AnnotatedT>, Value<AnnotatedT>)>,
     {
         Self::new(BTreeMap::from_iter(iterable))
     }
 
     /// True if any of the map keys is a collection.
     pub fn has_a_collection_key(&self) -> bool {
-        for key in self.value.keys() {
+        for key in self.inner.keys() {
             if key.is_collection() {
                 return true;
             }
@@ -51,17 +51,17 @@ impl<AnnotationsT> Map<AnnotationsT> {
     }
 
     /// If the map has *only* one key then returns the key-value tuple.
-    pub fn to_key_value_pair(&self) -> Option<(&Value<AnnotationsT>, &Value<AnnotationsT>)> {
-        match self.value.len() {
-            1 => return self.value.iter().next(),
+    pub fn to_key_value_pair(&self) -> Option<(&Value<AnnotatedT>, &Value<AnnotatedT>)> {
+        match self.inner.len() {
+            1 => return self.inner.iter().next(),
             _ => None,
         }
     }
 
     /// Removes all entries from the map and returns them as a vector of key-value tuples.
-    pub fn into_vector(&mut self) -> Vec<(Value<AnnotationsT>, Value<AnnotationsT>)> {
-        let mut vector = Vec::with_capacity(self.value.len());
-        while let Some(entry) = self.value.pop_first() {
+    pub fn into_vector(&mut self) -> Vec<(Value<AnnotatedT>, Value<AnnotatedT>)> {
+        let mut vector = Vec::with_capacity(self.inner.len());
+        while let Some(entry) = self.inner.pop_first() {
             vector.push(entry);
         }
         vector
@@ -70,25 +70,25 @@ impl<AnnotationsT> Map<AnnotationsT> {
     /// Removes all [Annotations] recursively.
     pub fn without_annotations(self) -> Map<WithoutAnnotations> {
         let new_map: BTreeMap<_, _> = self
-            .value
+            .inner
             .into_iter()
             .map(|(key, value)| (key.without_annotations(), value.without_annotations()))
             .collect();
         new_map.into()
     }
 
-    /// Into different annotations.
+    /// Into different [Annotated] implementation.
     pub fn into_annotated<NewAnnotationsT>(mut self) -> Map<NewAnnotationsT>
     where
-        AnnotationsT: Annotated,
+        AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
         let vector: Vec<_> =
             self.into_vector().into_iter().map(|(key, value)| (key.into_annotated(), value.into_annotated())).collect();
         let new_map = Map::from_iter(vector);
-        if AnnotationsT::is_annotated()
+        if AnnotatedT::is_annotated()
             && NewAnnotationsT::is_annotated()
-            && let Some(annotations) = self.annotations.get_annotations()
+            && let Some(annotations) = self.annotated.get_annotations()
         {
             new_map.with_annotations(annotations.clone())
         } else {
@@ -97,12 +97,12 @@ impl<AnnotationsT> Map<AnnotationsT> {
     }
 
     /// [Debuggable] with [Annotations].
-    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableMap<AnnotationsT> {
+    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableMap<AnnotatedT> {
         AnnotatedDebuggableMap::new(self, mode)
     }
 }
 
-impl<AnnotationsT> Debuggable for Map<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Map<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -114,11 +114,11 @@ impl<AnnotationsT> Debuggable for Map<AnnotationsT> {
             None
         };
 
-        utils::write_debug_as_map(self.value.iter(), override_format, writer, context)
+        utils::write_debug_as_map(self.inner.iter(), override_format, writer, context)
     }
 }
 
-impl<AnnotationsT> fmt::Display for Map<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Map<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_char('{')?;
 
@@ -135,87 +135,87 @@ impl<AnnotationsT> fmt::Display for Map<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> IntoIterator for Map<AnnotationsT> {
-    type Item = (Value<AnnotationsT>, Value<AnnotationsT>);
-    type IntoIter = btree_map::IntoIter<Value<AnnotationsT>, Value<AnnotationsT>>;
+impl<AnnotatedT> IntoIterator for Map<AnnotatedT> {
+    type Item = (Value<AnnotatedT>, Value<AnnotatedT>);
+    type IntoIter = btree_map::IntoIter<Value<AnnotatedT>, Value<AnnotatedT>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.value.into_iter()
+        self.inner.into_iter()
     }
 }
 
-impl<'own, AnnotationsT> IntoIterator for &'own Map<AnnotationsT> {
-    type Item = (&'own Value<AnnotationsT>, &'own Value<AnnotationsT>);
-    type IntoIter = btree_map::Iter<'own, Value<AnnotationsT>, Value<AnnotationsT>>;
+impl<'own, AnnotatedT> IntoIterator for &'own Map<AnnotatedT> {
+    type Item = (&'own Value<AnnotatedT>, &'own Value<AnnotatedT>);
+    type IntoIter = btree_map::Iter<'own, Value<AnnotatedT>, Value<AnnotatedT>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.value.iter()
+        self.inner.iter()
     }
 }
 
-impl<'own, AnnotationsT> IntoIterator for &'own mut Map<AnnotationsT> {
-    type Item = (&'own Value<AnnotationsT>, &'own mut Value<AnnotationsT>);
-    type IntoIter = btree_map::IterMut<'own, Value<AnnotationsT>, Value<AnnotationsT>>;
+impl<'own, AnnotatedT> IntoIterator for &'own mut Map<AnnotatedT> {
+    type Item = (&'own Value<AnnotatedT>, &'own mut Value<AnnotatedT>);
+    type IntoIter = btree_map::IterMut<'own, Value<AnnotatedT>, Value<AnnotatedT>>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.value.iter_mut()
+        self.inner.iter_mut()
     }
 }
 
 // Conversions
 
-impl<AnnotationsT> From<BTreeMap<Value<AnnotationsT>, Value<AnnotationsT>>> for Map<AnnotationsT>
+impl<AnnotatedT> From<BTreeMap<Value<AnnotatedT>, Value<AnnotatedT>>> for Map<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
-    fn from(map: BTreeMap<Value<AnnotationsT>, Value<AnnotationsT>>) -> Self {
+    fn from(map: BTreeMap<Value<AnnotatedT>, Value<AnnotatedT>>) -> Self {
         Self::new(map)
     }
 }
 
-impl<AnnotationsT> From<Map<AnnotationsT>> for BTreeMap<Value<AnnotationsT>, Value<AnnotationsT>> {
-    fn from(map: Map<AnnotationsT>) -> Self {
-        map.value
+impl<AnnotatedT> From<Map<AnnotatedT>> for BTreeMap<Value<AnnotatedT>, Value<AnnotatedT>> {
+    fn from(map: Map<AnnotatedT>) -> Self {
+        map.inner
     }
 }
 
-impl<const SIZE: usize, AnnotationsT> From<[(Value<AnnotationsT>, Value<AnnotationsT>); SIZE]> for Map<AnnotationsT>
+impl<const SIZE: usize, AnnotatedT> From<[(Value<AnnotatedT>, Value<AnnotatedT>); SIZE]> for Map<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
-    fn from(array: [(Value<AnnotationsT>, Value<AnnotationsT>); SIZE]) -> Self {
+    fn from(array: [(Value<AnnotatedT>, Value<AnnotatedT>); SIZE]) -> Self {
         BTreeMap::from(array).into()
     }
 }
 
-impl<AnnotationsT> FromIterator<(Value<AnnotationsT>, Value<AnnotationsT>)> for Map<AnnotationsT>
+impl<AnnotatedT> FromIterator<(Value<AnnotatedT>, Value<AnnotatedT>)> for Map<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from_iter<IntoIteratorT>(iterator: IntoIteratorT) -> Self
     where
-        IntoIteratorT: IntoIterator<Item = (Value<AnnotationsT>, Value<AnnotationsT>)>,
+        IntoIteratorT: IntoIterator<Item = (Value<AnnotatedT>, Value<AnnotatedT>)>,
     {
         BTreeMap::from_iter(iterator).into()
     }
 }
 
-impl<'own, AnnotationsT> From<&'own Map<AnnotationsT>> for &'own BTreeMap<Value<AnnotationsT>, Value<AnnotationsT>> {
-    fn from(map: &'own Map<AnnotationsT>) -> Self {
-        &map.value
+impl<'own, AnnotatedT> From<&'own Map<AnnotatedT>> for &'own BTreeMap<Value<AnnotatedT>, Value<AnnotatedT>> {
+    fn from(map: &'own Map<AnnotatedT>) -> Self {
+        &map.inner
     }
 }
 
-impl<AnnotationsT> TryFrom<List<AnnotationsT>> for Map<AnnotationsT>
+impl<AnnotatedT> TryFrom<List<AnnotatedT>> for Map<AnnotatedT>
 where
-    AnnotationsT: Clone + Default,
+    AnnotatedT: Clone + Default,
 {
-    type Error = MalformedError<AnnotationsT>;
+    type Error = MalformedError<AnnotatedT>;
 
     /// The iterated values are expected to be [List] of length 2 (key-value pairs).
     ///
     /// Will return an error if it encounters a duplicate key.
-    fn try_from(list: List<AnnotationsT>) -> Result<Self, Self::Error> {
+    fn try_from(list: List<AnnotatedT>) -> Result<Self, Self::Error> {
         let mut map = Self::default();
 
         // Repeat until we get a non-error
@@ -223,7 +223,7 @@ where
         loop {
             match iterator.next().map_err(|(error, _value)| error)? {
                 Some((key, value)) => {
-                    map.value.insert(key.clone(), value.clone());
+                    map.inner.insert(key.clone(), value.clone());
                 }
 
                 None => break,

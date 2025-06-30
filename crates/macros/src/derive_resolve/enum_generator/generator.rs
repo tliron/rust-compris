@@ -53,7 +53,7 @@ impl EnumGenerator {
                                 if fields.unnamed.len() != 1 {
                                     return Err(syn::Error::new(
                                         variant.ident.span(),
-                                        "`Resolve`: variants must have exactly 1 unnamed field",
+                                        "`Resolve`: variants with more than 1 unnamed field are not supported",
                                     ));
                                 }
                             }
@@ -86,7 +86,7 @@ impl EnumGenerator {
                                 generator.single_variant = Some(Variant {
                                     key: key.clone(),
                                     name: variant_name.to_token_stream(),
-                                    newtype: !variant.fields.is_empty(),
+                                    has_fields: !variant.fields.is_empty(),
                                 });
                             }
                         }
@@ -99,7 +99,7 @@ impl EnumGenerator {
                         generator.select_variants.push(Variant {
                             key,
                             name: variant_name.to_token_stream(),
-                            newtype: !variant.fields.is_empty(),
+                            has_fields: !variant.fields.is_empty(),
                         });
                     }
                 }
@@ -124,6 +124,6 @@ pub struct Variant {
     /// Variant name.
     pub name: TokenStream,
 
-    /// Variant newtype.
-    pub newtype: bool,
+    /// Whether the variant has fields.
+    pub has_fields: bool,
 }

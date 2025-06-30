@@ -9,17 +9,17 @@ use serde::{Deserializer as _, de};
 // VariantDeserializer
 //
 
-pub(crate) struct VariantDeserializer<'de, AnnotationsT> {
-    value: &'de Value<AnnotationsT>,
+pub(crate) struct VariantDeserializer<'de, AnnotatedT> {
+    value: &'de Value<AnnotatedT>,
 }
 
-impl<'de, AnnotationsT> VariantDeserializer<'de, AnnotationsT> {
-    pub fn new(value: &'de Value<AnnotationsT>) -> Self {
+impl<'de, AnnotatedT> VariantDeserializer<'de, AnnotatedT> {
+    pub fn new(value: &'de Value<AnnotatedT>) -> Self {
         Self { value }
     }
 }
 
-impl<'de, AnnotationsT> de::VariantAccess<'de> for VariantDeserializer<'de, AnnotationsT> {
+impl<'de, AnnotatedT> de::VariantAccess<'de> for VariantDeserializer<'de, AnnotatedT> {
     type Error = DeserializeError;
 
     fn unit_variant(self) -> Result<(), Self::Error> {

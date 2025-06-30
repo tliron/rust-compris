@@ -9,14 +9,14 @@ use {serde::de, std::slice::*};
 // MapAsListDeserializer
 //
 
-pub(crate) struct MapAsListDeserializer<'de, AnnotationsT> {
-    iterator: Iter<'de, Value<AnnotationsT>>,
-    current_entry: Option<(&'de Value<AnnotationsT>, &'de Value<AnnotationsT>)>,
+pub(crate) struct MapAsListDeserializer<'de, AnnotatedT> {
+    iterator: Iter<'de, Value<AnnotatedT>>,
+    current_entry: Option<(&'de Value<AnnotatedT>, &'de Value<AnnotatedT>)>,
 }
 
-impl<'de, AnnotationsT> MapAsListDeserializer<'de, AnnotationsT> {
-    pub(crate) fn new(list: &'de List<AnnotationsT>) -> Self {
-        Self { iterator: list.value.iter(), current_entry: None }
+impl<'de, AnnotatedT> MapAsListDeserializer<'de, AnnotatedT> {
+    pub(crate) fn new(list: &'de List<AnnotatedT>) -> Self {
+        Self { iterator: list.inner.iter(), current_entry: None }
     }
 
     fn next(&mut self) -> Result<(), DeserializeError> {
@@ -39,7 +39,7 @@ impl<'de, AnnotationsT> MapAsListDeserializer<'de, AnnotationsT> {
     }
 }
 
-impl<'de, AnnotationsT> de::MapAccess<'de> for MapAsListDeserializer<'de, AnnotationsT> {
+impl<'de, AnnotatedT> de::MapAccess<'de> for MapAsListDeserializer<'de, AnnotatedT> {
     type Error = DeserializeError;
 
     fn next_key_seed<SeedT>(&mut self, seed: SeedT) -> Result<Option<SeedT::Value>, Self::Error>

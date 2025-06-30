@@ -14,8 +14,8 @@ use deluxe::*;
 #[derive(Default, ExtractAttributes)]
 #[deluxe(attributes(resolve))]
 pub struct EnumAttribute {
-    /// If set will use this existing generic parameter for annotations. Otherwise will insert a
-    /// new parameter, "_AnnotationsT".
+    /// If set will use this existing generic parameter for the annotated field. Otherwise will insert
+    /// a new parameter, "_AnnotatedT".
     #[deluxe(default)]
-    pub annotations_parameter: Option<syn::Ident>,
+    pub annotated_parameter: Option<syn::Ident>,
 }

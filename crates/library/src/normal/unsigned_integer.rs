@@ -22,23 +22,23 @@ impl_normal! {
 
 impl_normal_basic!(UnsignedInteger);
 
-impl<AnnotationsT> Debuggable for UnsignedInteger<AnnotationsT> {
+impl<AnnotatedT> Debuggable for UnsignedInteger<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
         if matches!(context.format, DebugFormat::Compact) {
-            context.theme.write_number(writer, self.value)
+            context.theme.write_number(writer, self.inner)
         } else {
-            write!(writer, "{} {}", context.theme.number(self.value), context.theme.meta("u64"))
+            write!(writer, "{} {}", context.theme.number(self.inner), context.theme.meta("u64"))
         }
     }
 }
 
-impl<AnnotationsT> fmt::Display for UnsignedInteger<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for UnsignedInteger<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}u64", self.value)
+        write!(formatter, "{}u64", self.inner)
     }
 }
 
@@ -52,17 +52,17 @@ impl<AnnotationsT> fmt::Display for UnsignedInteger<AnnotationsT> {
   [u8];
   [usize];
 )]
-impl<AnnotationsT> From<ToNormalT> for UnsignedInteger<AnnotationsT>
+impl<AnnotatedT> From<ToNormalT> for UnsignedInteger<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(unsigned_integer: ToNormalT) -> Self {
         Self::new(unsigned_integer as u64)
     }
 }
 
-impl<AnnotationsT> From<&UnsignedInteger<AnnotationsT>> for u64 {
-    fn from(unsigned_integer: &UnsignedInteger<AnnotationsT>) -> Self {
-        unsigned_integer.value
+impl<AnnotatedT> From<&UnsignedInteger<AnnotatedT>> for u64 {
+    fn from(unsigned_integer: &UnsignedInteger<AnnotatedT>) -> Self {
+        unsigned_integer.inner
     }
 }

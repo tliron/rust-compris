@@ -2,16 +2,16 @@ use super::super::{super::normal::*, modal::*, mode::*};
 
 use serde::ser::*;
 
-impl<AnnotationsT> Serialize for Blob<AnnotationsT> {
+impl<AnnotatedT> Serialize for Blob<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
     {
-        serializer.serialize_bytes(&*self.value)
+        serializer.serialize_bytes(&*self.inner)
     }
 }
 
-impl<AnnotationsT> SerializeModal for Blob<AnnotationsT> {
+impl<AnnotatedT> SerializeModal for Blob<AnnotatedT> {
     fn serialize_modal<SerializerT>(
         &self,
         serializer: SerializerT,
@@ -21,7 +21,7 @@ impl<AnnotationsT> SerializeModal for Blob<AnnotationsT> {
         SerializerT: Serializer,
     {
         match &mode.blob {
-            BlobSerializationMode::AsBytes => serializer.serialize_bytes(&*self.value),
+            BlobSerializationMode::AsBytes => serializer.serialize_bytes(&*self.inner),
 
             BlobSerializationMode::StringifyBase64(hint) => {
                 let string = self.to_base64();

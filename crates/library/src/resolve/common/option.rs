@@ -5,13 +5,13 @@ use kutil_std::error::*;
 // We only have to care about Some, because None will never get resolved
 // (A Null is definitely not a None and requires entirely different consideration)
 
-impl<OptionalT, AnnotationsT> Resolve<Option<OptionalT>, AnnotationsT> for Value<AnnotationsT>
+impl<OptionalT, AnnotatedT> Resolve<Option<OptionalT>, AnnotatedT> for Value<AnnotatedT>
 where
-    Value<AnnotationsT>: Resolve<OptionalT, AnnotationsT>,
+    Value<AnnotatedT>: Resolve<OptionalT, AnnotatedT>,
 {
-    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<Option<OptionalT>, AnnotationsT>
+    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<Option<OptionalT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         Ok(Some(self.resolve_with_errors(errors)?))
     }

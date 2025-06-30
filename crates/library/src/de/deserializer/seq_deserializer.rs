@@ -9,14 +9,14 @@ use {serde::de, std::slice::*};
 // SeqDeserializer
 //
 
-pub(crate) struct SeqDeserializer<'de, AnnotationsT> {
-    iterator: Iter<'de, Value<AnnotationsT>>,
-    current_item: Option<&'de Value<AnnotationsT>>,
+pub(crate) struct SeqDeserializer<'de, AnnotatedT> {
+    iterator: Iter<'de, Value<AnnotatedT>>,
+    current_item: Option<&'de Value<AnnotatedT>>,
 }
 
-impl<'de, AnnotationsT> SeqDeserializer<'de, AnnotationsT> {
-    pub(crate) fn new(list: &'de List<AnnotationsT>) -> Self {
-        Self { iterator: list.value.iter(), current_item: None }
+impl<'de, AnnotatedT> SeqDeserializer<'de, AnnotatedT> {
+    pub(crate) fn new(list: &'de List<AnnotatedT>) -> Self {
+        Self { iterator: list.inner.iter(), current_item: None }
     }
 
     fn next(&mut self) {
@@ -24,7 +24,7 @@ impl<'de, AnnotationsT> SeqDeserializer<'de, AnnotationsT> {
     }
 }
 
-impl<'de, AnnotationsT> de::SeqAccess<'de> for SeqDeserializer<'de, AnnotationsT> {
+impl<'de, AnnotatedT> de::SeqAccess<'de> for SeqDeserializer<'de, AnnotatedT> {
     type Error = DeserializeError;
 
     fn next_element_seed<SeedT>(&mut self, seed: SeedT) -> Result<Option<SeedT::Value>, Self::Error>

@@ -7,22 +7,22 @@ use super::super::{
 
 use {serde::ser::*, tracing::trace};
 
-impl<AnnotationsT> Serialize for Map<AnnotationsT> {
+impl<AnnotatedT> Serialize for Map<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
     {
-        let mut map = serializer.serialize_map(Some(self.value.len()))?;
-        for (key, value) in &self.value {
+        let mut map = serializer.serialize_map(Some(self.inner.len()))?;
+        for (key, value) in &self.inner {
             map.serialize_entry(key, value)?;
         }
         map.end()
     }
 }
 
-impl<AnnotationsT> SerializeModalRescursive for Map<AnnotationsT>
+impl<AnnotatedT> SerializeModalRescursive for Map<AnnotatedT>
 where
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn serialize_modal<SerializerT>(
         &self,
@@ -35,8 +35,8 @@ where
     {
         match mode.map {
             MapSerializationMode::AsMap => {
-                let mut map = serializer.serialize_map(Some(self.value.len()))?;
-                for (key, value) in &self.value {
+                let mut map = serializer.serialize_map(Some(self.inner.len()))?;
+                for (key, value) in &self.inner {
                     map.serialize_entry(&key.modal(mode, modal_serializer), &value.modal(mode, modal_serializer))?;
                 }
                 map.end()
@@ -51,7 +51,7 @@ where
 
                 if as_map {
                     // Do we have a non-string key?
-                    for key in self.value.keys() {
+                    for key in self.inner.keys() {
                         match key {
                             Value::Text(_) => {}
 
@@ -65,8 +65,8 @@ where
                 }
 
                 if as_map {
-                    let mut map = serializer.serialize_map(Some(self.value.len()))?;
-                    for (key, value) in &self.value {
+                    let mut map = serializer.serialize_map(Some(self.inner.len()))?;
+                    for (key, value) in &self.inner {
                         map.serialize_entry(&key.modal(mode, modal_serializer), &value.modal(mode, modal_serializer))?;
                     }
                     map.end()
@@ -76,8 +76,8 @@ where
                             trace!("map as seq wrapped in single-key map with key: {}", hint);
 
                             // TODO: because Serde doesn't serialize iters we must collect all entries
-                            let mut entries = Vec::with_capacity(self.value.len());
-                            for (key, value) in self.value.iter() {
+                            let mut entries = Vec::with_capacity(self.inner.len());
+                            for (key, value) in self.inner.iter() {
                                 entries.push((key.modal(mode, modal_serializer), value.modal(mode, modal_serializer)));
                             }
 
@@ -88,8 +88,8 @@ where
 
                         None => {
                             trace!("map as seq");
-                            let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
-                            for (key, value) in self.value.iter() {
+                            let mut seq = serializer.serialize_seq(Some(self.inner.len()))?;
+                            for (key, value) in self.inner.iter() {
                                 let entry = (key.modal(mode, modal_serializer), value.modal(mode, modal_serializer));
                                 seq.serialize_element(&entry)?;
                             }
@@ -103,8 +103,8 @@ where
                 let always = mode.map == MapSerializationMode::SerializeKeys;
                 let stringify_serializer = modal_serializer.clone().with_pretty(false);
 
-                let mut map = serializer.serialize_map(Some(self.value.len()))?;
-                for (key, value) in &self.value {
+                let mut map = serializer.serialize_map(Some(self.inner.len()))?;
+                for (key, value) in &self.inner {
                     if always || !matches!(key, Value::Text(_)) {
                         match stringify_serializer.stringify(key) {
                             Ok(key) => map.serialize_entry(&key, &value.modal(mode, modal_serializer))?,

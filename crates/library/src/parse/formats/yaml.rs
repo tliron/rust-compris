@@ -21,10 +21,10 @@ impl Parser {
     /// Is affected by [Parser::try_unsigned_integers](super::super::Parser),
     /// [Parser::allow_legacy_words](super::super::Parser),
     /// and [Parser::allow_legacy_types](super::super::Parser).
-    pub fn parse_yaml<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse_yaml<ReadT, AnnotatedT>(&self, reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         // https://github.com/saphyr-rs/saphyr/issues/17
         // https://github.com/saphyr-rs/saphyr/issues/16
@@ -47,12 +47,12 @@ const YAML_TAG_PREFIX: &'static str = "tag:yaml.org,2002:";
 //
 
 /// Saphyr receiver for normal types.
-struct YamlReceiver<AnnotationsT> {
+struct YamlReceiver<AnnotatedT> {
     try_unsigned_integers: bool,
     allow_legacy_words: bool,
     allow_legacy_types: bool,
 
-    value_builder: ValueBuilder<AnnotationsT>,
+    value_builder: ValueBuilder<AnnotatedT>,
     last_span: Option<SaphyrSpan>,
     error: Option<ParseError>,
 
@@ -60,9 +60,9 @@ struct YamlReceiver<AnnotationsT> {
     collection_span: fn(&Self, &SaphyrSpan) -> Option<Span>,
 }
 
-impl<AnnotationsT> YamlReceiver<AnnotationsT>
+impl<AnnotatedT> YamlReceiver<AnnotatedT>
 where
-    AnnotationsT: Annotated,
+    AnnotatedT: Annotated,
 {
     /// Constructor.
     fn new(
@@ -78,8 +78,8 @@ where
             value_builder: ValueBuilder::new(source.clone()),
             last_span: None,
             error: None,
-            span: if AnnotationsT::is_annotated() { |span| Some(span.into()) } else { |_| None },
-            collection_span: if AnnotationsT::is_annotated() {
+            span: if AnnotatedT::is_annotated() { |span| Some(span.into()) } else { |_| None },
+            collection_span: if AnnotatedT::is_annotated() {
                 |yaml_receiver, span| Some(yaml_receiver.last_span.as_ref().unwrap_or_else(|| span).into())
             } else {
                 |_, _| None
@@ -88,9 +88,9 @@ where
     }
 
     /// Returns the final built value.
-    fn value(&mut self) -> Result<Value<AnnotationsT>, ParseError>
+    fn value(&mut self) -> Result<Value<AnnotatedT>, ParseError>
     where
-        AnnotationsT: Default,
+        AnnotatedT: Default,
     {
         match self.error.take() {
             None => Ok(self.value_builder.value()),
@@ -104,9 +104,9 @@ where
         tag_prefix: &str,
         tag_suffix: &str,
         span: &SaphyrSpan,
-    ) -> Result<Value<AnnotationsT>, ParseError>
+    ) -> Result<Value<AnnotatedT>, ParseError>
     where
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         // Check for standard schema tags
         if tag_prefix == YAML_TAG_PREFIX {
@@ -160,9 +160,9 @@ where
         Ok(Text::from(value).with_span((self.span)(span)).into())
     }
 
-    fn parse_yaml_bare_scalar(&self, value: Cow<'_, str>, span: &SaphyrSpan) -> Result<Value<AnnotationsT>, ParseError>
+    fn parse_yaml_bare_scalar(&self, value: Cow<'_, str>, span: &SaphyrSpan) -> Result<Value<AnnotatedT>, ParseError>
     where
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         // Core schema, https://yaml.org/spec/1.2.2/#1032-tag-resolution
         if self.parse_yaml_null(&value, span).is_ok() {
@@ -267,9 +267,9 @@ where
     }
 }
 
-impl<'own, 'input, AnnotationsT> SpannedEventReceiver<'input> for YamlReceiver<AnnotationsT>
+impl<'own, 'input, AnnotatedT> SpannedEventReceiver<'input> for YamlReceiver<AnnotatedT>
 where
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn on_event(&mut self, event: Event, span: SaphyrSpan) {
         tracing::trace!("{:?} {:?}", event, span);
@@ -330,7 +330,7 @@ where
             _ => {}
         }
 
-        if AnnotationsT::is_annotated() {
+        if AnnotatedT::is_annotated() {
             self.last_span = Some(span);
         }
     }

@@ -1,4 +1,4 @@
-use super::super::super::annotation::*;
+use {super::super::value::*, crate::impl_annotated};
 
 use {
     kutil_cli::debug::*,
@@ -12,49 +12,27 @@ use {
 
 /// Casting error.
 #[derive(Debug, Error)]
-pub struct CastingError<AnnotationsT> {
+pub struct CastingError<AnnotatedT> {
     /// Value.
-    pub value: String,
+    pub value: Value<AnnotatedT>,
 
     /// Type name.
     pub type_name: String,
-
-    /// Annotations.
-    pub annotations: AnnotationsT,
 }
 
-impl<AnnotationsT> CastingError<AnnotationsT> {
+impl<AnnotatedT> CastingError<AnnotatedT> {
     /// Constructor.
-    pub fn new(value: &str, type_name: &str) -> Self
+    pub fn new(value: &Value<AnnotatedT>, type_name: String) -> Self
     where
-        AnnotationsT: Default,
+        AnnotatedT: Clone + Default,
     {
-        Self { value: value.into(), type_name: type_name.into(), annotations: AnnotationsT::default() }
+        Self { value: value.clone(), type_name }
     }
 }
 
-impl<AnnotationsT> Annotated for CastingError<AnnotationsT>
-where
-    AnnotationsT: Annotated,
-{
-    fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
-    }
+impl_annotated!(CastingError, value);
 
-    fn get_annotations(&self) -> Option<&Annotations> {
-        self.annotations.get_annotations()
-    }
-
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
-        self.annotations.get_annotations_mut()
-    }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        self.annotations.set_annotations(annotations);
-    }
-}
-
-impl<AnnotationsT> Debuggable for CastingError<AnnotationsT> {
+impl<AnnotatedT> Debuggable for CastingError<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -63,7 +41,7 @@ impl<AnnotationsT> Debuggable for CastingError<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> fmt::Display for CastingError<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for CastingError<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{} cannot be cast to a {}", self.value, self.type_name)
     }

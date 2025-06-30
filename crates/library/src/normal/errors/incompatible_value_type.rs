@@ -1,4 +1,7 @@
-use super::super::{super::annotation::*, value::*};
+use {
+    super::super::{super::annotation::*, value::*},
+    crate::impl_annotated,
+};
 
 use {
     kutil_cli::debug::*,
@@ -13,54 +16,35 @@ use {
 
 /// Incompatible value type.
 #[derive(Debug, Error)]
-pub struct IncompatibleValueTypeError<AnnotationsT> {
+pub struct IncompatibleValueTypeError<AnnotatedT> {
     /// Expected type names.
     pub expected_type_names: Vec<String>,
 
     /// Type name.
     pub type_name: String,
 
-    /// Annotations.
-    pub annotations: AnnotationsT,
+    /// Annotated.
+    pub annotated: AnnotatedT,
 }
 
-impl<AnnotationsT> IncompatibleValueTypeError<AnnotationsT> {
+impl<AnnotatedT> IncompatibleValueTypeError<AnnotatedT> {
     /// Constructor.
-    pub fn new(value: &Value<AnnotationsT>, expected_type_names: &[&str]) -> Self
+    pub fn new(value: &Value<AnnotatedT>, expected_type_names: &[&str]) -> Self
     where
-        AnnotationsT: Annotated + Default + Clone,
+        AnnotatedT: Annotated + Default + Clone,
     {
         Self {
             expected_type_names: expected_type_names.iter().map(|type_name| String::from(*type_name)).collect(),
             type_name: value.get_type_name().into(),
-            annotations: AnnotationsT::default(),
+            annotated: AnnotatedT::default(),
         }
         .with_annotations_from(value)
     }
 }
 
-impl<AnnotationsT> Annotated for IncompatibleValueTypeError<AnnotationsT>
-where
-    AnnotationsT: Annotated,
-{
-    fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
-    }
+impl_annotated!(IncompatibleValueTypeError);
 
-    fn get_annotations(&self) -> Option<&Annotations> {
-        self.annotations.get_annotations()
-    }
-
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
-        self.annotations.get_annotations_mut()
-    }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        self.annotations.set_annotations(annotations);
-    }
-}
-
-impl<AnnotationsT> Debuggable for IncompatibleValueTypeError<AnnotationsT> {
+impl<AnnotatedT> Debuggable for IncompatibleValueTypeError<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -74,7 +58,7 @@ impl<AnnotationsT> Debuggable for IncompatibleValueTypeError<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> fmt::Display for IncompatibleValueTypeError<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for IncompatibleValueTypeError<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "is {}, expected {}", self.type_name, self.expected_type_names.join_conjunction("or"))
     }

@@ -45,7 +45,7 @@ where
                     }
                 }
 
-                AnnotatedDebuggableMode::Full => {
+                AnnotatedDebuggableMode::Multiline => {
                     if annotations.has_debug(DebugFormat::Reduced) {
                         annotations.write_debug_for(writer, &context.clone().with_format(DebugFormat::Reduced))?;
                         context.indent(writer)?;
@@ -65,9 +65,9 @@ where
 // ToAnnotatedDebuggable
 //
 
-///
+/// To [AnnotatedDebuggable].
 pub trait ToAnnotatedDebuggable<'own>: Sized {
-    /// [Debuggable](Debuggable) with [Annotations](super::super::annotations::Annotations).
+    /// To [AnnotatedDebuggable].
     fn annotated_debuggable(&'own self) -> AnnotatedDebuggable<'own, Self>;
 }
 
@@ -76,6 +76,6 @@ where
     ErrorT: Error,
 {
     fn annotated_debuggable(&'own self) -> AnnotatedDebuggable<'own, Self> {
-        AnnotatedDebuggable::new(self, AnnotatedDebuggableMode::Full)
+        AnnotatedDebuggable::new(self, AnnotatedDebuggableMode::Multiline)
     }
 }

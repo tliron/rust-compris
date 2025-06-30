@@ -7,22 +7,22 @@ use super::super::{
 
 use serde::ser::*;
 
-impl<AnnotationsT> Serialize for List<AnnotationsT> {
+impl<AnnotatedT> Serialize for List<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
     {
-        let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
-        for item in &self.value {
+        let mut seq = serializer.serialize_seq(Some(self.inner.len()))?;
+        for item in &self.inner {
             seq.serialize_element(item)?;
         }
         seq.end()
     }
 }
 
-impl<AnnotationsT> SerializeModalRescursive for List<AnnotationsT>
+impl<AnnotatedT> SerializeModalRescursive for List<AnnotatedT>
 where
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn serialize_modal<SerializerT>(
         &self,
@@ -33,8 +33,8 @@ where
     where
         SerializerT: Serializer,
     {
-        let mut seq = serializer.serialize_seq(Some(self.value.len()))?;
-        for item in &self.value {
+        let mut seq = serializer.serialize_seq(Some(self.inner.len()))?;
+        for item in &self.inner {
             seq.serialize_element(&item.modal(mode, compris_serializer))?;
         }
         seq.end()

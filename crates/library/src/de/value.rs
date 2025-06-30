@@ -6,7 +6,7 @@ use serde::de;
 // Value
 //
 
-impl<AnnotationsT> Value<AnnotationsT> {
+impl<AnnotatedT> Value<AnnotatedT> {
     /// Deserialize.
     ///
     /// Will convert number types only if information is not lost. Otherwise, will return an error.

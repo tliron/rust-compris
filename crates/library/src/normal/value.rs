@@ -21,40 +21,40 @@ use {bytestring::*, std::mem::*};
 
 /// Container for normal types.
 #[derive(Clone, Debug, Default)]
-pub enum Value<AnnotationsT> {
+pub enum Value<AnnotatedT> {
     /// Signifies no value.
     #[default]
     Nothing,
 
     /// Null.
-    Null(Null<AnnotationsT>),
+    Null(Null<AnnotatedT>),
 
     /// Integer.
-    Integer(Integer<AnnotationsT>),
+    Integer(Integer<AnnotatedT>),
 
     /// Unsigned integer.
-    UnsignedInteger(UnsignedInteger<AnnotationsT>),
+    UnsignedInteger(UnsignedInteger<AnnotatedT>),
 
     /// Float.
-    Float(Float<AnnotationsT>),
+    Float(Float<AnnotatedT>),
 
     /// Boolean.
-    Boolean(Boolean<AnnotationsT>),
+    Boolean(Boolean<AnnotatedT>),
 
     /// Text.
-    Text(Text<AnnotationsT>),
+    Text(Text<AnnotatedT>),
 
     /// Blob.
-    Blob(Blob<AnnotationsT>),
+    Blob(Blob<AnnotatedT>),
 
     /// List.
-    List(List<AnnotationsT>),
+    List(List<AnnotatedT>),
 
     /// Map.
-    Map(Map<AnnotationsT>),
+    Map(Map<AnnotatedT>),
 }
 
-impl<AnnotationsT> Value<AnnotationsT> {
+impl<AnnotatedT> Value<AnnotatedT> {
     /// The value's type name.
     pub fn get_type_name(&self) -> &'static str {
         match self {
@@ -94,11 +94,11 @@ impl<AnnotationsT> Value<AnnotationsT> {
     /// [Value::UnsignedInteger] or an [Value::Integer].
     pub fn get(&self, key: &Self) -> Option<&Self> {
         match self {
-            Self::Map(map) => map.value.get(key),
+            Self::Map(map) => map.inner.get(key),
 
             Self::List(list) => match key {
-                Self::UnsignedInteger(unsigned_integer) => list.value.get(unsigned_integer.value as usize),
-                Self::Integer(integer) => list.value.get(integer.value as usize),
+                Self::UnsignedInteger(unsigned_integer) => list.inner.get(unsigned_integer.inner as usize),
+                Self::Integer(integer) => list.inner.get(integer.inner as usize),
                 _ => None,
             },
 
@@ -114,11 +114,11 @@ impl<AnnotationsT> Value<AnnotationsT> {
     /// [Value::UnsignedInteger] or an [Value::Integer].
     pub fn get_mut(&mut self, key: &Self) -> Option<&mut Self> {
         match self {
-            Value::Map(map) => map.value.get_mut(key),
+            Value::Map(map) => map.inner.get_mut(key),
 
             Self::List(list) => match key {
-                Value::UnsignedInteger(unsigned_integer) => list.value.get_mut(unsigned_integer.value as usize),
-                Value::Integer(integer) => list.value.get_mut(integer.value as usize),
+                Value::UnsignedInteger(unsigned_integer) => list.inner.get_mut(unsigned_integer.inner as usize),
+                Value::Integer(integer) => list.inner.get_mut(integer.inner as usize),
                 _ => None,
             },
 
@@ -160,7 +160,7 @@ impl<AnnotationsT> Value<AnnotationsT> {
     /// be more efficient because it doesn't require an allocated iterator.
     pub fn traverse<'own, IteratorT>(&self, keys: IteratorT) -> Option<&Self>
     where
-        AnnotationsT: 'own,
+        AnnotatedT: 'own,
         IteratorT: Iterator<Item = &'own Self>,
     {
         let mut found = self;
@@ -178,7 +178,7 @@ impl<AnnotationsT> Value<AnnotationsT> {
     /// be more efficient because it doesn't require an allocated iterator.
     pub fn traverse_mut<'own, IteratorT>(&mut self, keys: IteratorT) -> Option<&mut Self>
     where
-        AnnotationsT: 'own,
+        AnnotatedT: 'own,
         IteratorT: Iterator<Item = &'own Self>,
     {
         let mut found = self;
@@ -208,7 +208,7 @@ impl<AnnotationsT> Value<AnnotationsT> {
     }
 
     /// If the value is a [List], iterates its items. Otherwise just iterates itself once.
-    pub fn iterator(&self) -> ValueIterator<AnnotationsT> {
+    pub fn iterator(&self) -> ValueIterator<AnnotatedT> {
         ValueIterator::new(self)
     }
 
@@ -219,18 +219,18 @@ impl<AnnotationsT> Value<AnnotationsT> {
     ///
     /// Note that the implementation relies on `dyn` to support two different [KeyValuePairIterator]
     /// implementations.
-    pub fn key_value_iterator<'own>(&'own self) -> Option<Box<dyn KeyValuePairIterator<AnnotationsT> + 'own>>
+    pub fn key_value_iterator<'own>(&'own self) -> Option<Box<dyn KeyValuePairIterator<AnnotatedT> + 'own>>
     where
-        AnnotationsT: Default,
+        AnnotatedT: Default,
     {
         match self {
-            Self::Map(map) => Some(Box::new(KeyValuePairIteratorForBTreeMap::new_for(&map.value))),
+            Self::Map(map) => Some(Box::new(KeyValuePairIteratorForBTreeMap::new_for(&map.inner))),
             Self::List(list) => Some(Box::new(KeyValuePairIteratorForValueIterator::new_for(list))),
             _ => None,
         }
     }
 
-    /// Removes all [Annotations] recursively.
+    /// Remove all [Annotations] recursively.
     pub fn without_annotations(self) -> Value<WithoutAnnotations> {
         match self {
             Self::Nothing => Value::Nothing,
@@ -246,10 +246,10 @@ impl<AnnotationsT> Value<AnnotationsT> {
         }
     }
 
-    /// Into different annotations.
+    /// Into different [Annotated] implementation.
     pub fn into_annotated<NewAnnotationsT>(self) -> Value<NewAnnotationsT>
     where
-        AnnotationsT: Annotated,
+        AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
         match self {
@@ -267,20 +267,20 @@ impl<AnnotationsT> Value<AnnotationsT> {
     }
 
     /// Add source and [PathRepresentation] to all [Annotations] recursively.
-    pub fn annotated(mut self, source: &Option<ByteString>) -> Self
+    pub fn fully_annotated(mut self, source: &Option<ByteString>) -> Self
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
-        if AnnotationsT::is_annotated() {
+        if AnnotatedT::is_annotated() {
             let path = self.get_annotations().and_then(|annotations| annotations.path.clone()).unwrap_or_default();
-            self.annotate_with_base_path(source, &path);
+            self.fully_annotate(source, &path);
         }
         self
     }
 
-    fn annotate_with_base_path(&mut self, source: &Option<ByteString>, base_path: &PathRepresentation)
+    fn fully_annotate(&mut self, source: &Option<ByteString>, base_path: &PathRepresentation)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         if source.is_some() {
             if let Some(annotations) = self.get_annotations_mut() {
@@ -290,10 +290,10 @@ impl<AnnotationsT> Value<AnnotationsT> {
 
         match self {
             Self::List(list) => {
-                for (index, value) in list.value.iter_mut().enumerate() {
+                for (index, value) in list.inner.iter_mut().enumerate() {
                     let mut path = base_path.clone();
                     path.push_list_index(index);
-                    value.annotate_with_base_path(source, &path);
+                    value.fully_annotate(source, &path);
 
                     if let Some(annotations) = value.get_annotations_mut() {
                         annotations.path = Some(path);
@@ -308,8 +308,8 @@ impl<AnnotationsT> Value<AnnotationsT> {
                     let mut path = base_path.clone();
                     path.push_map_key(key.to_string().into());
 
-                    key.annotate_with_base_path(source, &path);
-                    value.annotate_with_base_path(source, &path);
+                    key.fully_annotate(source, &path);
+                    value.fully_annotate(source, &path);
 
                     if let Some(annotations) = key.get_annotations_mut() {
                         annotations.path = Some(path.clone());
@@ -328,7 +328,7 @@ impl<AnnotationsT> Value<AnnotationsT> {
     }
 
     /// [Debuggable](kutil_cli::debug::Debuggable) with [Annotations].
-    pub fn annotated_debuggable(&self) -> AnnotatedDebuggableValue<AnnotationsT> {
+    pub fn annotated_debuggable(&self) -> AnnotatedDebuggableValue<AnnotatedT> {
         AnnotatedDebuggableValue::new(self, AnnotatedDebuggableMode::Inline)
     }
 }

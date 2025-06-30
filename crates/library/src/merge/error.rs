@@ -8,22 +8,22 @@ use std::{error::*, fmt};
 
 /// Merge error.
 #[derive(Clone, Debug)]
-pub struct MergeError<'own, AnnotationsT> {
+pub struct MergeError<'own, AnnotatedT> {
     /// Cause of the error.
-    pub cause: &'own Value<AnnotationsT>,
+    pub cause: &'own Value<AnnotatedT>,
 }
 
-impl<'own, AnnotationsT> MergeError<'own, AnnotationsT> {
+impl<'own, AnnotatedT> MergeError<'own, AnnotatedT> {
     /// Constructor.
-    pub fn new(cause: &'own Value<AnnotationsT>) -> Self {
+    pub fn new(cause: &'own Value<AnnotatedT>) -> Self {
         Self { cause }
     }
 }
 
-impl<'own, AnnotationsT> fmt::Display for MergeError<'own, AnnotationsT> {
+impl<'own, AnnotatedT> fmt::Display for MergeError<'own, AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "merge: {}", self.cause)
     }
 }
 
-impl<'own, AnnotationsT> Error for MergeError<'own, AnnotationsT> where AnnotationsT: fmt::Debug {}
+impl<'own, AnnotatedT> Error for MergeError<'own, AnnotatedT> where AnnotatedT: fmt::Debug {}

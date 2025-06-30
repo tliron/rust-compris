@@ -7,7 +7,7 @@ use kutil_std::error::*;
 //
 
 /// Resolve one type into another.
-pub trait Resolve<ResolvedT, AnnotationsT> {
+pub trait Resolve<ResolvedT, AnnotatedT> {
     /// Resolve one type into another.
     ///
     /// Errors can be reported as usual by [Err] *but also* by the [ErrorRecipient]. Callers should
@@ -17,9 +17,9 @@ pub trait Resolve<ResolvedT, AnnotationsT> {
     fn resolve_with_errors<ErrorRecipientT>(
         &self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolvedT, AnnotationsT>
+    ) -> ResolveResult<ResolvedT, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>;
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>;
 
     /// Resolve one type into another.
     ///
@@ -27,7 +27,7 @@ pub trait Resolve<ResolvedT, AnnotationsT> {
     /// [ResolveError::None] instead of [None].
     ///
     /// If you want all the errors use [resolve](Resolve::resolve) instead.
-    fn resolve(&self) -> Result<ResolvedT, ResolveError<AnnotationsT>> {
-        self.resolve_with_errors(&mut FailFastErrorRecipient)?.ok_or(ResolveError::None)
+    fn resolve(&self) -> Result<ResolvedT, ResolveError<AnnotatedT>> {
+        self.resolve_with_errors(&mut FailFastErrorRecipient)?.ok_or(ResolveError::Missing)
     }
 }

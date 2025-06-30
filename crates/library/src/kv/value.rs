@@ -12,20 +12,20 @@ use kutil_std::collections::*;
 /// of length 2 (key-value pairs).
 ///
 /// Keeps track of keys and will report errors if it encounters duplicates.
-pub struct KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotationsT>
+pub struct KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotatedT>
 where
-    InnerT: Iterator<Item = &'own Value<AnnotationsT>>,
+    InnerT: Iterator<Item = &'own Value<AnnotatedT>>,
 {
     /// Inner iterator.
     pub inner: InnerT,
 
     /// Accumulated keys.
-    pub keys: FastHashSet<&'own Value<AnnotationsT>>,
+    pub keys: FastHashSet<&'own Value<AnnotatedT>>,
 }
 
-impl<'own, InnerT, AnnotationsT> KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotationsT>
+impl<'own, InnerT, AnnotatedT> KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotatedT>
 where
-    InnerT: Iterator<Item = &'own Value<AnnotationsT>>,
+    InnerT: Iterator<Item = &'own Value<AnnotatedT>>,
 {
     /// Constructor.
     pub fn new(inner: InnerT) -> Self {
@@ -41,29 +41,29 @@ where
     }
 }
 
-impl<'own, InnerT, AnnotationsT> KeyValuePairIterator<AnnotationsT>
-    for KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotationsT>
+impl<'own, InnerT, AnnotatedT> KeyValuePairIterator<AnnotatedT>
+    for KeyValuePairIteratorForValueIterator<'own, InnerT, AnnotatedT>
 where
-    InnerT: Iterator<Item = &'own Value<AnnotationsT>>,
-    AnnotationsT: Default,
+    InnerT: Iterator<Item = &'own Value<AnnotatedT>>,
+    AnnotatedT: Default,
 {
     fn next(
         &mut self,
     ) -> Result<
-        Option<(&'own Value<AnnotationsT>, &'own Value<AnnotationsT>)>,
-        (MalformedError<AnnotationsT>, &Value<AnnotationsT>),
+        Option<(&'own Value<AnnotatedT>, &'own Value<AnnotatedT>)>,
+        (MalformedError<AnnotatedT>, &Value<AnnotatedT>),
     > {
         if let Some(item) = self.inner.next() {
             if let Some((key, value)) = item.to_pair() {
                 if self.keys.contains(key) {
-                    return Err((MalformedError::new("key-value pair", "key is not unique"), key));
+                    return Err((MalformedError::new("key-value pair".into(), "key is not unique".into()), key));
                 } else {
                     self.keys.insert(key);
                     return Ok(Some((key, value)));
                 }
             }
 
-            return Err((MalformedError::new("key-value pair", "is not list of length 2"), item));
+            return Err((MalformedError::new("key-value pair".into(), "is not list of length 2".into()), item));
         }
 
         Ok(None)

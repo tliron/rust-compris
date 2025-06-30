@@ -10,17 +10,17 @@ use {
 };
 
 /// Resolve a [Value] into a [TryFrom] via an intermediate.
-pub fn resolve_try_from<TryFromT, IntermediateT, AnnotationsT, ErrorRecipientT>(
-    value: &Value<AnnotationsT>,
+pub fn resolve_try_from<TryFromT, IntermediateT, AnnotatedT, ErrorRecipientT>(
+    value: &Value<AnnotatedT>,
     errors: &mut ErrorRecipientT,
-) -> ResolveResult<TryFromT, AnnotationsT>
+) -> ResolveResult<TryFromT, AnnotatedT>
 where
-    for<'value> &'value Value<AnnotationsT>: TryInto<IntermediateT>,
-    for<'value> <&'value Value<AnnotationsT> as TryInto<IntermediateT>>::Error: fmt::Debug,
+    for<'value> &'value Value<AnnotatedT>: TryInto<IntermediateT>,
+    for<'value> <&'value Value<AnnotatedT> as TryInto<IntermediateT>>::Error: fmt::Debug,
     TryFromT: TryFrom<IntermediateT>,
     TryFromT::Error: fmt::Display,
-    AnnotationsT: Annotated + Clone + Default,
-    ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+    AnnotatedT: Annotated + Clone + Default,
+    ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
 {
     let intermediate: IntermediateT = value.try_into().unwrap();
 
@@ -29,7 +29,7 @@ where
 
         Err(error) => {
             errors.give(
-                MalformedError::new(&tynm::type_name::<TryFromT>(), &error.to_string()).with_annotations_from(value),
+                MalformedError::new(tynm::type_name::<TryFromT>(), error.to_string()).with_annotations_from(value),
             )?;
             None
         }
@@ -43,56 +43,55 @@ where
 /// A wrapper for a [TryFrom] that implements [Resolve].
 #[derive(Clone, Default, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ResolveTryFrom<TryFromT, IntermediateT> {
-    /// Value.
-    pub value: TryFromT,
+pub struct ResolveTryFrom<InnerT, IntermediateT> {
+    /// Inner.
+    pub inner: InnerT,
 
     intermediate: PhantomData<IntermediateT>,
 }
 
-impl<TryFromT, IntermediateT> ResolveTryFrom<TryFromT, IntermediateT> {
+impl<InnerT, IntermediateT> ResolveTryFrom<InnerT, IntermediateT> {
     /// Constructor.
-    pub fn new(value: TryFromT) -> Self {
-        Self { value, intermediate: PhantomData }
+    pub fn new(inner: InnerT) -> Self {
+        Self { inner, intermediate: PhantomData }
     }
 }
 
-impl<TryFromT, IntermediateT> AsRef<TryFromT> for ResolveTryFrom<TryFromT, IntermediateT> {
-    fn as_ref(&self) -> &TryFromT {
-        &self.value
+impl<InnerT, IntermediateT> AsRef<InnerT> for ResolveTryFrom<InnerT, IntermediateT> {
+    fn as_ref(&self) -> &InnerT {
+        &self.inner
     }
 }
 
-impl<TryFromT, IntermediateT> From<TryFromT> for ResolveTryFrom<TryFromT, IntermediateT> {
-    fn from(value: TryFromT) -> Self {
-        Self::new(value)
+impl<InnerT, IntermediateT> From<InnerT> for ResolveTryFrom<InnerT, IntermediateT> {
+    fn from(inner: InnerT) -> Self {
+        Self::new(inner)
     }
 }
 
-impl<TryFromT, IntermediateT> fmt::Display for ResolveTryFrom<TryFromT, IntermediateT>
+impl<InnerT, IntermediateT> fmt::Display for ResolveTryFrom<InnerT, IntermediateT>
 where
-    TryFromT: fmt::Display,
+    InnerT: fmt::Display,
 {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.value, formatter)
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
-impl<TryFromT, IntermediateT, AnnotationsT> Resolve<ResolveTryFrom<TryFromT, IntermediateT>, AnnotationsT>
-    for Value<AnnotationsT>
+impl<InnerT, IntermediateT, AnnotatedT> Resolve<ResolveTryFrom<InnerT, IntermediateT>, AnnotatedT> for Value<AnnotatedT>
 where
-    for<'value> &'value Value<AnnotationsT>: TryInto<IntermediateT>,
-    for<'value> <&'value Value<AnnotationsT> as TryInto<IntermediateT>>::Error: fmt::Debug,
-    TryFromT: TryFrom<IntermediateT>,
-    TryFromT::Error: fmt::Display,
-    AnnotationsT: Annotated + Clone + Default,
+    for<'value> &'value Value<AnnotatedT>: TryInto<IntermediateT>,
+    for<'value> <&'value Value<AnnotatedT> as TryInto<IntermediateT>>::Error: fmt::Debug,
+    InnerT: TryFrom<IntermediateT>,
+    InnerT::Error: fmt::Display,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<ErrorRecipientT>(
         &self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolveTryFrom<TryFromT, IntermediateT>, AnnotationsT>
+    ) -> ResolveResult<ResolveTryFrom<InnerT, IntermediateT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         resolve_try_from(self, errors).map(|resolved| resolved.map(ResolveTryFrom::new))
     }

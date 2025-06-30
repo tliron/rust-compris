@@ -8,20 +8,20 @@ use {
 
 impl EnumGenerator {
     /// Generic parameter for annotations.
-    pub fn annotations_parameter(&self) -> TokenStream {
+    pub fn annotated_parameter(&self) -> TokenStream {
         self.enum_attribute
-            .annotations_parameter
+            .annotated_parameter
             .as_ref()
             .map(|parameter| parameter.to_token_stream())
-            .unwrap_or(quote! {_AnnotationsT})
+            .unwrap_or(quote! {_AnnotatedT})
     }
 
     /// impl_generics, type_generics, where_clause.
-    pub fn generics(&self, annotations_parameter: &TokenStream) -> (TokenStream, TokenStream, TokenStream) {
+    pub fn generics(&self, annotated_parameter: &TokenStream) -> (TokenStream, TokenStream, TokenStream) {
         let mut struct_generics = self.enum_generics.clone();
 
-        if self.enum_attribute.annotations_parameter.is_none() {
-            struct_generics.params.push(parse_quote! {#annotations_parameter});
+        if self.enum_attribute.annotated_parameter.is_none() {
+            struct_generics.params.push(parse_quote! {#annotated_parameter});
         }
 
         let (impl_generics, _, _) = struct_generics.split_for_impl();
@@ -32,7 +32,7 @@ impl EnumGenerator {
             .unwrap_or(WhereClause { where_token: Where::default(), predicates: Punctuated::default() });
 
         where_clause.predicates.push(parse_quote! {
-            #annotations_parameter:
+            #annotated_parameter:
                 ::compris::annotation::Annotated
                 + ::std::clone::Clone
                 + ::std::fmt::Debug

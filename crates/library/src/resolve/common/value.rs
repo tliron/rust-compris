@@ -8,17 +8,17 @@ use kutil_std::error::*;
 
 // Resolving a value into a value means cloning it
 
-impl<ResolvedAnnotationsT, AnnotationsT> Resolve<Value<ResolvedAnnotationsT>, AnnotationsT> for Value<AnnotationsT>
+impl<ResolvedAnnotationsT, AnnotatedT> Resolve<Value<ResolvedAnnotationsT>, AnnotatedT> for Value<AnnotatedT>
 where
     ResolvedAnnotationsT: Annotated + Default,
-    AnnotationsT: Annotated + Clone,
+    AnnotatedT: Annotated + Clone,
 {
     fn resolve_with_errors<ErrorRecipientT>(
         &self,
         _errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Value<ResolvedAnnotationsT>, AnnotationsT>
+    ) -> ResolveResult<Value<ResolvedAnnotationsT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         Ok(Some(self.clone().into_annotated()))
     }

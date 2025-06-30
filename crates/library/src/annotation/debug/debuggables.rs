@@ -100,14 +100,14 @@ where
 // ToAnnotatedDebuggables
 //
 
-///
+/// To [AnnotatedDebuggables].
 pub trait ToAnnotatedDebuggables<'own, ItemT>
 where
     Self: 'own + Sized,
     ItemT: 'own,
     &'own Self: IntoIterator<Item = &'own ItemT>,
 {
-    /// [Debuggable](Debuggable) with [Annotations](super::super::annotations::Annotations).
+    /// To [AnnotatedDebuggables].
     fn annotated_debuggables(&'own self, heading: Option<String>) -> AnnotatedDebuggables<'own, Self, ItemT>;
 }
 
@@ -118,6 +118,6 @@ where
     ErrorT: 'own + Error,
 {
     fn annotated_debuggables(&'own self, heading: Option<String>) -> AnnotatedDebuggables<'own, Self, ErrorT> {
-        AnnotatedDebuggables::new(self, AnnotatedDebuggableMode::Full, heading)
+        AnnotatedDebuggables::new(self, AnnotatedDebuggableMode::Multiline, heading)
     }
 }

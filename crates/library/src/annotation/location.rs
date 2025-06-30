@@ -30,7 +30,7 @@ impl Location {
 
     /// Whether [Debuggable] will have output.
     pub fn has_debug(&self) -> bool {
-        self.row.is_some()
+        self.row.is_some() || self.index.is_some()
     }
 }
 

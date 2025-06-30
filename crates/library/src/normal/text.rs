@@ -27,26 +27,26 @@ impl_normal! {
 
 impl_normal_basic!(Text);
 
-impl<AnnotationsT> Text<AnnotationsT> {
+impl<AnnotatedT> Text<AnnotatedT> {
     /// As string.
     pub fn as_str(&self) -> &str {
-        self.value.as_ref()
+        self.inner.as_ref()
     }
 }
 
-impl<AnnotationsT> Debuggable for Text<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Text<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        write!(writer, "{}", context.theme.string(format!("{:?}", self.value)))
+        write!(writer, "{}", context.theme.string(format!("{:?}", self.inner)))
     }
 }
 
-impl<AnnotationsT> fmt::Display for Text<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Text<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.value, formatter)
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
@@ -58,18 +58,18 @@ impl<AnnotationsT> fmt::Display for Text<AnnotationsT> {
   [String];
   [&str];
 )]
-impl<AnnotationsT> From<ToNormalT> for Text<AnnotationsT>
+impl<AnnotatedT> From<ToNormalT> for Text<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(string: ToNormalT) -> Self {
         Self::new(string.into())
     }
 }
 
-impl<AnnotationsT> From<Cow<'_, str>> for Text<AnnotationsT>
+impl<AnnotatedT> From<Cow<'_, str>> for Text<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(string: Cow<'_, str>) -> Self {
         match string {
@@ -79,14 +79,14 @@ where
     }
 }
 
-impl<AnnotationsT> From<Text<AnnotationsT>> for String {
-    fn from(text: Text<AnnotationsT>) -> Self {
+impl<AnnotatedT> From<Text<AnnotatedT>> for String {
+    fn from(text: Text<AnnotatedT>) -> Self {
         text.into()
     }
 }
 
-impl<'own, AnnotationsT> From<&'own Text<AnnotationsT>> for &'own str {
-    fn from(text: &'own Text<AnnotationsT>) -> Self {
-        &text.value
+impl<'own, AnnotatedT> From<&'own Text<AnnotatedT>> for &'own str {
+    fn from(text: &'own Text<AnnotatedT>) -> Self {
+        &text.inner
     }
 }

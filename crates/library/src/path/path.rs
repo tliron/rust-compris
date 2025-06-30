@@ -18,16 +18,16 @@ use {
 /// Because this type contains references to the values, it shares their lifetime. For a version of
 /// [Path] that does not keep the references see [PathRepresentation].
 #[derive(Clone, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct Path<'own, AnnotationsT> {
+pub struct Path<'own, AnnotatedT> {
     /// Path nodes.
-    pub nodes: Vec<PathNode<'own, AnnotationsT>>,
+    pub nodes: Vec<PathNode<'own, AnnotatedT>>,
 }
 
-impl<'own, AnnotationsT> Path<'own, AnnotationsT> {
+impl<'own, AnnotatedT> Path<'own, AnnotatedT> {
     /// Constructor.
     pub fn new() -> Self
     where
-        AnnotationsT: Default,
+        AnnotatedT: Default,
     {
         Self::default()
     }
@@ -40,9 +40,9 @@ impl<'own, AnnotationsT> Path<'own, AnnotationsT> {
     /// Important: For our purposes here, the identities of the provided values are
     /// the *pointers* represented by the references. Thus a clone of a value or an
     /// otherwise equal value will *not* be considered identical.
-    pub fn find(ancestor: &'own Value<AnnotationsT>, descendent: &'own Value<AnnotationsT>) -> Option<Self>
+    pub fn find(ancestor: &'own Value<AnnotatedT>, descendent: &'own Value<AnnotatedT>) -> Option<Self>
     where
-        AnnotationsT: Default,
+        AnnotatedT: Default,
     {
         if ptr::eq(descendent, ancestor) {
             let mut route = Path::new();
@@ -52,7 +52,7 @@ impl<'own, AnnotationsT> Path<'own, AnnotationsT> {
 
         match ancestor {
             Value::List(list) => {
-                for (index, child) in list.value.iter().enumerate() {
+                for (index, child) in list.inner.iter().enumerate() {
                     if let Some(child_route) = Self::find(child, descendent) {
                         let mut route = Path::new();
                         route.push_list_index(ancestor, index);
@@ -63,7 +63,7 @@ impl<'own, AnnotationsT> Path<'own, AnnotationsT> {
             }
 
             Value::Map(map) => {
-                for (key, child) in &map.value {
+                for (key, child) in &map.inner {
                     // The descendent we are looking for might be this key
                     if ptr::eq(descendent, key) {
                         let mut route = Path::new();
@@ -87,22 +87,22 @@ impl<'own, AnnotationsT> Path<'own, AnnotationsT> {
     }
 
     /// Push a new route node.
-    pub fn push(&mut self, value: &'own Value<AnnotationsT>) {
+    pub fn push(&mut self, value: &'own Value<AnnotatedT>) {
         self.nodes.push(PathNode::new(value, None))
     }
 
     /// Push a new list index route node.
-    pub fn push_list_index(&mut self, value: &'own Value<AnnotationsT>, index: usize) {
+    pub fn push_list_index(&mut self, value: &'own Value<AnnotatedT>, index: usize) {
         self.nodes.push(PathNode::new(value, Some(PathSegment::ListIndex(index))))
     }
 
     /// Push a new map key route node.
-    pub fn push_map_key(&mut self, value: &'own Value<AnnotationsT>, key: &'own Value<AnnotationsT>) {
+    pub fn push_map_key(&mut self, value: &'own Value<AnnotatedT>, key: &'own Value<AnnotatedT>) {
         self.nodes.push(PathNode::new(value, Some(PathSegment::MapKey(key))))
     }
 
     /// Extend this route with another route.
-    pub fn extend(&mut self, other: Path<'own, AnnotationsT>) {
+    pub fn extend(&mut self, other: Path<'own, AnnotatedT>) {
         self.nodes.extend(other.nodes);
     }
 
@@ -118,7 +118,7 @@ impl<'own, AnnotationsT> Path<'own, AnnotationsT> {
     }
 }
 
-impl<'own, AnnotationsT> Debuggable for Path<'own, AnnotationsT> {
+impl<'own, AnnotatedT> Debuggable for Path<'own, AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -137,7 +137,7 @@ impl<'own, AnnotationsT> Debuggable for Path<'own, AnnotationsT> {
     }
 }
 
-impl<'own, AnnotationsT> fmt::Display for Path<'own, AnnotationsT> {
+impl<'own, AnnotatedT> fmt::Display for Path<'own, AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (node, first) in IterateWithFirst::new(&self.nodes) {
             if let Some(segment) = &node.segment {

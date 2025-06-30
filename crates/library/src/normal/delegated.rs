@@ -5,12 +5,12 @@ use {
     std::{cmp::*, fmt, hash::*, io},
 };
 
-impl<AnnotationsT> Annotated for Value<AnnotationsT>
+impl<AnnotatedT> Annotated for Value<AnnotatedT>
 where
-    AnnotationsT: Annotated,
+    AnnotatedT: Annotated,
 {
     fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
+        AnnotatedT::is_annotated()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
@@ -59,7 +59,7 @@ where
     }
 }
 
-impl<AnnotationsT> Debuggable for Value<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Value<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -82,7 +82,7 @@ impl<AnnotationsT> Debuggable for Value<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> PartialEq for Value<AnnotationsT> {
+impl<AnnotatedT> PartialEq for Value<AnnotatedT> {
     fn eq(&self, other: &Self) -> bool {
         match self {
             Self::Nothing => return matches!(other, Self::Nothing),
@@ -142,9 +142,9 @@ impl<AnnotationsT> PartialEq for Value<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> Eq for Value<AnnotationsT> {}
+impl<AnnotatedT> Eq for Value<AnnotatedT> {}
 
-impl<AnnotationsT> PartialOrd for Value<AnnotationsT> {
+impl<AnnotatedT> PartialOrd for Value<AnnotatedT> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match self {
             Self::Nothing => {
@@ -212,7 +212,7 @@ impl<AnnotationsT> PartialOrd for Value<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> Ord for Value<AnnotationsT> {
+impl<AnnotatedT> Ord for Value<AnnotatedT> {
     fn cmp(&self, other: &Self) -> Ordering {
         match self {
             Self::Nothing => todo!(),
@@ -300,7 +300,7 @@ impl<AnnotationsT> Ord for Value<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> Hash for Value<AnnotationsT> {
+impl<AnnotatedT> Hash for Value<AnnotatedT> {
     fn hash<HasherT>(&self, state: &mut HasherT)
     where
         HasherT: Hasher,
@@ -320,7 +320,7 @@ impl<AnnotationsT> Hash for Value<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> fmt::Display for Value<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Value<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Nothing => fmt::Display::fmt("nothing", formatter),

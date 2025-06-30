@@ -63,8 +63,5 @@ pub mod resolve;
 #[cfg(feature = "serde")]
 pub mod ser;
 
-// /// Tags for [Debuggable](kutil_cli::debug::Debuggable).
-// pub mod tag;
-
 #[allow(unused_imports)]
 pub use format::*;

@@ -1,4 +1,4 @@
-use super::super::super::annotation::*;
+use crate::impl_annotated;
 
 use {
     kutil_cli::debug::*,
@@ -12,49 +12,30 @@ use {
 
 /// Malformed error.
 #[derive(Debug, Error)]
-pub struct MalformedError<AnnotationsT> {
+pub struct MalformedError<AnnotatedT> {
     /// Type name.
     pub type_name: String,
 
     /// Reason.
     pub reason: String,
 
-    /// Annotations.
-    pub annotations: AnnotationsT,
+    /// Annotated.
+    pub annotated: AnnotatedT,
 }
 
-impl<AnnotationsT> MalformedError<AnnotationsT> {
+impl<AnnotatedT> MalformedError<AnnotatedT> {
     /// Constructor.
-    pub fn new(type_name: &str, reason: &str) -> Self
+    pub fn new(type_name: String, reason: String) -> Self
     where
-        AnnotationsT: Default,
+        AnnotatedT: Default,
     {
-        Self { type_name: type_name.into(), reason: reason.into(), annotations: AnnotationsT::default() }
+        Self { type_name, reason, annotated: AnnotatedT::default() }
     }
 }
 
-impl<AnnotationsT> Annotated for MalformedError<AnnotationsT>
-where
-    AnnotationsT: Annotated,
-{
-    fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
-    }
+impl_annotated!(MalformedError);
 
-    fn get_annotations(&self) -> Option<&Annotations> {
-        self.annotations.get_annotations()
-    }
-
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
-        self.annotations.get_annotations_mut()
-    }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        self.annotations.set_annotations(annotations);
-    }
-}
-
-impl<AnnotationsT> Debuggable for MalformedError<AnnotationsT> {
+impl<AnnotatedT> Debuggable for MalformedError<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -63,7 +44,7 @@ impl<AnnotationsT> Debuggable for MalformedError<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> fmt::Display for MalformedError<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for MalformedError<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "malformed {}: {}", self.type_name, self.reason)
     }

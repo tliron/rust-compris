@@ -7,8 +7,8 @@ impl EnumGenerator {
     pub fn generate_impl_resolve(&self) -> TokenStream {
         let mut segments = Vec::<TokenStream>::new();
 
-        let annotations_parameter = self.annotations_parameter();
-        let (impl_generics, type_generics, where_clause) = self.generics(&annotations_parameter);
+        let annotated_parameter = self.annotated_parameter();
+        let (impl_generics, type_generics, where_clause) = self.generics(&annotated_parameter);
 
         let enum_name = &self.enum_name;
         let quoted_enum_name = enum_name.to_string().to_token_stream();
@@ -27,14 +27,14 @@ impl EnumGenerator {
             #[automatically_derived]
             impl
                 #impl_generics
-                Resolve<#enum_name #type_generics, #annotations_parameter>
-                for ::compris::normal::Value<#annotations_parameter>
+                Resolve<#enum_name #type_generics, #annotated_parameter>
+                for ::compris::normal::Value<#annotated_parameter>
                 #where_clause
             {
                 fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) ->
-                    ::compris::resolve::ResolveResult<#enum_name #type_generics, #annotations_parameter>
+                    ::compris::resolve::ResolveResult<#enum_name #type_generics, #annotated_parameter>
                     where ErrorRecipientT:
-                        ::kutil_std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotations_parameter>>
+                        ::kutil_std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
                 {
                     #handle_single_variant
 
@@ -48,8 +48,8 @@ impl EnumGenerator {
                                         errors.give(
                                             ::compris::annotation::Annotated::with_annotations_from(
                                                 ::compris::normal::MalformedError::new(
-                                                    #quoted_enum_name,
-                                                    &format!("key is not {}: {}", #human_readable_key_list, key),
+                                                    #quoted_enum_name.into(),
+                                                    format!("key is not {}: {}", #human_readable_key_list, key),
                                                 ),
                                                 self
                                             ),
@@ -76,8 +76,8 @@ impl EnumGenerator {
                                 errors.give(
                                     ::compris::annotation::Annotated::with_annotations_from(
                                         ::compris::normal::MalformedError::new(
-                                            "map",
-                                            "is not a single-key map",
+                                            "map".into(),
+                                            "is not a single-key map".into(),
                                         ),
                                         self
                                     ),

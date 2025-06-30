@@ -25,23 +25,23 @@ impl_normal! {
 
 impl_normal_basic!(Float);
 
-impl<AnnotationsT> Debuggable for Float<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Float<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
         if matches!(context.format, DebugFormat::Compact) {
-            context.theme.write_number(writer, self.value)
+            context.theme.write_number(writer, self.inner)
         } else {
-            write!(writer, "{} {}", context.theme.number(self.value), context.theme.meta("f64"))
+            write!(writer, "{} {}", context.theme.number(self.inner), context.theme.meta("f64"))
         }
     }
 }
 
-impl<AnnotationsT> fmt::Display for Float<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Float<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}f64", self.value)
+        write!(formatter, "{}f64", self.inner)
     }
 }
 
@@ -52,32 +52,38 @@ impl<AnnotationsT> fmt::Display for Float<AnnotationsT> {
   [f64];
   [f32];
 )]
-impl<AnnotationsT> From<ToNormalT> for Float<AnnotationsT>
+impl<AnnotatedT> From<ToNormalT> for Float<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(float: ToNormalT) -> Self {
         Self::new((float as f64).into())
     }
 }
 
-impl<AnnotationsT> From<OrderedFloat<f64>> for Float<AnnotationsT>
+impl<AnnotatedT> From<OrderedFloat<f64>> for Float<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(float: OrderedFloat<f64>) -> Self {
         Self::new(float)
     }
 }
 
-impl<AnnotationsT> From<Float<AnnotationsT>> for f64 {
-    fn from(float: Float<AnnotationsT>) -> Self {
-        float.value.into()
+impl<AnnotatedT> From<Float<AnnotatedT>> for f64 {
+    fn from(float: Float<AnnotatedT>) -> Self {
+        float.inner.into()
     }
 }
 
-impl<AnnotationsT> From<Float<AnnotationsT>> for OrderedFloat<f64> {
-    fn from(float: Float<AnnotationsT>) -> Self {
-        float.value
+impl<AnnotatedT> From<&Float<AnnotatedT>> for f64 {
+    fn from(float: &Float<AnnotatedT>) -> Self {
+        float.inner.into()
+    }
+}
+
+impl<AnnotatedT> From<Float<AnnotatedT>> for OrderedFloat<f64> {
+    fn from(float: Float<AnnotatedT>) -> Self {
+        float.inner
     }
 }

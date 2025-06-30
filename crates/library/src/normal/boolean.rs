@@ -21,35 +21,35 @@ impl_normal! {
 
 impl_normal_basic!(Boolean);
 
-impl<AnnotationsT> Debuggable for Boolean<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Boolean<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        context.theme.write_symbol(writer, self.value)
+        context.theme.write_symbol(writer, self.inner)
     }
 }
 
-impl<AnnotationsT> fmt::Display for Boolean<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Boolean<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.value, formatter)
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
 // Conversions
 
-impl<AnnotationsT> From<bool> for Boolean<AnnotationsT>
+impl<AnnotatedT> From<bool> for Boolean<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(boolean: bool) -> Self {
         Self::new(boolean)
     }
 }
 
-impl<AnnotationsT> From<&Boolean<AnnotationsT>> for bool {
-    fn from(boolean: &Boolean<AnnotationsT>) -> Self {
-        boolean.value
+impl<AnnotatedT> From<&Boolean<AnnotatedT>> for bool {
+    fn from(boolean: &Boolean<AnnotatedT>) -> Self {
+        boolean.inner
     }
 }

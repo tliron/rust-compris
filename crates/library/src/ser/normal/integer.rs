@@ -6,18 +6,18 @@ use super::super::{
 
 use serde::ser::*;
 
-impl<AnnotationsT> Serialize for Integer<AnnotationsT> {
+impl<AnnotatedT> Serialize for Integer<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
     {
-        serializer.serialize_i64(self.value)
+        serializer.serialize_i64(self.inner)
     }
 }
 
-impl<AnnotationsT> SerializeModal for Integer<AnnotationsT>
+impl<AnnotatedT> SerializeModal for Integer<AnnotatedT>
 where
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn serialize_modal<SerializerT>(
         &self,
@@ -29,18 +29,18 @@ where
     {
         // See: https://docs.rs/num-traits/latest/num_traits/cast/trait.NumCast.html#tymethod.from
         match &mode.integer {
-            IntegerSerializationMode::AsI64 => serializer.serialize_i64(self.value),
+            IntegerSerializationMode::AsI64 => serializer.serialize_i64(self.inner),
 
             IntegerSerializationMode::AsU64IfNonNegative => {
-                if self.value < 0 {
-                    serializer.serialize_i64(self.value)
+                if self.inner < 0 {
+                    serializer.serialize_i64(self.inner)
                 } else {
-                    let unsigned_integer = self.value as u64; // should always succeed
+                    let unsigned_integer = self.inner as u64; // should always succeed
                     if mode.unsigned_integer.might_be_integer() {
                         // Avoid endless recursion!
                         serializer.serialize_u64(unsigned_integer)
                     } else {
-                        UnsignedInteger::<AnnotationsT>::new(unsigned_integer)
+                        UnsignedInteger::<AnnotatedT>::new(unsigned_integer)
                             .with_annotations_from(self)
                             .serialize_modal(serializer, mode)
                     }
@@ -48,18 +48,18 @@ where
             }
 
             IntegerSerializationMode::AsF64 => {
-                let float = num_traits::cast(self.value)
-                    .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.value)))?;
+                let float = num_traits::cast(self.inner)
+                    .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.inner)))?;
                 if mode.float.might_be_integer() {
                     // Avoid endless recursion!
                     serializer.serialize_f64(float)
                 } else {
-                    Float::<AnnotationsT>::from(float).with_annotations_from(self).serialize_modal(serializer, mode)
+                    Float::<AnnotatedT>::from(float).with_annotations_from(self).serialize_modal(serializer, mode)
                 }
             }
 
             IntegerSerializationMode::Stringify(hint) => {
-                let string = self.value.to_string();
+                let string = self.inner.to_string();
                 match hint {
                     None => serializer.serialize_str(&string),
 

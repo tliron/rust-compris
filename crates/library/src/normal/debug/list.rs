@@ -10,24 +10,24 @@ use {kutil_cli::debug::*, std::io};
 //
 
 ///
-pub struct AnnotatedDebuggableList<'own, AnnotationsT> {
+pub struct AnnotatedDebuggableList<'own, AnnotatedT> {
     /// List.
-    pub list: &'own List<AnnotationsT>,
+    pub list: &'own List<AnnotatedT>,
 
     /// Mode.
     pub mode: AnnotatedDebuggableMode,
 }
 
-impl<'own, AnnotationsT> AnnotatedDebuggableList<'own, AnnotationsT> {
+impl<'own, AnnotatedT> AnnotatedDebuggableList<'own, AnnotatedT> {
     /// Constructor.
-    pub fn new(list: &'own List<AnnotationsT>, mode: AnnotatedDebuggableMode) -> Self {
+    pub fn new(list: &'own List<AnnotatedT>, mode: AnnotatedDebuggableMode) -> Self {
         Self { list, mode }
     }
 }
 
-impl<'own, AnnotationsT> Debuggable for AnnotatedDebuggableList<'own, AnnotationsT>
+impl<'own, AnnotatedT> Debuggable for AnnotatedDebuggableList<'own, AnnotatedT>
 where
-    AnnotationsT: Annotated,
+    AnnotatedT: Annotated,
 {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where

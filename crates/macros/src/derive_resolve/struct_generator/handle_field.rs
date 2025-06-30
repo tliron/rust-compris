@@ -8,12 +8,12 @@ impl StructGenerator {
         &self,
         field: &Field,
         key: &TokenStream,
-        annotations_parameter: &TokenStream,
+        annotated_parameter: &TokenStream,
     ) -> TokenStream {
         let handle_annotations = if let Some(annotations_field_name) = &self.annotations_field {
             let quoted_field_name = field.name.to_string().to_token_stream();
             quote! {
-                if #annotations_parameter::is_annotated()
+                if #annotated_parameter::is_annotated()
                     && let ::std::option::Option::Some(annotations) = ::compris::annotation::Annotated::get_annotations(value)
                 {
                     resolved.#annotations_field_name.insert(

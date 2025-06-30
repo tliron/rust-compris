@@ -11,13 +11,13 @@ use {
 
 #[derive(Debuggable, Default, Resolve)]
 // By default #[derive(Resolve)] will add a generic parameter for annotations
-// But if we want to define and use it in our type then we must specify it via #[resolve(annotations_parameter=...)]
-// We're also adding our own generic parameter, ExtraT, just to show that it is possible
-#[resolve(annotations_parameter=AnnotationsT)]
+// But if we want to define and use it in our type then we must specify it via #[resolve(annotated_parameter=...)]
+// We're also adding our own generic parameter, ExtraT, just to show that it is possible to do so :)
+#[resolve(annotated_parameter=AnnotatedT)]
 #[allow(dead_code)]
-struct User<AnnotationsT, ExtraT>
+struct User<AnnotatedT, ExtraT>
 where
-    AnnotationsT: fmt::Debug,
+    AnnotatedT: fmt::Debug,
     ExtraT: Default + fmt::Debug,
 {
     #[resolve(required)]
@@ -40,7 +40,7 @@ where
     // (Value resolves into itself)
     #[resolve]
     #[debuggable(option, as(debuggable))]
-    metadata: Option<Value<AnnotationsT>>,
+    metadata: Option<Value<AnnotatedT>>,
 
     // By default unknown keys cause errors
     // But we can resolve and collate them instead

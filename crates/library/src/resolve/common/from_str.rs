@@ -10,24 +10,23 @@ use {
 };
 
 /// Resolve a [Value] into a [FromStr].
-pub fn resolve_from_str<FromStrT, AnnotationsT, ErrorRecipientT>(
-    value: &Value<AnnotationsT>,
+pub fn resolve_from_str<FromStrT, AnnotatedT, ErrorRecipientT>(
+    value: &Value<AnnotatedT>,
     errors: &mut ErrorRecipientT,
-) -> ResolveResult<FromStrT, AnnotationsT>
+) -> ResolveResult<FromStrT, AnnotatedT>
 where
     FromStrT: FromStr,
     FromStrT::Err: fmt::Display,
-    AnnotationsT: Annotated + Clone + Default,
-    ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+    AnnotatedT: Annotated + Clone + Default,
+    ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
 {
     Ok(match value {
-        Value::Text(text) => match text.value.parse() {
+        Value::Text(text) => match text.inner.parse() {
             Ok(parsed) => Some(parsed),
 
             Err(error) => {
                 errors.give(
-                    MalformedError::new(&tynm::type_name::<FromStrT>(), &error.to_string())
-                        .with_annotations_from(value),
+                    MalformedError::new(tynm::type_name::<FromStrT>(), error.to_string()).with_annotations_from(value),
                 )?;
                 None
             }
@@ -44,16 +43,16 @@ where
 #[macro_export]
 macro_rules! impl_resolve_from_str {
     ( $type:ident ) => {
-        impl<AnnotationsT> $crate::resolve::Resolve<$type, AnnotationsT> for $crate::normal::Value<AnnotationsT>
+        impl<AnnotatedT> $crate::resolve::Resolve<$type, AnnotatedT> for $crate::normal::Value<AnnotatedT>
         where
-            AnnotationsT: $crate::annotation::Annotated + ::std::clone::Clone + ::std::default::Default,
+            AnnotatedT: $crate::annotation::Annotated + ::std::clone::Clone + ::std::default::Default,
         {
             fn resolve_with_errors<ErrorRecipientT>(
                 &self,
                 errors: &mut ErrorRecipientT,
-            ) -> $crate::resolve::ResolveResult<$type, AnnotationsT>
+            ) -> $crate::resolve::ResolveResult<$type, AnnotatedT>
             where
-                ErrorRecipientT: ::kutil_std::error::ErrorRecipient<$crate::resolve::ResolveError<AnnotationsT>>,
+                ErrorRecipientT: ::kutil_std::error::ErrorRecipient<$crate::resolve::ResolveError<AnnotatedT>>,
             {
                 $crate::resolve::resolve_from_str(self, errors)
             }
@@ -68,51 +67,51 @@ macro_rules! impl_resolve_from_str {
 /// A wrapper for a [FromStr] that implements [Resolve].
 #[derive(Clone, Default, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ResolveFromStr<FromStrT> {
-    /// Value.
-    pub value: FromStrT,
+pub struct ResolveFromStr<InnerT> {
+    /// Inner.
+    pub inner: InnerT,
 }
 
-impl<FromStrT> ResolveFromStr<FromStrT> {
+impl<InnerT> ResolveFromStr<InnerT> {
     /// Constructor.
-    pub fn new(value: FromStrT) -> Self {
-        Self { value }
+    pub fn new(inner: InnerT) -> Self {
+        Self { inner }
     }
 }
 
-impl<FromStrT> AsRef<FromStrT> for ResolveFromStr<FromStrT> {
-    fn as_ref(&self) -> &FromStrT {
-        &self.value
+impl<InnerT> AsRef<InnerT> for ResolveFromStr<InnerT> {
+    fn as_ref(&self) -> &InnerT {
+        &self.inner
     }
 }
 
-impl<FromStrT> From<FromStrT> for ResolveFromStr<FromStrT> {
-    fn from(value: FromStrT) -> Self {
+impl<InnerT> From<InnerT> for ResolveFromStr<InnerT> {
+    fn from(value: InnerT) -> Self {
         Self::new(value)
     }
 }
 
-impl<FromStrT> fmt::Display for ResolveFromStr<FromStrT>
+impl<InnerT> fmt::Display for ResolveFromStr<InnerT>
 where
-    FromStrT: fmt::Display,
+    InnerT: fmt::Display,
 {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.value, formatter)
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
-impl<FromStrT, AnnotationsT> Resolve<ResolveFromStr<FromStrT>, AnnotationsT> for Value<AnnotationsT>
+impl<InnerT, AnnotatedT> Resolve<ResolveFromStr<InnerT>, AnnotatedT> for Value<AnnotatedT>
 where
-    FromStrT: FromStr,
-    FromStrT::Err: fmt::Display,
-    AnnotationsT: Annotated + Clone + Default,
+    InnerT: FromStr,
+    InnerT::Err: fmt::Display,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<ErrorRecipientT>(
         &self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolveFromStr<FromStrT>, AnnotationsT>
+    ) -> ResolveResult<ResolveFromStr<InnerT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         resolve_from_str(self, errors).map(|resolved| resolved.map(ResolveFromStr::new))
     }

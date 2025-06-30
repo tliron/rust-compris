@@ -13,20 +13,20 @@ use {
     std::{collections::*, hash::*},
 };
 
-impl<KeyT, ValueT, BuildHasherT, AnnotationsT> Resolve<HashMap<KeyT, ValueT, BuildHasherT>, AnnotationsT>
-    for Value<AnnotationsT>
+impl<KeyT, ValueT, BuildHasherT, AnnotatedT> Resolve<HashMap<KeyT, ValueT, BuildHasherT>, AnnotatedT>
+    for Value<AnnotatedT>
 where
     KeyT: Hash + Eq,
-    Value<AnnotationsT>: Resolve<KeyT, AnnotationsT> + Resolve<ValueT, AnnotationsT>,
-    AnnotationsT: Annotated + Clone + Default,
+    Value<AnnotatedT>: Resolve<KeyT, AnnotatedT> + Resolve<ValueT, AnnotatedT>,
+    AnnotatedT: Annotated + Clone + Default,
     BuildHasherT: BuildHasher + Default,
 {
     fn resolve_with_errors<'own, ErrorRecipientT>(
         &'own self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<HashMap<KeyT, ValueT, BuildHasherT>, AnnotationsT>
+    ) -> ResolveResult<HashMap<KeyT, ValueT, BuildHasherT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         let mut resolved = HashMap::default();
 

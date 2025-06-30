@@ -1,4 +1,4 @@
-use super::{super::path::*, annotations::*, label::*, span::*};
+use super::{super::path::*, annotations::*, fields::*, label::*, span::*};
 
 use bytestring::*;
 
@@ -10,8 +10,7 @@ use bytestring::*;
 pub trait Annotated: Sized {
     /// Whether we have [Annotations].
     ///
-    /// When false, the other functions are guaranteed to return [None], allowing for optimizing by
-    /// avoiding unnecessary annotation construction.
+    /// When false, the other functions are guaranteed to be no-ops.
     fn is_annotated() -> bool;
 
     /// Get [Annotations].
@@ -36,6 +35,20 @@ pub trait Annotated: Sized {
     {
         if Self::is_annotated()
             && let Some(annotations) = source.get_annotations()
+        {
+            self.set_annotations(annotations.clone());
+        }
+
+        self
+    }
+
+    /// Clone [Annotations] from another [AnnotatedFields].
+    fn with_annotations_from_field<AnnotatedFieldsT>(mut self, source: &AnnotatedFieldsT, name: &str) -> Self
+    where
+        AnnotatedFieldsT: AnnotatedFields,
+    {
+        if Self::is_annotated()
+            && let Some(annotations) = source.get_field_annotations(name)
         {
             self.set_annotations(annotations.clone());
         }

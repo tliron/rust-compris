@@ -18,10 +18,10 @@ impl Parser {
     /// Parses MessagePack into a [Value].
     ///
     /// Is affected by [Parser::base64](super::super::Parser).
-    pub fn parse_message_pack<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse_message_pack<ReadT, AnnotatedT>(&self, reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         let mut value_builder = ValueBuilder::new(self.source.clone());
         if self.base64 {
@@ -36,13 +36,13 @@ impl Parser {
 
 // Utils
 
-fn read_next_message_pack<ReadT, AnnotationsT>(
+fn read_next_message_pack<ReadT, AnnotatedT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     let marker = read_marker(reader)?;
     trace!("{:?}", marker);
@@ -218,14 +218,14 @@ where
     Ok(())
 }
 
-fn read_message_pack_string<ReadT, AnnotationsT>(
+fn read_message_pack_string<ReadT, AnnotatedT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     trace!("string length: {}", length);
     let mut buffer = vec![0; length];
@@ -234,14 +234,14 @@ where
     Ok(value_builder.add(Text::from(string), None))
 }
 
-fn read_message_pack_bytes<ReadT, AnnotationsT>(
+fn read_message_pack_bytes<ReadT, AnnotatedT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     trace!("bytes length: {}", length);
     let mut buffer = vec![0; length];
@@ -249,15 +249,15 @@ where
     Ok(value_builder.add(Blob::from(buffer), None))
 }
 
-fn read_message_pack_ext<ReadT, AnnotationsT>(
+fn read_message_pack_ext<ReadT, AnnotatedT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     length: usize,
     label: i64,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     trace!("ext type: {}", label);
     let mut buffer = vec![0; length];
@@ -265,14 +265,14 @@ where
     Ok(value_builder.add(Blob::from(buffer).with_label(Some(Label::Integer(label))), None))
 }
 
-fn read_message_pack_array<ReadT, AnnotationsT>(
+fn read_message_pack_array<ReadT, AnnotatedT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     trace!("array length: {}", length);
     value_builder.start_list(None);
@@ -283,14 +283,14 @@ where
     Ok(())
 }
 
-fn read_message_pack_map<ReadT, AnnotationsT>(
+fn read_message_pack_map<ReadT, AnnotatedT>(
     reader: &mut ReadT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     length: usize,
 ) -> Result<(), ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     trace!("map length: {}", length);
     value_builder.start_map(None);

@@ -2,7 +2,7 @@ use super::{super::normal::*, error::*, mode::*};
 
 use {kutil_std::error::*, std::fmt};
 
-impl<AnnotationsT> Value<AnnotationsT> {
+impl<AnnotatedT> Value<AnnotatedT> {
     /// Merge another value into this value. Return true if any change happened.
     ///
     /// This function only affects lists and maps.
@@ -13,10 +13,10 @@ impl<AnnotationsT> Value<AnnotationsT> {
         other: &'own Self,
         merge_mode: &MergeMode,
         errors: &mut ErrorRecipientT,
-    ) -> Result<bool, MergeError<'own, AnnotationsT>>
+    ) -> Result<bool, MergeError<'own, AnnotatedT>>
     where
-        AnnotationsT: Clone,
-        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotationsT>>,
+        AnnotatedT: Clone,
+        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotatedT>>,
     {
         match self {
             Self::List(list) => match other {
@@ -43,9 +43,9 @@ impl<AnnotationsT> Value<AnnotationsT> {
         &mut self,
         other: &'own Self,
         merge_mode: &MergeMode,
-    ) -> Result<bool, MergeError<'own, AnnotationsT>>
+    ) -> Result<bool, MergeError<'own, AnnotatedT>>
     where
-        AnnotationsT: Clone,
+        AnnotatedT: Clone,
     {
         self.merge_with_errors(other, merge_mode, &mut FailFastErrorRecipient)
     }
@@ -57,7 +57,7 @@ impl<AnnotationsT> Value<AnnotationsT> {
     /// Uses the default [MergeMode].
     pub fn merge(&mut self, other: &Self) -> bool
     where
-        AnnotationsT: Clone + fmt::Debug,
+        AnnotatedT: Clone + fmt::Debug,
     {
         // The default mode should never cause errors, so unwrap is safe
         self.merge_with_mode(other, &MergeMode::default()).expect("merge_with_mode")

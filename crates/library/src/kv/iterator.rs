@@ -5,7 +5,7 @@ use super::super::normal::*;
 //
 
 /// Iterator of key-value pairs.
-pub trait KeyValuePairIterator<AnnotationsT> {
+pub trait KeyValuePairIterator<AnnotatedT> {
     /// Next.
     ///
     /// Important: An error returned here does *not* mean that there are no more entries,
@@ -17,8 +17,5 @@ pub trait KeyValuePairIterator<AnnotationsT> {
     /// result.
     fn next(
         &mut self,
-    ) -> Result<
-        Option<(&Value<AnnotationsT>, &Value<AnnotationsT>)>,
-        (MalformedError<AnnotationsT>, &Value<AnnotationsT>),
-    >;
+    ) -> Result<Option<(&Value<AnnotatedT>, &Value<AnnotatedT>)>, (MalformedError<AnnotatedT>, &Value<AnnotatedT>)>;
 }

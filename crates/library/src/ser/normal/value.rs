@@ -11,7 +11,7 @@ use serde::ser::*;
 // Value
 //
 
-impl<AnnotationsT> Serialize for Value<AnnotationsT> {
+impl<AnnotatedT> Serialize for Value<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
@@ -31,9 +31,9 @@ impl<AnnotationsT> Serialize for Value<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> SerializeModalRescursive for Value<AnnotationsT>
+impl<AnnotatedT> SerializeModalRescursive for Value<AnnotatedT>
 where
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn serialize_modal<SerializerT>(
         &self,

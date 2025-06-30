@@ -12,17 +12,17 @@ use {kutil_std::error::*, std::collections::*};
 
 // Uses push_back
 
-impl<ItemT, AnnotationsT> Resolve<LinkedList<ItemT>, AnnotationsT> for Value<AnnotationsT>
+impl<ItemT, AnnotatedT> Resolve<LinkedList<ItemT>, AnnotatedT> for Value<AnnotatedT>
 where
-    Value<AnnotationsT>: Resolve<ItemT, AnnotationsT>,
-    AnnotationsT: Annotated + Clone + Default,
+    Value<AnnotatedT>: Resolve<ItemT, AnnotatedT>,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<'own, ErrorRecipientT>(
         &'own self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<LinkedList<ItemT>, AnnotationsT>
+    ) -> ResolveResult<LinkedList<ItemT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         let mut resolved = LinkedList::new();
 

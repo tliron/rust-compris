@@ -7,24 +7,24 @@ use {kutil_cli::debug::*, std::io};
 //
 
 ///
-pub struct AnnotatedDebuggableValue<'own, AnnotationsT> {
+pub struct AnnotatedDebuggableValue<'own, AnnotatedT> {
     /// Value.
-    pub value: &'own Value<AnnotationsT>,
+    pub value: &'own Value<AnnotatedT>,
 
     /// Mode.
     pub mode: AnnotatedDebuggableMode,
 }
 
-impl<'own, AnnotationsT> AnnotatedDebuggableValue<'own, AnnotationsT> {
+impl<'own, AnnotatedT> AnnotatedDebuggableValue<'own, AnnotatedT> {
     /// Constructor.
-    pub fn new(value: &'own Value<AnnotationsT>, mode: AnnotatedDebuggableMode) -> Self {
+    pub fn new(value: &'own Value<AnnotatedT>, mode: AnnotatedDebuggableMode) -> Self {
         Self { value, mode }
     }
 }
 
-impl<'own, AnnotationsT> Debuggable for AnnotatedDebuggableValue<'own, AnnotationsT>
+impl<'own, AnnotatedT> Debuggable for AnnotatedDebuggableValue<'own, AnnotatedT>
 where
-    AnnotationsT: Annotated,
+    AnnotatedT: Annotated,
 {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where

@@ -20,25 +20,25 @@ use kutil_std::error::*;
 ///
 /// Useful for implementing [Resolve] for map-like collections, such as
 /// [HashMap](std::collections::HashMap).
-pub struct ResolvingKeyValuePairIterator<'own, AnnotationsT> {
+pub struct ResolvingKeyValuePairIterator<'own, AnnotatedT> {
     /// Key-value pair iterator.
-    pub iterator: Box<dyn KeyValuePairIterator<AnnotationsT> + 'own>,
+    pub iterator: Box<dyn KeyValuePairIterator<AnnotatedT> + 'own>,
 }
 
-impl<'own, AnnotationsT> ResolvingKeyValuePairIterator<'own, AnnotationsT> {
+impl<'own, AnnotatedT> ResolvingKeyValuePairIterator<'own, AnnotatedT> {
     /// Constructor.
-    pub fn new(iterator: Box<dyn KeyValuePairIterator<AnnotationsT> + 'own>) -> Self {
+    pub fn new(iterator: Box<dyn KeyValuePairIterator<AnnotatedT> + 'own>) -> Self {
         Self { iterator }
     }
 
     /// Constructor.
     pub fn new_from<ErrorRecipientT>(
-        value: &'own Value<AnnotationsT>,
+        value: &'own Value<AnnotatedT>,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Self, AnnotationsT>
+    ) -> ResolveResult<Self, AnnotatedT>
     where
-        AnnotationsT: Annotated + Clone + Default,
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        AnnotatedT: Annotated + Clone + Default,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         match value.key_value_iterator() {
             Some(iterator) => Ok(Some(Self::new(iterator))),
@@ -51,19 +51,19 @@ impl<'own, AnnotationsT> ResolvingKeyValuePairIterator<'own, AnnotationsT> {
     }
 }
 
-impl<'own, KeyT, ValueT, AnnotationsT> ResolvingIterator<(KeyT, ValueT), AnnotationsT>
-    for ResolvingKeyValuePairIterator<'own, AnnotationsT>
+impl<'own, KeyT, ValueT, AnnotatedT> ResolvingIterator<(KeyT, ValueT), AnnotatedT>
+    for ResolvingKeyValuePairIterator<'own, AnnotatedT>
 where
-    Value<AnnotationsT>: Resolve<KeyT, AnnotationsT>,
-    Value<AnnotationsT>: Resolve<ValueT, AnnotationsT>,
-    AnnotationsT: Annotated + Default,
+    Value<AnnotatedT>: Resolve<KeyT, AnnotatedT>,
+    Value<AnnotatedT>: Resolve<ValueT, AnnotatedT>,
+    AnnotatedT: Annotated + Default,
 {
     fn resolve_next<ErrorRecipientT>(
         &mut self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<(KeyT, ValueT), AnnotationsT>
+    ) -> ResolveResult<(KeyT, ValueT), AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         // Repeat until we get a non-error
         loop {

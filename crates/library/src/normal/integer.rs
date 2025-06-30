@@ -22,23 +22,23 @@ impl_normal! {
 
 impl_normal_basic!(Integer);
 
-impl<AnnotationsT> Debuggable for Integer<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Integer<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
         if matches!(context.format, DebugFormat::Compact) {
-            context.theme.write_number(writer, self.value)
+            context.theme.write_number(writer, self.inner)
         } else {
-            write!(writer, "{} {}", context.theme.number(self.value), context.theme.meta("i64"))
+            write!(writer, "{} {}", context.theme.number(self.inner), context.theme.meta("i64"))
         }
     }
 }
 
-impl<AnnotationsT> fmt::Display for Integer<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Integer<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}i64", self.value)
+        write!(formatter, "{}i64", self.inner)
     }
 }
 
@@ -52,17 +52,17 @@ impl<AnnotationsT> fmt::Display for Integer<AnnotationsT> {
   [i8];
   [isize];
 )]
-impl<AnnotationsT> From<ToNormalT> for Integer<AnnotationsT>
+impl<AnnotatedT> From<ToNormalT> for Integer<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(integer: ToNormalT) -> Self {
         Self::new(integer as i64)
     }
 }
 
-impl<AnnotationsT> From<&Integer<AnnotationsT>> for i64 {
-    fn from(integer: &Integer<AnnotationsT>) -> Self {
-        integer.value
+impl<AnnotatedT> From<&Integer<AnnotatedT>> for i64 {
+    fn from(integer: &Integer<AnnotatedT>) -> Self {
+        integer.inner
     }
 }

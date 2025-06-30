@@ -1,29 +1,32 @@
 use super::{super::super::annotation::*, casting::*, incompatible_value_type::*};
 
-use {kutil_cli::debug::*, std::io, thiserror::*};
+use {kutil_cli::debug::*, thiserror::*};
 
 //
 // ConversionError
 //
 
 /// Conversion.
-#[derive(Debug, Error)]
-pub enum ConversionError<AnnotationsT> {
+#[derive(Debug, Debuggable, Error)]
+#[debuggable(variant = false)]
+pub enum ConversionError<AnnotatedT> {
     /// Incompatible value type.
     #[error("incompatible value type: {0}")]
-    IncompatibleValueType(#[from] IncompatibleValueTypeError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    IncompatibleValueType(#[from] IncompatibleValueTypeError<AnnotatedT>),
 
     /// Malformed.
     #[error("casting: {0}")]
-    Casting(#[from] CastingError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    Casting(#[from] CastingError<AnnotatedT>),
 }
 
-impl<AnnotationsT> Annotated for ConversionError<AnnotationsT>
+impl<AnnotatedT> Annotated for ConversionError<AnnotatedT>
 where
-    AnnotationsT: Annotated,
+    AnnotatedT: Annotated,
 {
     fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
+        AnnotatedT::is_annotated()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
@@ -44,20 +47,6 @@ where
         match self {
             Self::IncompatibleValueType(incompatible_value_type) => incompatible_value_type.set_annotations(metadata),
             Self::Casting(casting) => casting.set_annotations(metadata),
-        }
-    }
-}
-
-impl<AnnotationsT> Debuggable for ConversionError<AnnotationsT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
-    where
-        WriteT: io::Write,
-    {
-        match self {
-            Self::IncompatibleValueType(incompatible_value_type) => {
-                incompatible_value_type.write_debug_for(writer, context)
-            }
-            Self::Casting(casting) => casting.write_debug_for(writer, context),
         }
     }
 }

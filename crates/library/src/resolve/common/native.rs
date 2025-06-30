@@ -27,13 +27,13 @@ use {bytes::*, bytestring::*, duplicate::*, kutil_std::error::*};
   [String];
   [Bytes];
 )]
-impl<AnnotationsT> Resolve<ResolvedT, AnnotationsT> for Value<AnnotationsT>
+impl<AnnotatedT> Resolve<ResolvedT, AnnotatedT> for Value<AnnotatedT>
 where
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
-    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, AnnotationsT>
+    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         Ok(match self.try_into() {
             Ok(primitive) => Some(primitive),

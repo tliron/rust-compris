@@ -1,4 +1,4 @@
-use super::super::annotation::*;
+use {super::super::annotation::*, crate::impl_annotated};
 
 use {
     kutil_cli::debug::*,
@@ -13,26 +13,26 @@ use {
 ///
 /// Annotations, if present, are *ignored* for the purposes of comparison and hashing.
 #[derive(Clone, Debug)]
-pub struct Null<AnnotationsT> {
-    /// Annotations.
-    pub annotations: AnnotationsT,
+pub struct Null<AnnotatedT> {
+    /// Annotated.
+    pub annotated: AnnotatedT,
 }
 
-impl<AnnotationsT> Null<AnnotationsT> {
-    /// Removes all [Annotations].
+impl<AnnotatedT> Null<AnnotatedT> {
+    /// Remove all [Annotations].
     pub fn without_annotations(self) -> Null<WithoutAnnotations> {
         Null::default()
     }
 
-    /// Into different annotations.
+    /// Into different [Annotated] implementation.
     pub fn into_annotated<NewAnnotationsT>(self) -> Null<NewAnnotationsT>
     where
-        AnnotationsT: Annotated,
+        AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        if AnnotationsT::is_annotated()
+        if AnnotatedT::is_annotated()
             && NewAnnotationsT::is_annotated()
-            && let Some(annotations) = self.annotations.get_annotations()
+            && let Some(annotations) = self.annotated.get_annotations()
         {
             Null::default().with_annotations(annotations.clone())
         } else {
@@ -41,28 +41,9 @@ impl<AnnotationsT> Null<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> Annotated for Null<AnnotationsT>
-where
-    AnnotationsT: Annotated,
-{
-    fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
-    }
+impl_annotated!(Null);
 
-    fn get_annotations(&self) -> Option<&Annotations> {
-        self.annotations.get_annotations()
-    }
-
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
-        self.annotations.get_annotations_mut()
-    }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        self.annotations.set_annotations(annotations);
-    }
-}
-
-impl<AnnotationsT> Debuggable for Null<AnnotationsT> {
+impl<AnnotatedT> Debuggable for Null<AnnotatedT> {
     fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
     where
         WriteT: io::Write,
@@ -72,16 +53,16 @@ impl<AnnotationsT> Debuggable for Null<AnnotationsT> {
     }
 }
 
-impl<AnnotationsT> Default for Null<AnnotationsT>
+impl<AnnotatedT> Default for Null<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn default() -> Self {
-        Self { annotations: AnnotationsT::default() }
+        Self { annotated: AnnotatedT::default() }
     }
 }
 
-impl<AnnotationsT> fmt::Display for Null<AnnotationsT> {
+impl<AnnotatedT> fmt::Display for Null<AnnotatedT> {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt("Null", formatter)
     }
@@ -89,27 +70,27 @@ impl<AnnotationsT> fmt::Display for Null<AnnotationsT> {
 
 // Basics
 
-impl<AnnotationsT> PartialEq for Null<AnnotationsT> {
+impl<AnnotatedT> PartialEq for Null<AnnotatedT> {
     fn eq(&self, _other: &Self) -> bool {
         true
     }
 }
 
-impl<AnnotationsT> Eq for Null<AnnotationsT> {}
+impl<AnnotatedT> Eq for Null<AnnotatedT> {}
 
-impl<AnnotationsT> PartialOrd for Null<AnnotationsT> {
+impl<AnnotatedT> PartialOrd for Null<AnnotatedT> {
     fn partial_cmp(&self, _other: &Self) -> Option<Ordering> {
         Some(Ordering::Equal)
     }
 }
 
-impl<AnnotationsT> Ord for Null<AnnotationsT> {
+impl<AnnotatedT> Ord for Null<AnnotatedT> {
     fn cmp(&self, _other: &Self) -> Ordering {
         Ordering::Equal
     }
 }
 
-impl<AnnotationsT> Hash for Null<AnnotationsT> {
+impl<AnnotatedT> Hash for Null<AnnotatedT> {
     fn hash<HasherT>(&self, state: &mut HasherT)
     where
         HasherT: Hasher,
@@ -120,17 +101,17 @@ impl<AnnotationsT> Hash for Null<AnnotationsT> {
 
 // Conversions
 
-impl<AnnotationsT> From<()> for Null<AnnotationsT>
+impl<AnnotatedT> From<()> for Null<AnnotatedT>
 where
-    AnnotationsT: Default,
+    AnnotatedT: Default,
 {
     fn from(_: ()) -> Self {
         Self::default()
     }
 }
 
-impl<AnnotationsT> From<Null<AnnotationsT>> for () {
-    fn from(_: Null<AnnotationsT>) -> Self {
+impl<AnnotatedT> From<Null<AnnotatedT>> for () {
+    fn from(_: Null<AnnotatedT>) -> Self {
         ()
     }
 }

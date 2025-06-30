@@ -15,10 +15,10 @@ impl Parser {
     ///
     /// Is affected by [Parser::try_integers](super::super::Parser)
     /// and [Parser::try_unsigned_integers](super::super::Parser).
-    pub fn parse_json<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse_json<ReadT, AnnotatedT>(&self, reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         self.parse_json_with_hints(reader, None)
     }
@@ -27,10 +27,10 @@ impl Parser {
     ///
     /// Is affected by [Parser::try_integers](super::super::Parser)
     /// and [Parser::try_unsigned_integers](super::super::Parser).
-    pub fn parse_xjson<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse_xjson<ReadT, AnnotatedT>(&self, reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         self.parse_json_with_hints(reader, Some(&Hints::xjson()))
     }
@@ -39,14 +39,14 @@ impl Parser {
     ///
     /// Is affected by [Parser::try_integers](super::super::Parser)
     /// and [Parser::try_unsigned_integers](super::super::Parser).
-    pub fn parse_json_with_hints<ReadT, AnnotationsT>(
+    pub fn parse_json_with_hints<ReadT, AnnotatedT>(
         &self,
         reader: &mut ReadT,
         hints: Option<&Hints>,
-    ) -> Result<Value<AnnotationsT>, ParseError>
+    ) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         let mut reader = JsonStreamReader::new(reader);
         let mut value_builder = ValueBuilder::new(self.source.clone());
@@ -57,18 +57,18 @@ impl Parser {
 
 // Utils
 
-fn read_next_json<JsonReaderT, AnnotationsT>(
+fn read_next_json<JsonReaderT, AnnotatedT>(
     reader: &mut JsonReaderT,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     hints: Option<&Hints>,
     try_integers: bool,
     try_unsigned_integers: bool,
 ) -> Result<(), ParseError>
 where
     JsonReaderT: JsonReader,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
-    let get_span = if AnnotationsT::is_annotated() {
+    let get_span = if AnnotatedT::is_annotated() {
         |reader: &mut JsonReaderT| -> Option<Span> { get_json_span(reader) }
     } else {
         |_reader: &mut JsonReaderT| -> Option<Span> { None }

@@ -50,7 +50,7 @@ pub fn main() {
     match found_value {
         Value::Text(text) => {
             utils::heading("it matches text", false);
-            println!("{}", text.value);
+            println!("{}", text);
         }
 
         // this branch won't happen; just an example

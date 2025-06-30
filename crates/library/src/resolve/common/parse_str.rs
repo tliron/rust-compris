@@ -19,35 +19,35 @@ use {
 /// A wrapper for a [ParseStr] that implements [Resolve].
 #[derive(Clone, Default, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ResolveParseStr<ParsedT, ParseStrT> {
-    /// Value.
-    pub value: ParsedT,
+pub struct ResolveParseStr<InnerT, ParseStrT> {
+    /// Inner.
+    pub inner: InnerT,
 
     resolve_parser: PhantomData<ParseStrT>,
 }
 
-impl<ParsedT, ParseStrT> ResolveParseStr<ParsedT, ParseStrT> {
+impl<InnerT, ParseStrT> ResolveParseStr<InnerT, ParseStrT> {
     /// Constructor.
-    pub fn new(value: ParsedT) -> Self {
-        Self { value, resolve_parser: PhantomData }
+    pub fn new(inner: InnerT) -> Self {
+        Self { inner, resolve_parser: PhantomData }
     }
 }
 
-impl<ParsedT, ParseStrT> AsRef<ParsedT> for ResolveParseStr<ParsedT, ParseStrT> {
-    fn as_ref(&self) -> &ParsedT {
-        &self.value
+impl<InnerT, ParseStrT> AsRef<InnerT> for ResolveParseStr<InnerT, ParseStrT> {
+    fn as_ref(&self) -> &InnerT {
+        &self.inner
     }
 }
 
-impl<ParsedT, ParseStrT> From<ParsedT> for ResolveParseStr<ParsedT, ParseStrT> {
-    fn from(value: ParsedT) -> Self {
-        Self::new(value)
+impl<InnerT, ParseStrT> From<InnerT> for ResolveParseStr<InnerT, ParseStrT> {
+    fn from(inner: InnerT) -> Self {
+        Self::new(inner)
     }
 }
 
-impl<ParsedT, ParseStrT> FromStr for ResolveParseStr<ParsedT, ParseStrT>
+impl<InnerT, ParseStrT> FromStr for ResolveParseStr<InnerT, ParseStrT>
 where
-    ParseStrT: ParseStr<ParsedT>,
+    ParseStrT: ParseStr<InnerT>,
 {
     type Err = ParseError;
 
@@ -56,27 +56,26 @@ where
     }
 }
 
-impl<ParsedT, ParseStrT> fmt::Display for ResolveParseStr<ParsedT, ParseStrT>
+impl<InnerT, ParseStrT> fmt::Display for ResolveParseStr<InnerT, ParseStrT>
 where
-    ParsedT: fmt::Display,
+    InnerT: fmt::Display,
 {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.value, formatter)
+        fmt::Display::fmt(&self.inner, formatter)
     }
 }
 
-impl<ParsedT, ParseStrT, AnnotationsT> Resolve<ResolveParseStr<ParsedT, ParseStrT>, AnnotationsT>
-    for Value<AnnotationsT>
+impl<InnerT, ParseStrT, AnnotatedT> Resolve<ResolveParseStr<InnerT, ParseStrT>, AnnotatedT> for Value<AnnotatedT>
 where
-    ParseStrT: ParseStr<ParsedT>,
-    AnnotationsT: Annotated + Clone + Default,
+    ParseStrT: ParseStr<InnerT>,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<ErrorRecipientT>(
         &self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<ResolveParseStr<ParsedT, ParseStrT>, AnnotationsT>
+    ) -> ResolveResult<ResolveParseStr<InnerT, ParseStrT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         resolve_from_str(self, errors)
     }

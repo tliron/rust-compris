@@ -13,21 +13,21 @@ use {bytestring::*, kutil_std::collections::*};
 ///
 /// This is a utility for format parsers.
 #[derive(Debug)]
-pub struct ValueBuilder<AnnotationsT> {
+pub struct ValueBuilder<AnnotatedT> {
     /// Source.
     pub source: Option<ByteString>,
 
     /// Stack.
-    pub stack: Vec<StackEntry<AnnotationsT>>,
+    pub stack: Vec<StackEntry<AnnotatedT>>,
 
     /// Key stack.
-    pub key_stack: Vec<Option<Value<AnnotationsT>>>,
+    pub key_stack: Vec<Option<Value<AnnotatedT>>>,
 
     /// Value references.
-    pub references: FastHashMap<usize, Value<AnnotationsT>>,
+    pub references: FastHashMap<usize, Value<AnnotatedT>>,
 }
 
-impl<AnnotationsT> ValueBuilder<AnnotationsT> {
+impl<AnnotatedT> ValueBuilder<AnnotatedT> {
     /// Constructor.
     pub fn new(source: Option<ByteString>) -> Self {
         Self { source, stack: Vec::new(), key_stack: Vec::new(), references: FastHashMap::default() }
@@ -41,9 +41,9 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// [end_container](Self::end_container) wasn't called when necessary).
     ///
     /// After calling this method the builder can be reused to build a new value.
-    pub fn value(&mut self) -> Value<AnnotationsT>
+    pub fn value(&mut self) -> Value<AnnotatedT>
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         // To ensure reusability
         self.key_stack = Vec::new();
@@ -51,7 +51,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
 
         match self.stack.len() {
             0 => Value::Nothing,
-            1 => self.stack.remove(0).value.annotated(&self.source),
+            1 => self.stack.remove(0).value.fully_annotated(&self.source),
             length => panic!("ValueBuilder in indeterminate state, stack length: {}", length),
         }
     }
@@ -67,8 +67,8 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Otherwise, will set the value to be the builder's final value.
     pub fn add<ValueT>(&mut self, value: ValueT, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Clone,
-        ValueT: Into<Value<AnnotationsT>>,
+        AnnotatedT: Annotated + Clone,
+        ValueT: Into<Value<AnnotatedT>>,
     {
         let value = value.into();
 
@@ -82,7 +82,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
             Some(entry) => match &mut entry.value {
                 Value::List(list) => {
                     tracing::trace!("add to list: {}", value);
-                    list.value.push(value);
+                    list.inner.push(value);
                 }
 
                 Value::Map(map) => {
@@ -97,7 +97,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
                         Some(key) => {
                             // We have the key, so that means this is the value
                             tracing::trace!("insert in map: {} -> {}", key, value);
-                            map.value.insert(key, value);
+                            map.inner.insert(key, value);
                         }
                     }
                 }
@@ -115,7 +115,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Add a referenced [Value].
     pub fn add_referenced(&mut self, reference: usize) -> Result<(), ParseError>
     where
-        AnnotationsT: Annotated + Clone,
+        AnnotatedT: Annotated + Clone,
     {
         match self.references.get(&reference) {
             Some(value) => {
@@ -132,7 +132,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_list(&mut self, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         self.push(List::default().into(), reference);
     }
@@ -142,7 +142,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_list_with_span(&mut self, span: Option<Span>, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         self.push(List::default().with_span(span).into(), reference);
     }
@@ -152,7 +152,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_list_with_label(&mut self, label: Option<Label>, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         self.push(List::default().with_label(label).into(), reference);
     }
@@ -162,7 +162,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_map(&mut self, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         self.push(Map::default().into(), reference);
 
@@ -175,7 +175,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_map_with_span(&mut self, span: Option<Span>, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         self.push(Map::default().with_span(span).into(), reference);
 
@@ -188,7 +188,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Should be followed later by [end_container](Self::end_container).
     pub fn start_map_with_label(&mut self, label: Option<Label>, reference: Option<usize>)
     where
-        AnnotationsT: Annotated + Default,
+        AnnotatedT: Annotated + Default,
     {
         self.push(Map::default().with_label(label).into(), reference);
 
@@ -201,7 +201,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// Follows either [start_list](Self::start_list) or [start_map](Self::start_map).
     pub fn end_container(&mut self)
     where
-        AnnotationsT: Annotated + Clone,
+        AnnotatedT: Annotated + Clone,
     {
         let entry = self.stack.pop().expect("malformed: empty stack");
 
@@ -220,7 +220,7 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
     /// See [Value::to_hinted_value].
     pub fn end_container_with_hints(&mut self, hints: Option<&Hints>) -> Result<(), ParseError>
     where
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         let mut entry = self.stack.pop().expect("malformed: empty stack");
 
@@ -242,9 +242,9 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
         Ok(())
     }
 
-    fn push(&mut self, value: Value<AnnotationsT>, reference: Option<usize>)
+    fn push(&mut self, value: Value<AnnotatedT>, reference: Option<usize>)
     where
-        AnnotationsT: Annotated,
+        AnnotatedT: Annotated,
     {
         tracing::trace!("push on stack: {}", value);
         self.stack.push(StackEntry::new(value, reference));
@@ -257,17 +257,17 @@ impl<AnnotationsT> ValueBuilder<AnnotationsT> {
 
 /// [ValueBuilder] stack entry.
 #[derive(Debug)]
-pub struct StackEntry<AnnotationsT> {
+pub struct StackEntry<AnnotatedT> {
     /// Value.
-    pub value: Value<AnnotationsT>,
+    pub value: Value<AnnotatedT>,
 
     /// Optional reference.
     pub reference: Option<usize>,
 }
 
-impl<AnnotationsT> StackEntry<AnnotationsT> {
+impl<AnnotatedT> StackEntry<AnnotatedT> {
     /// Constructor.
-    pub fn new(value: Value<AnnotationsT>, reference: Option<usize>) -> Self {
+    pub fn new(value: Value<AnnotatedT>, reference: Option<usize>) -> Self {
         Self { value, reference }
     }
 }

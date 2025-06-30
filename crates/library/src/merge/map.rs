@@ -2,7 +2,7 @@ use super::{super::normal::*, error::*, mode::*};
 
 use {kutil_std::error::*, std::fmt};
 
-impl<AnnotationsT> Map<AnnotationsT> {
+impl<AnnotatedT> Map<AnnotatedT> {
     /// Merge another map into this map. Return true if any change happened.
     ///
     /// The merging behavior depends on the [MergeMode].
@@ -11,15 +11,15 @@ impl<AnnotationsT> Map<AnnotationsT> {
         other: &'own Self,
         merge_mode: &MergeMode,
         errors: &mut ErrorRecipientT,
-    ) -> Result<bool, MergeError<'own, AnnotationsT>>
+    ) -> Result<bool, MergeError<'own, AnnotatedT>>
     where
         Self: 'own,
-        AnnotationsT: Clone,
-        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotationsT>>,
+        AnnotatedT: Clone,
+        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotatedT>>,
     {
         let mut changed = false;
 
-        for (other_key, other_value) in &other.value {
+        for (other_key, other_value) in &other.inner {
             if self.merge_key(other_key, other_value, merge_mode, errors)? {
                 changed = true;
             }
@@ -36,9 +36,9 @@ impl<AnnotationsT> Map<AnnotationsT> {
         &mut self,
         other: &'own Self,
         merge_mode: &MergeMode,
-    ) -> Result<bool, MergeError<'own, AnnotationsT>>
+    ) -> Result<bool, MergeError<'own, AnnotatedT>>
     where
-        AnnotationsT: Clone,
+        AnnotatedT: Clone,
     {
         self.merge_with_errors(other, merge_mode, &mut FailFastErrorRecipient)
     }
@@ -48,7 +48,7 @@ impl<AnnotationsT> Map<AnnotationsT> {
     /// Uses the default [MergeMode].
     pub fn merge(&mut self, other: &Self) -> bool
     where
-        AnnotationsT: Clone + fmt::Debug,
+        AnnotatedT: Clone + fmt::Debug,
     {
         // The default mode should never cause errors, so unwrap is safe
         self.merge_with_mode(other, &MergeMode::default()).expect("merge_with_mode")
@@ -56,16 +56,16 @@ impl<AnnotationsT> Map<AnnotationsT> {
 
     fn merge_key<'own, ErrorRecipientT>(
         &mut self,
-        other_key: &'own Value<AnnotationsT>,
-        other_value: &'own Value<AnnotationsT>,
+        other_key: &'own Value<AnnotatedT>,
+        other_value: &'own Value<AnnotatedT>,
         merge_mode: &MergeMode,
         errors: &mut ErrorRecipientT,
-    ) -> Result<bool, MergeError<'own, AnnotationsT>>
+    ) -> Result<bool, MergeError<'own, AnnotatedT>>
     where
-        AnnotationsT: Clone,
-        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotationsT>>,
+        AnnotatedT: Clone,
+        ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotatedT>>,
     {
-        match self.value.get_mut(other_key) {
+        match self.inner.get_mut(other_key) {
             Some(value) => {
                 // We already have the key, so merge the value
                 Ok(value.merge_with_errors(other_value, merge_mode, errors)?)
@@ -73,7 +73,7 @@ impl<AnnotationsT> Map<AnnotationsT> {
 
             None => {
                 // We don't have the key, so insert it
-                if self.value.insert(other_key.clone(), other_value.clone()).is_some() {
+                if self.inner.insert(other_key.clone(), other_value.clone()).is_some() {
                     if matches!(merge_mode.map, MapMergeMode::FailExisting) {
                         errors.give(MergeError::new(other_key))?;
                     }

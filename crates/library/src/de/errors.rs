@@ -48,12 +48,12 @@ pub enum DeserializeError {
 
 impl DeserializeError {
     /// Incompatible type.
-    pub fn incompatible_type<AnnotationsT>(value: &Value<AnnotationsT>) -> DeserializeError {
+    pub fn incompatible_type<AnnotatedT>(value: &Value<AnnotatedT>) -> DeserializeError {
         Self::IncompatibleType(value.get_type_name())
     }
 
     /// Incompatible value.
-    pub fn incompatible_value<AnnotationsT>(value: &Value<AnnotationsT>) -> DeserializeError {
+    pub fn incompatible_value<AnnotatedT>(value: &Value<AnnotatedT>) -> DeserializeError {
         Self::IncompatibleValue(format!("{}", value))
     }
 }

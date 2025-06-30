@@ -9,7 +9,7 @@ impl EnumGenerator {
         let variant_name = &select_variant.name;
         let enum_name = &self.enum_name;
 
-        if select_variant.newtype {
+        if select_variant.has_fields {
             quote! {
                 #key =>
                     ::compris::resolve::Resolve::resolve_with_errors(value, errors)?

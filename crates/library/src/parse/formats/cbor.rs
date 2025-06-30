@@ -15,10 +15,10 @@ impl Parser {
     /// Parses CBOR into a [Value].
     ///
     /// Is affected by [Parser::base64](super::super::Parser).
-    pub fn parse_cbor<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse_cbor<ReadT, AnnotatedT>(&self, reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         let mut value_builder = ValueBuilder::new(self.source.clone());
         if self.base64 {
@@ -35,14 +35,14 @@ impl Parser {
 
 // Utils
 
-fn read_next_cbor<ReadT, AnnotationsT>(
+fn read_next_cbor<ReadT, AnnotatedT>(
     decoder: &mut Decoder<ReadT>,
-    value_builder: &mut ValueBuilder<AnnotationsT>,
+    value_builder: &mut ValueBuilder<AnnotatedT>,
     label: Option<Label>,
 ) -> Result<bool, ParseError>
 where
     ReadT: io::Read,
-    AnnotationsT: Annotated + Clone + Default,
+    AnnotatedT: Annotated + Clone + Default,
 {
     let event = decoder.next_event()?;
     trace!("{:?}", event);

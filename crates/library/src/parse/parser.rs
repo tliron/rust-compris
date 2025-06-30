@@ -100,10 +100,10 @@ impl Parser {
     }
 
     /// Parses into a [Value] according to [Parser::format](Parser).
-    pub fn parse<ReadT, AnnotationsT>(&self, reader: &mut ReadT) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse<ReadT, AnnotatedT>(&self, reader: &mut ReadT) -> Result<Value<AnnotatedT>, ParseError>
     where
         ReadT: io::Read,
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         match &self.format {
             #[cfg(feature = "cbor")]
@@ -136,9 +136,9 @@ impl Parser {
     }
 
     /// Parses into a [Value] according to [Parser::format](Parser).
-    pub fn parse_from_string<AnnotationsT>(&self, string: &str) -> Result<Value<AnnotationsT>, ParseError>
+    pub fn parse_from_string<AnnotatedT>(&self, string: &str) -> Result<Value<AnnotatedT>, ParseError>
     where
-        AnnotationsT: Annotated + Clone + Default,
+        AnnotatedT: Annotated + Clone + Default,
     {
         self.parse(&mut string.as_bytes())
     }

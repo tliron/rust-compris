@@ -2,11 +2,11 @@ use super::super::super::normal::*;
 
 use serde::ser::*;
 
-impl<AnnotationsT> Serialize for Boolean<AnnotationsT> {
+impl<AnnotatedT> Serialize for Boolean<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
     where
         SerializerT: Serializer,
     {
-        serializer.serialize_bool(self.value)
+        serializer.serialize_bool(self.inner)
     }
 }

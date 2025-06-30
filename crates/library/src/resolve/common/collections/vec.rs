@@ -10,17 +10,17 @@ use super::super::{
 
 use kutil_std::error::*;
 
-impl<ItemT, AnnotationsT> Resolve<Vec<ItemT>, AnnotationsT> for Value<AnnotationsT>
+impl<ItemT, AnnotatedT> Resolve<Vec<ItemT>, AnnotatedT> for Value<AnnotatedT>
 where
-    Value<AnnotationsT>: Resolve<ItemT, AnnotationsT>,
-    AnnotationsT: Annotated + Clone + Default,
+    Value<AnnotatedT>: Resolve<ItemT, AnnotatedT>,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<'own, ErrorRecipientT>(
         &'own self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Vec<ItemT>, AnnotationsT>
+    ) -> ResolveResult<Vec<ItemT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         let mut resolved = Vec::new();
 

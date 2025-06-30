@@ -13,18 +13,18 @@ use {
     std::{collections::*, hash::*},
 };
 
-impl<KeyT, ValueT, AnnotationsT> Resolve<BTreeMap<KeyT, ValueT>, AnnotationsT> for Value<AnnotationsT>
+impl<KeyT, ValueT, AnnotatedT> Resolve<BTreeMap<KeyT, ValueT>, AnnotatedT> for Value<AnnotatedT>
 where
     KeyT: Hash + Eq + Ord,
-    Value<AnnotationsT>: Resolve<KeyT, AnnotationsT> + Resolve<ValueT, AnnotationsT>,
-    AnnotationsT: Annotated + Clone + Default,
+    Value<AnnotatedT>: Resolve<KeyT, AnnotatedT> + Resolve<ValueT, AnnotatedT>,
+    AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<'own, ErrorRecipientT>(
         &'own self,
         errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<BTreeMap<KeyT, ValueT>, AnnotationsT>
+    ) -> ResolveResult<BTreeMap<KeyT, ValueT>, AnnotatedT>
     where
-        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotationsT>>,
+        ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
         let mut resolved = BTreeMap::new();
 

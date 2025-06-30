@@ -1,85 +1,92 @@
 use super::{
     super::super::{annotation::*, normal::*},
-    grammar::*,
     invalid_key::*,
     missing_required_key::*,
 };
 
-use {kutil_cli::debug::*, std::io, thiserror::*};
+use {kutil_cli::debug::*, std::fmt, thiserror::*};
 
 //
 // ResolveError
 //
 
 /// [Resolve](super::super::resolve::Resolve) error.
-#[derive(Debug, Error)]
-pub enum ResolveError<AnnotationsT> {
-    /// None.
-    #[error("none")]
-    None,
+#[derive(Debug, Debuggable, Error)]
+#[debuggable(variant = false)]
+pub enum ResolveError<AnnotatedT> {
+    /// Missing.
+    #[error("missing")]
+    #[debuggable(as(debuggable))]
+    Missing,
 
     /// Incompatible value type.
     #[error("incompatible value type: {0}")]
-    IncompatibleValueType(#[from] IncompatibleValueTypeError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    IncompatibleValueType(#[from] IncompatibleValueTypeError<AnnotatedT>),
 
     /// Missing required key.
     #[error("missing required key: {0}")]
-    MissingRequiredKey(#[from] MissingRequiredKeyError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    MissingRequiredKey(#[from] MissingRequiredKeyError<AnnotatedT>),
 
     /// Invalid key.
     #[error("invalid key: {0}")]
-    InvalidKey(#[from] InvalidKeyError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    InvalidKey(#[from] InvalidKeyError<AnnotatedT>),
 
     /// Conversion.
     #[error("conversion: {0}")]
-    Conversion(#[from] ConversionError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    Conversion(#[from] ConversionError<AnnotatedT>),
 
     /// Malformed.
     #[error("malformed: {0}")]
-    Malformed(#[from] MalformedError<AnnotationsT>),
+    #[debuggable(as(debuggable))]
+    Malformed(#[from] MalformedError<AnnotatedT>),
 
-    /// Grammar.
-    #[error("grammar: {0}")]
-    Grammar(#[from] GrammarError<AnnotationsT>),
+    /// Other.
+    #[error("{0}")]
+    #[debuggable(as(dyn_debuggable))]
+    Other(CapturedAnnotatedError),
 }
 
 // Delegated
 
-impl<AnnotationsT> Annotated for ResolveError<AnnotationsT>
+impl<AnnotatedT> Annotated for ResolveError<AnnotatedT>
 where
-    AnnotationsT: Annotated,
+    AnnotatedT: Annotated,
 {
     fn is_annotated() -> bool {
-        AnnotationsT::is_annotated()
+        AnnotatedT::is_annotated()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
         match self {
-            Self::None => None,
+            Self::Missing => None,
             Self::IncompatibleValueType(incompatible_value_type) => incompatible_value_type.get_annotations(),
             Self::MissingRequiredKey(missing_required_key) => missing_required_key.get_annotations(),
             Self::InvalidKey(invalid_key) => invalid_key.get_annotations(),
             Self::Conversion(conversion) => conversion.get_annotations(),
             Self::Malformed(malformed) => malformed.get_annotations(),
-            Self::Grammar(grammar) => grammar.get_annotations(),
+            Self::Other(other) => other.get_annotations(),
         }
     }
 
     fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
         match self {
-            Self::None => None,
+            Self::Missing => None,
             Self::IncompatibleValueType(incompatible_value_type) => incompatible_value_type.get_annotations_mut(),
             Self::MissingRequiredKey(missing_required_key) => missing_required_key.get_annotations_mut(),
             Self::InvalidKey(invalid_key) => invalid_key.get_annotations_mut(),
             Self::Conversion(conversion) => conversion.get_annotations_mut(),
             Self::Malformed(malformed) => malformed.get_annotations_mut(),
-            Self::Grammar(grammar) => grammar.get_annotations_mut(),
+            Self::Other(other) => other.get_annotations_mut(),
         }
     }
 
     fn set_annotations(&mut self, annotations: Annotations) {
         match self {
-            Self::None => {}
+            Self::Missing => {}
             Self::IncompatibleValueType(incompatible_value_type) => {
                 incompatible_value_type.set_annotations(annotations)
             }
@@ -87,26 +94,25 @@ where
             Self::InvalidKey(invalid_key) => invalid_key.set_annotations(annotations),
             Self::Conversion(conversion) => conversion.set_annotations(annotations),
             Self::Malformed(malformed) => malformed.set_annotations(annotations),
-            Self::Grammar(grammar) => grammar.set_annotations(annotations),
+            Self::Other(other) => other.set_annotations(annotations),
         }
     }
 }
 
-impl<AnnotationsT> Debuggable for ResolveError<AnnotationsT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
-    where
-        WriteT: io::Write,
-    {
-        match self {
-            Self::None => write!(writer, "none"),
-            Self::IncompatibleValueType(incompatible_value_type) => {
-                incompatible_value_type.write_debug_for(writer, context)
-            }
-            Self::InvalidKey(invalid_key) => invalid_key.write_debug_for(writer, context),
-            Self::MissingRequiredKey(missing_required_key) => missing_required_key.write_debug_for(writer, context),
-            Self::Conversion(conversion) => conversion.write_debug_for(writer, context),
-            Self::Malformed(malformed) => malformed.write_debug_for(writer, context),
-            Self::Grammar(grammar) => grammar.write_debug_for(writer, context),
-        }
+impl<AnnotatedT> From<String> for ResolveError<AnnotatedT>
+where
+    AnnotatedT: 'static + Annotated + fmt::Debug + Default + Send + Sync,
+{
+    fn from(message: String) -> Self {
+        Self::Other(AnnotatedMessageError::<AnnotatedT>::new(message).into())
+    }
+}
+
+impl<AnnotatedT> From<&str> for ResolveError<AnnotatedT>
+where
+    AnnotatedT: 'static + Annotated + fmt::Debug + Default + Send + Sync,
+{
+    fn from(value: &str) -> Self {
+        String::from(value).into()
     }
 }

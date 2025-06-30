@@ -1,0 +1,100 @@
+[package]
+edition = "2024"
+
+name = "compris"
+description = "Composite Primitive Schema (CPS) for Rust"
+version = "0.0.7"
+rust-version = "1.89"
+
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tliron/rust-compris"
+documentation = "https://docs.rs/compris"
+authors = ["Tal Liron"]
+
+readme = "../../README.md"
+
+categories = [
+    "data-structures",
+    "encoding",
+    "parsing",
+] # https://crates.io/category_slugs
+keywords = ["cps"]
+
+[dependencies]
+anstream = "0.6.20"
+base64 = "0.22.1"
+borc = { optional = true, version = "0.6.0" }
+compris-macros = { optional = true, version = "=0.0.4" }
+duplicate = "2.0.0"
+kutil-cli = { version = "=0.0.9", features = ["derive"] }
+kutil-std = { version = "=0.0.6", features = ["derive", "fast_collections", "zerocopy"] }
+kutil-io = { optional = true, version = "=0.0.5" }
+num-traits = "0.2.19"
+ordered-float = "5.0.0"
+rmp = { optional = true, version = "0.8" }
+rmp-serde = { optional = true, version = "1.3.0" }
+saphyr-parser = { optional = true, version = "0.0.6" }
+serde = { optional = true, version = "1.0.219", features = ["derive"] }
+serde-xml-rs = { optional = true, version = "0.8.1" }
+serde_yml = { optional = true, version = "0.0.12" }       # YAML (eventually replace with saphyr-serde?)
+struson = { optional = true, version = "0.6.0" }
+thiserror = "2.0.12"
+tracing = "0.1.41"
+tynm = "0.2.0"
+
+[dev-dependencies]
+# For examples/serialize.rs
+serde = { version = "1.0.219", features = ["derive"] }
+
+[features]
+default = ["yaml", "json", "xml", "cbor", "messagepack"]
+## Enable YAML support.
+yaml = ["dep:saphyr-parser", "dep:kutil-io"]
+## Enable JSON support.
+json = ["dep:struson"]
+## Enable XML support.
+xml = []
+## Enable CBOR support.
+cbor = ["dep:borc"]
+## Enable MessagePack support.
+messagepack = ["dep:rmp"]
+
+## Include procedural macros for `derive`.
+derive = ["dep:compris-macros"]
+## Enable serde support.
+serde = [
+    "ordered-float/serde",
+    "dep:rmp-serde",       # TODO: only when messagepack
+    "dep:serde",
+    "dep:serde-xml-rs",    # TODO: only when xml
+    "dep:serde_yml",       # TODO: only when yaml
+    "struson?/serde",
+    "kutil-std/serde",
+]
+
+[[example]]
+name = "resolve_basic"
+required-features = ["derive"]
+
+[[example]]
+name = "resolve_enum"
+required-features = ["derive"]
+
+[[example]]
+name = "resolve_advanced"
+required-features = ["derive", "kutil-cli/derive"]
+
+[[example]]
+name = "serialize"
+required-features = ["serde"]
+
+[[example]]
+name = "deserialize"
+required-features = ["serde", "serde/derive"]
+# TODO: vscode rust-analyzer causes errors due to serde/derive requirement
+# for now we will put it in main dependencies
+
+# https://stackoverflow.com/a/61417700
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

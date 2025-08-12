@@ -30,9 +30,9 @@ impl StructGenerator {
             None => quote! {
                 for key in map.inner.keys() {
                     if !declared_keys.contains(key.into()) {
-                        errors.give(
+                        errors.give_error(
                             ::compris::annotate::Annotated::with_annotations_from(
-                                ::compris::resolve::InvalidKeyError::new(key.clone()),
+                                ::compris::resolve::InvalidKeyError::new(key.clone()).into(),
                                 key,
                             )
                         )?;

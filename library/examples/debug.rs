@@ -3,7 +3,7 @@ mod utils;
 use {
     anstream::println,
     compris::{annotate::*, normal::*, *},
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
 };
 
 pub fn main() {

@@ -5,7 +5,7 @@ use super::super::{
 };
 
 use {
-    kutil_std::error::*,
+    kutil::std::error::*,
     std::{fmt, marker::*},
 };
 

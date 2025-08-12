@@ -1,4 +1,4 @@
-use kutil_std::zerocopy::*;
+use kutil::std::zerocopy::*;
 
 //
 // Label

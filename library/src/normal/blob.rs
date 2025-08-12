@@ -6,8 +6,7 @@ use {
 use {
     base64::{prelude::*, *},
     duplicate::*,
-    kutil_cli::debug::*,
-    kutil_std::zerocopy::*,
+    kutil::{cli::debug::*, std::zerocopy::*},
     std::{borrow::*, fmt, io},
 };
 

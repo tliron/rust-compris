@@ -9,7 +9,7 @@ impl StructGenerator {
 
         quote! {
             if let ::compris::resolve::ResolveResult::Ok(::std::option::Option::Some(value)) =
-            ::compris::resolve::Resolve::resolve_with_errors(self, &mut ::kutil_std::error::FailFastErrorRecipient) {
+            ::compris::resolve::Resolve::resolve_with_errors(self, &mut ::kutil::std::error::FailFastErrorRecipient) {
                 resolved.#field_name = value;
                 return ::compris::resolve::ResolveResult::Ok(
                     ::std::option::Option::Some(resolved)

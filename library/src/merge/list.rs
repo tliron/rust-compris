@@ -1,6 +1,6 @@
 use super::{super::normal::*, error::*, mode::*};
 
-use {kutil_std::error::*, std::fmt};
+use {kutil::std::error::*, std::fmt};
 
 impl<AnnotatedT> List<AnnotatedT> {
     /// Merge another list into this list. Return true if any change happened.

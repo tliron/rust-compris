@@ -1,7 +1,7 @@
 use super::super::*;
 
 use {
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     std::{io, num::*, string},
     thiserror::*,
 };

@@ -35,7 +35,6 @@ impl EnumGenerator {
             #annotated_parameter:
                 ::compris::annotate::Annotated
                 + ::std::clone::Clone
-                + ::std::fmt::Debug
                 + ::std::default::Default
         });
 

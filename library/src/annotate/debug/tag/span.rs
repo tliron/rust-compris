@@ -1,8 +1,8 @@
 use super::super::super::r#struct::*;
 
-use {kutil_cli::debug::*, std::io};
+use {kutil::cli::debug::*, std::io};
 
-/// Location tag for [Debuggable](kutil_cli::debug::Debuggable).
+/// Location tag for [Debuggable](kutil::cli::debug::Debuggable).
 pub fn span<AnnotatedFieldsT, WriteT>(
     annotated_fields: &AnnotatedFieldsT,
     field_name: &str,

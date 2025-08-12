@@ -1,7 +1,7 @@
 use super::annotated::*;
 
 use {
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     std::{cmp::*, fmt, hash::*, io},
 };
 

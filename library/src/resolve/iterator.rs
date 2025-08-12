@@ -1,6 +1,6 @@
 use super::errors::*;
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 /// Iterator that resolves one item at a time.
 pub trait ResolvingIterator<ResolvedT, AnnotatedT> {

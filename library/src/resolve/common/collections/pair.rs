@@ -1,11 +1,12 @@
 use super::super::super::{super::normal::*, errors::*, resolve::*};
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 // Resolve two values at once
 // Useful for key-value pairs of maps
 
-impl<FirstT, SecondT, AnnotatedT> Resolve<(FirstT, SecondT), AnnotatedT> for (&Variant<AnnotatedT>, &Variant<AnnotatedT>)
+impl<FirstT, SecondT, AnnotatedT> Resolve<(FirstT, SecondT), AnnotatedT>
+    for (&Variant<AnnotatedT>, &Variant<AnnotatedT>)
 where
     Variant<AnnotatedT>: Resolve<FirstT, AnnotatedT> + Resolve<SecondT, AnnotatedT>,
 {

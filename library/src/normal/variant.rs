@@ -13,7 +13,7 @@ use super::{
     unsigned_integer::*,
 };
 
-use {kutil_std::zerocopy::*, std::mem::*};
+use {kutil::std::zerocopy::*, std::mem::*};
 
 //
 // Variant
@@ -330,7 +330,7 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         }
     }
 
-    /// [Debuggable](kutil_cli::debug::Debuggable) with [Annotations].
+    /// [Debuggable](kutil::cli::debug::Debuggable) with [Annotations].
     pub fn annotated_debuggable(&self) -> AnnotatedDebuggableVariant<'_, AnnotatedT> {
         AnnotatedDebuggableVariant::new(self, AnnotatedDebuggableMode::Inline)
     }

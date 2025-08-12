@@ -1,6 +1,6 @@
 use {
     compris::{parse::*, ser::*, *},
-    kutil_cli::run::*,
+    kutil::cli::run::*,
     read_url::*,
     std::io,
     thiserror::*,

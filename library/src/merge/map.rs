@@ -1,6 +1,6 @@
 use super::{super::normal::*, error::*, mode::*};
 
-use {kutil_std::error::*, std::fmt};
+use {kutil::std::error::*, std::fmt};
 
 impl<AnnotatedT> Map<AnnotatedT> {
     /// Merge another map into this map. Return true if any change happened.

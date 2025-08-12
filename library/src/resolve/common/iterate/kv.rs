@@ -5,7 +5,7 @@ use super::super::super::{
     resolve::*,
 };
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 //
 // ResolvingKeyValuePairIterator

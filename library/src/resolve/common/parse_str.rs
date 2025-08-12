@@ -8,7 +8,7 @@ use super::{
 };
 
 use {
-    kutil_std::{error::*, string::*},
+    kutil::std::{error::*, string::*},
     std::{fmt, marker::*, str::*},
 };
 

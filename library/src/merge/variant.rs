@@ -1,6 +1,6 @@
 use super::{super::normal::*, error::*, mode::*};
 
-use {kutil_std::error::*, std::fmt};
+use {kutil::std::error::*, std::fmt};
 
 impl<AnnotatedT> Variant<AnnotatedT> {
     /// Merge another [Variant] into this Variant]. Return true if any change happened.

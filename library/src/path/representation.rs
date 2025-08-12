@@ -1,8 +1,10 @@
 use super::{super::normal::*, path::*, segment::*};
 
 use {
-    kutil_cli::debug::*,
-    kutil_std::{iter::*, zerocopy::*},
+    kutil::{
+        cli::debug::*,
+        std::{iter::*, zerocopy::*},
+    },
     std::{
         fmt::{self, Write},
         io,

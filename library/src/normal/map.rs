@@ -10,8 +10,7 @@ use {
 };
 
 use {
-    kutil_cli::debug::*,
-    kutil_std::iter::*,
+    kutil::{cli::debug::*, std::iter::*},
     std::{
         collections::*,
         fmt::{self, Write},

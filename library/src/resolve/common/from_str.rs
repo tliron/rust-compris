@@ -5,7 +5,7 @@ use super::super::{
 };
 
 use {
-    kutil_std::error::*,
+    kutil::std::error::*,
     std::{fmt, str::*},
 };
 
@@ -53,7 +53,7 @@ macro_rules! impl_resolve_from_str {
                 errors: &mut ErrorRecipientT,
             ) -> $crate::resolve::ResolveResult<$type, AnnotatedT>
             where
-                ErrorRecipientT: ::kutil_std::error::ErrorRecipient<$crate::resolve::ResolveError<AnnotatedT>>,
+                ErrorRecipientT: ::kutil::std::error::ErrorRecipient<$crate::resolve::ResolveError<AnnotatedT>>,
             {
                 $crate::resolve::resolve_from_str(self, errors)
             }

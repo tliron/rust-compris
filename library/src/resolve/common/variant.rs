@@ -4,7 +4,7 @@ use super::super::{
     resolve::*,
 };
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 // Resolving a variant into a variant means cloning it
 

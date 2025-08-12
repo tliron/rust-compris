@@ -9,8 +9,7 @@ use super::super::{
 };
 
 use {
-    kutil_io::reader::*,
-    kutil_std::zerocopy::*,
+    kutil::{io::reader::*, std::zerocopy::*},
     saphyr_parser::{Event, Parser as SaphyrParser, Span as SaphyrSpan, *},
     std::{borrow::*, io},
 };

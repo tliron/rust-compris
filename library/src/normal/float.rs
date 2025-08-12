@@ -5,7 +5,7 @@ use {
 
 use {
     duplicate::*,
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     ordered_float::*,
     std::{fmt, io},
 };

@@ -9,5 +9,5 @@ cd "$ROOT"
 for E in $(cargo run --example 2>&1 | grep --extended-regexp '^    ' | sort); do
     m "\nexample: $E\n" "$RED"
 	# Note: specifying the "serde" feature is actually unneeded here, but why?
-	cargo +nightly run --quiet --example "$E" --features=derive,kutil-cli/derive,serde
+	cargo +nightly run --quiet --example "$E" --features=derive,kutil/derive,serde
 done

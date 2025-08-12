@@ -1,6 +1,6 @@
 use super::super::dyn_annotated::*;
 
-use {kutil_cli::debug::*, std::error::*};
+use {kutil::cli::debug::*, std::error::*};
 
 //
 // DynAnnotatedError

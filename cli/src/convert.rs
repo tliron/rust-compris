@@ -3,7 +3,7 @@ use super::{cli::*, errors::*};
 use {
     clap::*,
     compris::{annotate::*, normal::*, ser::*, *},
-    kutil_cli::{debug::*, run::*},
+    kutil::cli::{debug::*, run::*},
     read_url::*,
     std::{
         fs::*,

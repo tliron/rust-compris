@@ -1,6 +1,6 @@
 use super::resolve::*;
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 //
 // ResolveResult

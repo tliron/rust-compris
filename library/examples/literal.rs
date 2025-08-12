@@ -2,7 +2,7 @@ mod utils;
 
 use {
     compris::{normal::*, *},
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
 };
 
 pub fn main() {

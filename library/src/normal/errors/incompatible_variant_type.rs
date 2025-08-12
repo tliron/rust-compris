@@ -4,8 +4,7 @@ use {
 };
 
 use {
-    kutil_cli::debug::*,
-    kutil_std::string::*,
+    kutil::{cli::debug::*, std::string::*},
     std::{fmt, io},
     thiserror::*,
 };

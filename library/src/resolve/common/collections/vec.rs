@@ -8,7 +8,7 @@ use super::super::{
     iterate::*,
 };
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 impl<ItemT, AnnotatedT> Resolve<Vec<ItemT>, AnnotatedT> for Variant<AnnotatedT>
 where

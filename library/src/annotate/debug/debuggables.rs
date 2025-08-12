@@ -1,8 +1,7 @@
 use super::{super::annotated::*, debuggable::*, mode::*};
 
 use {
-    kutil_cli::debug::*,
-    kutil_std::iter::*,
+    kutil::{cli::debug::*, std::iter::*},
     std::{cmp::*, collections::*, error::*, io},
 };
 

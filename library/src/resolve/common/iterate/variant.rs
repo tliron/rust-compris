@@ -5,7 +5,7 @@ use super::super::super::{
     resolve::*,
 };
 
-use {kutil_std::error::*, std::slice};
+use {kutil::std::error::*, std::slice};
 
 //
 // ResolvingVariantIterator

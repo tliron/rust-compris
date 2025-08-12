@@ -3,7 +3,7 @@ use super::{
     variant::*,
 };
 
-use {kutil_cli::debug::*, std::io};
+use {kutil::cli::debug::*, std::io};
 
 //
 // AnnotatedDebuggableList

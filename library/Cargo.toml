@@ -26,9 +26,7 @@ base64 = "0.22.1"
 borc = { optional = true, version = "0.6.0" }
 compris-macros = { optional = true, version = "=0.0.4" }
 duplicate = "2.0.0"
-kutil-cli = { version = "=0.0.9", features = ["derive"] }
-kutil-std = { version = "=0.0.6", features = ["derive", "fast_collections", "zerocopy"] }
-kutil-io = { optional = true, version = "=0.0.5" }
+kutil = { version = "=0.0.1", features = ["derive", "fast_collections", "zerocopy"] }
 num-traits = "0.2.19"
 ordered-float = "5.0.0"
 rmp = { optional = true, version = "0.8" }
@@ -38,7 +36,7 @@ serde = { optional = true, version = "1.0.219", features = ["derive"] }
 serde-xml-rs = { optional = true, version = "0.8.1" }
 serde_yml = { optional = true, version = "0.0.12" }       # YAML (eventually replace with saphyr-serde?)
 struson = { optional = true, version = "0.6.0" }
-thiserror = "2.0.12"
+thiserror = "2.0.16"
 tracing = "0.1.41"
 tynm = "0.2.0"
 
@@ -49,7 +47,7 @@ serde = { version = "1.0.219", features = ["derive"] }
 [features]
 default = ["yaml", "json", "xml", "cbor", "messagepack"]
 ## Enable YAML support.
-yaml = ["dep:saphyr-parser", "dep:kutil-io"]
+yaml = ["dep:saphyr-parser", "kutil/io"]
 ## Enable JSON support.
 json = ["dep:struson"]
 ## Enable XML support.
@@ -69,7 +67,7 @@ serde = [
     "dep:serde-xml-rs",    # TODO: only when xml
     "dep:serde_yml",       # TODO: only when yaml
     "struson?/serde",
-    "kutil-std/serde",
+    "kutil/serde",
 ]
 
 [[example]]
@@ -82,7 +80,7 @@ required-features = ["derive"]
 
 [[example]]
 name = "resolve_advanced"
-required-features = ["derive", "kutil-cli/derive"]
+required-features = ["derive", "kutil/derive"]
 
 [[example]]
 name = "serialize"

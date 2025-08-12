@@ -4,7 +4,7 @@ use super::{
     resolve::*,
 };
 
-use {kutil_std::error::*, std::io};
+use {kutil::std::error::*, std::io};
 
 impl Parser {
     /// Resolve the parsed [Variant] into another type.

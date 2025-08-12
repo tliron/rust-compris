@@ -1,7 +1,7 @@
-use super::annotated::*;
+use super::{annotated::*, annotations::*};
 
 use {
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     std::{cmp::*, fmt, hash::*, io},
 };
 
@@ -12,8 +12,7 @@ use {
 /// Wrapper that adds an [Annotated] implementation.
 ///
 /// Useful for wrapping fields of structs when using [Resolve](super::super::resolve::Resolve),
-/// as it will retain the [Annotations](super::annotations::Annotations) of the resolved
-/// [Variant](super::super::normal::Variant).
+/// as it will retain the [Annotations] of the resolved [Variant](super::super::normal::Variant).
 #[derive(Clone, Debug, Default)]
 pub struct Annotate<InnerT, AnnotatedT> {
     /// Inner.
@@ -41,15 +40,15 @@ where
         AnnotatedT::has_annotations()
     }
 
-    fn get_annotations(&self) -> Option<&super::Annotations> {
+    fn get_annotations(&self) -> Option<&Annotations> {
         self.annotated.get_annotations()
     }
 
-    fn get_annotations_mut(&mut self) -> Option<&mut super::Annotations> {
+    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
         self.annotated.get_annotations_mut()
     }
 
-    fn set_annotations(&mut self, annotations: super::Annotations) {
+    fn set_annotations(&mut self, annotations: Annotations) {
         self.annotated.set_annotations(annotations);
     }
 }

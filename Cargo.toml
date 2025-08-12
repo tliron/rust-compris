@@ -5,10 +5,11 @@ members = ["library", "macros", "cli"]
 [patch.crates-io]
 compris = { path = "library" }
 compris-macros = { path = "macros" }
-kutil-cli = { path = "../rust-kutil/cli" }
+kutil = { path = "../rust-kutil/library" }
+#kutil-cli = { path = "../rust-kutil/cli" }
 kutil-cli-macros = { path = "../rust-kutil/cli-macros" }
-kutil-io = { path = "../rust-kutil/io" }
-kutil-std = { path = "../rust-kutil/std" }
+#kutil-io = { path = "../rust-kutil/io" }
+#kutil-std = { path = "../rust-kutil/std" }
 kutil-std-macros = { path = "../rust-kutil/std-macros" }
 read-url = { path = "../rust-read-url/library" }
 

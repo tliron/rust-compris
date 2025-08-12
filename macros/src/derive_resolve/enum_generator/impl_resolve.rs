@@ -34,7 +34,7 @@ impl EnumGenerator {
                 fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) ->
                     ::compris::resolve::ResolveResult<#enum_name #type_generics, #annotated_parameter>
                     where ErrorRecipientT:
-                        ::kutil_std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
+                        ::kutil::std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
                 {
                     #handle_single_variant
 
@@ -45,12 +45,12 @@ impl EnumGenerator {
                                     #(#segments)*
 
                                     key => {
-                                        errors.give(
+                                        errors.give_error(
                                             ::compris::annotate::Annotated::with_annotations_from(
                                                 ::compris::normal::MalformedError::new(
                                                     #quoted_enum_name.into(),
                                                     format!("key is not {}: {}", #human_readable_key_list, key),
-                                                ),
+                                                ).into(),
                                                 self
                                             ),
                                         )?;
@@ -59,12 +59,12 @@ impl EnumGenerator {
                                 }
 
                                 _ => {
-                                    errors.give(
+                                    errors.give_error(
                                         ::compris::annotate::Annotated::with_annotations_from(
                                             ::compris::normal::IncompatibleVariantTypeError::new(
                                                 self,
                                                 &["text"]
-                                            ),
+                                            ).into(),
                                             self,
                                         ),
                                     )?;
@@ -73,12 +73,12 @@ impl EnumGenerator {
                             }
 
                             None => {
-                                errors.give(
+                                errors.give_error(
                                     ::compris::annotate::Annotated::with_annotations_from(
                                         ::compris::normal::MalformedError::new(
                                             "map".into(),
                                             "is not a single-key map".into(),
-                                        ),
+                                        ).into(),
                                         self
                                     ),
                                 )?;

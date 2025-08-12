@@ -6,7 +6,7 @@ use super::{
 };
 
 use {
-    kutil_std::zerocopy::*,
+    kutil::std::zerocopy::*,
     serde::*,
     std::{
         fs::*,

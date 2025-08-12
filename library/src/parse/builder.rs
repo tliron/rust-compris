@@ -3,7 +3,7 @@ use super::{
     error::*,
 };
 
-use kutil_std::{collections::*, zerocopy::*};
+use kutil::std::{collections::*, zerocopy::*};
 
 //
 // VariantBuilder

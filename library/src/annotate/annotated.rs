@@ -1,6 +1,6 @@
 use super::{super::path::*, annotations::*, label::*, span::*, r#struct::*};
 
-use kutil_std::zerocopy::*;
+use kutil::std::zerocopy::*;
 
 //
 // Annotated

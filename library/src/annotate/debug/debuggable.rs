@@ -1,7 +1,7 @@
 use super::{super::annotated::*, mode::*};
 
 use {
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     std::{error::*, io},
 };
 
@@ -49,6 +49,8 @@ where
                     if annotations.has_debug(DebugFormat::Reduced) {
                         annotations.write_debug_for(writer, &context.clone().with_format(DebugFormat::Reduced))?;
                         context.indent(writer)?;
+                    } else {
+                        context.separate(writer)?;
                     }
                     self.inner.write_debug_for(writer, context)?;
                 }

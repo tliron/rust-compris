@@ -5,7 +5,7 @@ use super::super::{
 };
 
 use {
-    kutil_std::error::*,
+    kutil::std::error::*,
     std::{fmt, marker::*},
 };
 
@@ -16,13 +16,23 @@ pub fn resolve_try_from<TryFromT, IntermediateT, AnnotatedT, ErrorRecipientT>(
 ) -> ResolveResult<TryFromT, AnnotatedT>
 where
     for<'value> &'value Variant<AnnotatedT>: TryInto<IntermediateT>,
-    for<'value> <&'value Variant<AnnotatedT> as TryInto<IntermediateT>>::Error: fmt::Debug,
+    for<'value> <&'value Variant<AnnotatedT> as TryInto<IntermediateT>>::Error: fmt::Display,
     TryFromT: TryFrom<IntermediateT>,
     TryFromT::Error: fmt::Display,
     AnnotatedT: Annotated + Clone + Default,
     ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
 {
-    let intermediate: IntermediateT = variant.try_into().unwrap();
+    let intermediate: IntermediateT = match variant.try_into() {
+        Ok(intermediate) => intermediate,
+
+        Err(error) => {
+            errors.give(
+                MalformedError::new(tynm::type_name::<IntermediateT>(), error.to_string())
+                    .with_annotations_from(variant),
+            )?;
+            return Ok(None);
+        }
+    };
 
     Ok(match intermediate.try_into() {
         Ok(resolved) => Some(resolved),
@@ -61,7 +71,7 @@ impl<InnerT, IntermediateT, AnnotatedT> Resolve<ResolveTryFrom<InnerT, Intermedi
     for Variant<AnnotatedT>
 where
     for<'variant> &'variant Variant<AnnotatedT>: TryInto<IntermediateT>,
-    for<'variant> <&'variant Variant<AnnotatedT> as TryInto<IntermediateT>>::Error: fmt::Debug,
+    for<'variant> <&'variant Variant<AnnotatedT> as TryInto<IntermediateT>>::Error: fmt::Display,
     InnerT: TryFrom<IntermediateT>,
     InnerT::Error: fmt::Display,
     AnnotatedT: Annotated + Clone + Default,

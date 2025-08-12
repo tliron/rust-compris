@@ -1,8 +1,8 @@
 use super::super::super::r#struct::*;
 
-use {kutil_cli::debug::*, std::io};
+use {kutil::cli::debug::*, std::io};
 
-/// Source tag for a [Debuggable](kutil_cli::debug::Debuggable).
+/// Source tag for a [Debuggable](kutil::cli::debug::Debuggable).
 pub fn source<AnnotatedFieldsT, WriteT>(
     annotated_fields: &AnnotatedFieldsT,
     field_name: &str,

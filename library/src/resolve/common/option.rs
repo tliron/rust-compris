@@ -1,6 +1,6 @@
 use super::super::{super::normal::*, errors::*, resolve::*};
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 // We only have to care about Some, because None will never get resolved
 // (A Null is definitely not a None and requires entirely different consideration)

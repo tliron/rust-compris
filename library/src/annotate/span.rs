@@ -1,7 +1,7 @@
 use super::location::*;
 
 use {
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     std::{fmt, io},
 };
 

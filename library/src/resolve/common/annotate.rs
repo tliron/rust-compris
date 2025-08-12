@@ -4,7 +4,7 @@ use super::super::{
     resolve::*,
 };
 
-use kutil_std::error::*;
+use kutil::std::error::*;
 
 impl<InnerT, AnnotatedT> Resolve<Annotate<InnerT, AnnotatedT>, AnnotatedT> for Variant<AnnotatedT>
 where

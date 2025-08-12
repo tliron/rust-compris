@@ -1,6 +1,6 @@
 use super::{super::normal::*, iterator::*};
 
-use kutil_std::collections::*;
+use kutil::std::collections::*;
 
 //
 // KeyValuePairIteratorForVariantIterator

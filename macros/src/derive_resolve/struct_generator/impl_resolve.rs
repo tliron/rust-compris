@@ -49,7 +49,7 @@ impl StructGenerator {
                 fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) ->
                     ::compris::resolve::ResolveResult<#struct_name #type_generics, #annotated_parameter>
                     where ErrorRecipientT:
-                        ::kutil_std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
+                        ::kutil::std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
                 {
                     let mut resolved: #struct_name #type_generics = ::std::default::Default::default();
 

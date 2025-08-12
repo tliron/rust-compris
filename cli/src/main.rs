@@ -39,5 +39,5 @@ use std::process::*;
 
 /// Main.
 pub fn main() -> ExitCode {
-    kutil_cli::run::run(run)
+    kutil::cli::run::run(run)
 }

@@ -31,9 +31,9 @@ impl StructGenerator {
         let handle_required = if field.attribute.required {
             quote! {
                 else {
-                    errors.give(
+                    errors.give_error(
                         ::compris::annotate::Annotated::with_annotations_from(
-                            ::compris::resolve::MissingRequiredKeyError::new(key.into()),
+                            ::compris::resolve::MissingRequiredKeyError::new(key.into()).into(),
                             self,
                         )
                     )?;

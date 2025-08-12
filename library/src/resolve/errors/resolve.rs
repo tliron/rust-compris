@@ -4,7 +4,7 @@ use super::{
     missing_required_key::*,
 };
 
-use {kutil_cli::debug::*, std::fmt, thiserror::*};
+use {kutil::cli::debug::*, std::fmt, thiserror::*};
 
 //
 // ResolveError

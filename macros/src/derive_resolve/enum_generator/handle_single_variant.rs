@@ -10,7 +10,7 @@ impl EnumGenerator {
 
         quote! {
             if let ::compris::resolve::ResolveResult::Ok(::std::option::Option::Some(resolved)) =
-                ::compris::resolve::Resolve::resolve_with_errors(self, &mut ::kutil_std::error::FailFastErrorRecipient)
+                ::compris::resolve::Resolve::resolve_with_errors(self, &mut ::kutil::std::error::FailFastErrorRecipient)
             {
                 return ::compris::resolve::ResolveResult::Ok(
                     ::std::option::Option::Some(#enum_name::#variant_name(resolved))

@@ -5,7 +5,7 @@ use super::{
 
 use {
     duplicate::*,
-    kutil_std::zerocopy::*,
+    kutil::std::zerocopy::*,
     ordered_float::OrderedFloat,
     std::{borrow::*, collections::*},
 };

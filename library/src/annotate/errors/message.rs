@@ -1,7 +1,7 @@
 use crate::impl_dyn_annotated_error;
 
 use {
-    kutil_cli::debug::*,
+    kutil::cli::debug::*,
     std::{error::*, fmt, io},
 };
 

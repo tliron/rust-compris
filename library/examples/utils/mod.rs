@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use kutil_cli::debug::*;
+use kutil::cli::debug::*;
 
 pub fn heading(heading: &str, first: bool) {
     let theme = Theme::default();

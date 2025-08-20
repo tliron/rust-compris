@@ -84,8 +84,8 @@ macro_rules! impl_normal_basic (
                 NewAnnotationsT: Annotated + Default,
             {
                 let new_self = $type::new(self.inner);
-                if AnnotatedT::has_annotations()
-                    && NewAnnotationsT::has_annotations()
+                if AnnotatedT::can_have_annotations()
+                    && NewAnnotationsT::can_have_annotations()
                     && let Some(annotations) = self.annotated.get_annotations()
                 {
                     new_self.with_annotations(annotations.clone())

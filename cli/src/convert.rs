@@ -3,7 +3,7 @@ use super::{cli::*, errors::*};
 use {
     clap::*,
     compris::{annotate::*, normal::*, ser::*, *},
-    kutil::cli::{debug::*, run::*},
+    kutil::cli::{depict::*, run::*},
     read_url::*,
     std::{
         fs::*,
@@ -190,7 +190,7 @@ impl CLI {
             }
 
             None => {
-                content.write_debug(&mut writer)?;
+                content.write_depiction(&mut writer, &DEFAULT_DEPICTION_CONTEXT)?;
             }
         }
 

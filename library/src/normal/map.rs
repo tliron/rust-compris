@@ -1,7 +1,7 @@
 use {
     super::{
         super::{annotate::*, kv::*},
-        debug::*,
+        depict::*,
         errors::*,
         list::*,
         variant::*,
@@ -10,7 +10,7 @@ use {
 };
 
 use {
-    kutil::{cli::debug::*, std::iter::*},
+    kutil::{cli::depict::*, std::iter::*},
     std::{
         collections::*,
         fmt::{self, Write},
@@ -102,8 +102,8 @@ impl<AnnotatedT> Map<AnnotatedT> {
         let vector: Vec<_> =
             self.into_vector().into_iter().map(|(key, value)| (key.into_annotated(), value.into_annotated())).collect();
         let new_map = Map::from_iter(vector);
-        if AnnotatedT::has_annotations()
-            && NewAnnotationsT::has_annotations()
+        if AnnotatedT::can_have_annotations()
+            && NewAnnotationsT::can_have_annotations()
             && let Some(annotations) = self.annotated.get_annotations()
         {
             new_map.with_annotations(annotations.clone())
@@ -112,20 +112,20 @@ impl<AnnotatedT> Map<AnnotatedT> {
         }
     }
 
-    /// [Debuggable] with [Annotations].
-    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableMap<'_, AnnotatedT> {
-        AnnotatedDebuggableMap::new(self, mode)
+    /// [Depict] with [Annotations].
+    pub fn annotated_depict(&self, mode: AnnotatedDepictionMode) -> AnnotatedDepictMap<'_, AnnotatedT> {
+        AnnotatedDepictMap::new(self, mode)
     }
 }
 
-impl<AnnotatedT> Debuggable for Map<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Map<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         // Upgrade reduced to verbose if there are collection keys
-        let override_format = if (context.format == DebugFormat::Reduced) && self.has_a_collection_key() {
-            Some(DebugFormat::Verbose)
+        let override_format = if (context.get_format() == DepictionFormat::Optimized) && self.has_a_collection_key() {
+            Some(DepictionFormat::Verbose)
         } else {
             None
         };

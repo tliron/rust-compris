@@ -77,8 +77,8 @@ where
             value_builder: VariantBuilder::new(source.clone()),
             last_span: None,
             error: None,
-            span: if AnnotatedT::has_annotations() { |span| Some(span.into()) } else { |_| None },
-            collection_span: if AnnotatedT::has_annotations() {
+            span: if AnnotatedT::can_have_annotations() { |span| Some(span.into()) } else { |_| None },
+            collection_span: if AnnotatedT::can_have_annotations() {
                 |yaml_receiver, span| Some(yaml_receiver.last_span.as_ref().unwrap_or_else(|| span).into())
             } else {
                 |_, _| None
@@ -329,7 +329,7 @@ where
             _ => {}
         }
 
-        if AnnotatedT::has_annotations() {
+        if AnnotatedT::can_have_annotations() {
             self.last_span = Some(span);
         }
     }

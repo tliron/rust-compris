@@ -3,7 +3,7 @@ mod utils;
 use {
     anstream::println,
     compris::{normal::*, parse::*, path::*, *},
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
 };
 
 pub fn main() {
@@ -24,7 +24,7 @@ pub fn main() {
     let found_value = traverse!(variant, "hello", "world", 10, "how", 0, "are you").expect("traverse");
 
     utils::heading("found by macro", true);
-    found_value.print_debug();
+    found_value.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 
     // The macro above works with a literal path (no allocation), but there's also a traversal
     // function that accepts an iterator; to be used when your path is constructed dynamically
@@ -34,7 +34,7 @@ pub fn main() {
     let found_value = variant.traverse(path.iter()).expect("traverse");
 
     utils::heading("found by array", false);
-    found_value.print_debug();
+    found_value.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 
     // If "traverse!" hits a non-map or a missing key along the way, it stops and returns None
 
@@ -75,5 +75,5 @@ pub fn main() {
     let route = Path::find(&variant, found_value).expect("find");
 
     utils::heading("route to found value", false);
-    route.print_debug();
+    route.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 }

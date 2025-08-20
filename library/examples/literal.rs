@@ -2,7 +2,7 @@ mod utils;
 
 use {
     compris::{normal::*, *},
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
 };
 
 pub fn main() {
@@ -14,7 +14,7 @@ pub fn main() {
     // See examples/debug.rs
 
     utils::heading("literal value", true);
-    variant.print_debug();
+    variant.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 
     // Use "normal_list!" with a sequence of bare primitive expressions
     // (Use "()" for a literal null)
@@ -22,14 +22,14 @@ pub fn main() {
     let variant = without_annotations!(normal_list!["hello", 3 * 8, 6.2, true, ()]);
 
     utils::heading("literal list", false);
-    variant.print_debug();
+    variant.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 
     // Use "normal_map!" for maps via a sequence of key-value pairs
 
     let variant = without_annotations!(normal_map![("key", 5i32), (6u8, "value")]);
 
     utils::heading("literal map", false);
-    variant.print_debug();
+    variant.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 
     // You can nest as well as mix bare primitive expressions with normal types
 
@@ -44,5 +44,5 @@ pub fn main() {
     ]);
 
     utils::heading("literal nested", false);
-    variant.print_debug();
+    variant.print_depiction(&DEFAULT_DEPICTION_CONTEXT);
 }

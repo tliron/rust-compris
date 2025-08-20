@@ -1,8 +1,8 @@
 mod blob;
 mod boolean;
 mod conversions;
-mod debug;
 mod delegated;
+mod depict;
 mod errors;
 mod float;
 mod integer;
@@ -18,6 +18,6 @@ mod variant;
 
 #[allow(unused_imports)]
 pub use {
-    blob::*, boolean::*, conversions::*, debug::*, delegated::*, errors::*, float::*, integer::*, iterator::*, list::*,
-    map::*, null::*, text::*, traversal::*, unsigned_integer::*, variant::*,
+    blob::*, boolean::*, conversions::*, delegated::*, depict::*, errors::*, float::*, integer::*, iterator::*,
+    list::*, map::*, null::*, text::*, traversal::*, unsigned_integer::*, variant::*,
 };

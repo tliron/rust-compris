@@ -10,8 +10,8 @@ macro_rules! impl_annotated (
         where
             AnnotatedT: $crate::annotate::Annotated,
         {
-            fn has_annotations() -> bool {
-                AnnotatedT::has_annotations()
+            fn can_have_annotations() -> bool {
+                AnnotatedT::can_have_annotations()
             }
 
             fn get_annotations(&self) -> ::std::option::Option<&$crate::annotate::Annotations> {
@@ -20,10 +20,6 @@ macro_rules! impl_annotated (
 
             fn get_annotations_mut(&mut self) -> ::std::option::Option<&mut $crate::annotate::Annotations> {
                 self.$field.get_annotations_mut()
-            }
-
-            fn set_annotations(&mut self, annotations: $crate::annotate::Annotations) {
-                self.$field.set_annotations(annotations);
             }
         }
     }

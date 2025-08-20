@@ -14,7 +14,7 @@ pub struct WithAnnotations {
 }
 
 impl Annotated for WithAnnotations {
-    fn has_annotations() -> bool {
+    fn can_have_annotations() -> bool {
         true
     }
 
@@ -24,9 +24,5 @@ impl Annotated for WithAnnotations {
 
     fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
         Some(&mut self.annotations)
-    }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        self.annotations = annotations
     }
 }

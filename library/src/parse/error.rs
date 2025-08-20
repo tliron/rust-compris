@@ -1,7 +1,7 @@
 use super::super::*;
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{io, num::*, string},
     thiserror::*,
 };
@@ -11,7 +11,7 @@ use {
 //
 
 /// Compris parse error.
-#[derive(Debug, Debuggable, Error)]
+#[derive(Debug, Depict, Error)]
 pub enum ParseError {
     /// Unsupported format.
     #[error("unsupported format: {0:?}")]

@@ -6,7 +6,7 @@ use {
 use {
     base64::{prelude::*, *},
     duplicate::*,
-    kutil::{cli::debug::*, std::zerocopy::*},
+    kutil::{cli::depict::*, std::zerocopy::*},
     std::{borrow::*, fmt, io},
 };
 
@@ -47,8 +47,8 @@ impl<AnnotatedT> Blob<AnnotatedT> {
     }
 }
 
-impl<AnnotatedT> Debuggable for Blob<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Blob<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

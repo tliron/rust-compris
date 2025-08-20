@@ -11,9 +11,6 @@ pub trait DynAnnotated {
 
     /// Get [Annotations] as mutable.
     fn dyn_get_annotations_mut(&mut self) -> Option<&mut Annotations>;
-
-    /// Sets the [Annotations].
-    fn dyn_set_annotations(&mut self, annotations: Annotations);
 }
 
 impl<AnnotatedT> DynAnnotated for AnnotatedT
@@ -26,9 +23,5 @@ where
 
     fn dyn_get_annotations_mut(&mut self) -> Option<&mut Annotations> {
         self.get_annotations_mut()
-    }
-
-    fn dyn_set_annotations(&mut self, annotations: Annotations) {
-        self.set_annotations(annotations);
     }
 }

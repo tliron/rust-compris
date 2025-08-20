@@ -1,7 +1,7 @@
 use super::{super::annotate::*, variant::*};
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{cmp::*, fmt, hash::*, io},
 };
 
@@ -9,8 +9,8 @@ impl<AnnotatedT> Annotated for Variant<AnnotatedT>
 where
     AnnotatedT: Annotated,
 {
-    fn has_annotations() -> bool {
-        AnnotatedT::has_annotations()
+    fn can_have_annotations() -> bool {
+        AnnotatedT::can_have_annotations()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
@@ -42,25 +42,10 @@ where
             Self::Map(map) => map.get_annotations_mut(),
         }
     }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        match self {
-            Self::Undefined => {}
-            Self::Null(null) => null.set_annotations(annotations),
-            Self::Integer(integer) => integer.set_annotations(annotations),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.set_annotations(annotations),
-            Self::Float(float) => float.set_annotations(annotations),
-            Self::Boolean(boolean) => boolean.set_annotations(annotations),
-            Self::Text(text) => text.set_annotations(annotations),
-            Self::Blob(blob) => blob.set_annotations(annotations),
-            Self::List(list) => list.set_annotations(annotations),
-            Self::Map(map) => map.set_annotations(annotations),
-        }
-    }
 }
 
-impl<AnnotatedT> Debuggable for Variant<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Variant<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -69,15 +54,15 @@ impl<AnnotatedT> Debuggable for Variant<AnnotatedT> {
                 context.separate(writer)?;
                 context.theme.write_symbol(writer, "Nothing")
             }
-            Self::Null(null) => null.write_debug_for(writer, context),
-            Self::Integer(integer) => integer.write_debug_for(writer, context),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.write_debug_for(writer, context),
-            Self::Float(float) => float.write_debug_for(writer, context),
-            Self::Boolean(boolean) => boolean.write_debug_for(writer, context),
-            Self::Text(text) => text.write_debug_for(writer, context),
-            Self::Blob(blob) => blob.write_debug_for(writer, context),
-            Self::List(list) => list.write_debug_for(writer, context),
-            Self::Map(map) => map.write_debug_for(writer, context),
+            Self::Null(null) => null.depict(writer, context),
+            Self::Integer(integer) => integer.depict(writer, context),
+            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.depict(writer, context),
+            Self::Float(float) => float.depict(writer, context),
+            Self::Boolean(boolean) => boolean.depict(writer, context),
+            Self::Text(text) => text.depict(writer, context),
+            Self::Blob(blob) => blob.depict(writer, context),
+            Self::List(list) => list.depict(writer, context),
+            Self::Map(map) => map.depict(writer, context),
         }
     }
 }

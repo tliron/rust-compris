@@ -1,5 +1,5 @@
 use {
-    kutil::{cli::debug::*, std::zerocopy::*},
+    kutil::{cli::depict::*, std::zerocopy::*},
     std::{fmt, io},
 };
 
@@ -17,11 +17,11 @@ pub enum PathSegment<KeyT> {
     MapKey(KeyT),
 }
 
-impl<KeyT> Debuggable for PathSegment<KeyT>
+impl<KeyT> Depict for PathSegment<KeyT>
 where
     KeyT: fmt::Display,
 {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

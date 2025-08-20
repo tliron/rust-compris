@@ -1,9 +1,12 @@
 use super::location::*;
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{fmt, io},
 };
+
+/// Depict span separator.
+pub const DEPICT_SPAN_SEPARATOR: char = '→';
 
 //
 // Span
@@ -25,25 +28,25 @@ impl Span {
         Self { start, end }
     }
 
-    /// Whether [Debuggable] will have output.
+    /// Whether [Depict] will have output.
     pub fn has_debug(&self) -> bool {
         self.start.has_debug()
     }
 }
 
-impl Debuggable for Span {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl Depict for Span {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         if self.start.has_debug() {
-            self.start.write_debug_for(writer, context)?;
+            self.start.depict(writer, context)?;
 
             if let Some(end) = &self.end
                 && end.has_debug()
             {
-                context.theme.write_delimiter(writer, "-")?;
-                end.write_debug_for(writer, context)?;
+                context.theme.write_delimiter(writer, DEPICT_SPAN_SEPARATOR)?;
+                end.depict(writer, context)?;
             }
         }
 
@@ -58,7 +61,7 @@ impl fmt::Display for Span {
 
             if let Some(end) = &self.end {
                 if end.has_debug() {
-                    write!(formatter, "-{}", end)?;
+                    write!(formatter, "{}{}", DEPICT_SPAN_SEPARATOR, end)?;
                 }
             }
         }

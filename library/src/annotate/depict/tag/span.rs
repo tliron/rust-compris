@@ -1,13 +1,13 @@
-use super::super::super::r#struct::*;
+use super::super::super::{annotations::*, r#struct::*};
 
-use {kutil::cli::debug::*, std::io};
+use {kutil::cli::depict::*, std::io};
 
-/// Location tag for [Debuggable](kutil::cli::debug::Debuggable).
+/// Location tag for [Depict](kutil::cli::depict::Depict).
 pub fn span<AnnotatedFieldsT, WriteT>(
     annotated_fields: &AnnotatedFieldsT,
     field_name: &str,
     writer: &mut WriteT,
-    context: &DebugContext,
+    context: &DepictionContext,
 ) -> io::Result<()>
 where
     AnnotatedFieldsT: AnnotatedStruct,
@@ -17,8 +17,8 @@ where
         && let Some(span) = &annotations.span
     {
         context.separate(writer)?;
-        context.theme.write_delimiter(writer, "@")?;
-        context.theme.write_meta(writer, span)?;
+        context.theme.write_delimiter(writer, DEPICT_ANNOTATIONS_PREFIX)?;
+        span.depict(writer, context)?;
     }
 
     Ok(())

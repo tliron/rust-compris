@@ -35,7 +35,7 @@ macro_rules! normal_list (
 
     ( $( $value:expr ),+ $(,)? ) => (
         $crate::normal::Variant::List(
-            $crate::normal::List::new(
+            $crate::normal::List::from(
                 vec![ $( $crate::normal!( $value ) ),+ ]
             )
         )

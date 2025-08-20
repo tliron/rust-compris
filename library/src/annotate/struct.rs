@@ -1,6 +1,6 @@
 use super::annotations::*;
 
-use kutil::std::{collections::*, zerocopy::*};
+use kutil::std::{collections::*, immutable::*};
 
 //
 // StructAnnotations

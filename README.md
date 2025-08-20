@@ -16,11 +16,11 @@ And yet despite being so widely used, CPS has been unnamed... until now. You're 
 
 CPS is sometimes glossed as "JSON", but that's misleading and ultimately unhelpful because JSON is merely one representation format for the data, and is actually comparatively quite limited (e.g. implementations do not often preserve the distinction between integers and floats). So instead of saying "let's just store it as JSON", say "let's just store it as CPS", and use Compris to handle the representation. It will allow you and your users to select from all supported formats at runtime.
 
-See [here](https://github.com/tliron/rust-compris/blob/main/CPS.md) for a full descripton of CPS.
+See [here](https://github.com/tliron/compris/blob/main/CPS.md) for a full description of CPS.
 
 Compris is pronounced "com-PREE". The name comes from shortening CompositePrimitiveSchema to ComPriS.
 
-Get started with the [API documentation](https://docs.rs/compris/latest/compris/) and the [examples](https://github.com/tliron/rust-compris/tree/main/crates/library/examples).
+Get started with the [API documentation](https://docs.rs/compris/latest/compris/) and the [examples](https://github.com/tliron/compris/tree/main/crates/library/examples).
 
 J'ai compris!
 
@@ -48,14 +48,14 @@ The normal variant type serves as an equivalent to the "any-type" variables that
 
 Each normal variant can also include "annotations", including the source filename and span in the file (row and column), which can be used for citing textual sources (YAML, JSON, and XML). This allows Compris to provide very detailed error messages for higher-level grammars, IDEs, etc. The annotations feature is enabled via a generic parameter to avoid paying for it when not needed.
 
-[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/parse.rs).
+[Example](https://github.com/tliron/compris/blob/main/crates/library/examples/parse.rs).
 
 Path Traversal
 --------------
 
 Included are ergonomic facilities for accessing nested variants by path and for presenting paths in a human-readable format.
 
-[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/traverse.rs).
+[Example](https://github.com/tliron/compris/blob/main/crates/library/examples/traverse.rs).
 
 Resolving
 ---------
@@ -64,7 +64,7 @@ Compris can convert (we call this "resolve") the normal types to your own custom
 
 The API is simple but extensible, making use of a `#[derive(Resolve)]` procedural macro (with the `derive` feature) that generates the resolving code for your structs and enums while also allowing you to implement your own semantics and validations. This feature is designed to serve as a foundation for sophisticated CPS-based syntax parsers.
 
-[Basic example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_basic.rs), [enum example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_enum.rs), [advanced example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/resolve_advanced.rs).
+[Basic example](https://github.com/tliron/compris/blob/main/crates/library/examples/resolve_basic.rs), [enum example](https://github.com/tliron/compris/blob/main/crates/library/examples/resolve_enum.rs), [advanced example](https://github.com/tliron/compris/blob/main/crates/library/examples/resolve_advanced.rs).
 
 > Does the resolve feature sound a bit like Serde deserialization? At its simplest, they both provide the same result (and Compris does support Serde, too; see below). However, resolve is far more straightforward and efficient in that it is designed for CPS. Per type, you only need to implement one function in one trait. Furthermore, it allows for accumulating annotated errors (instead of always failing on the first error, like Serde), as well as configurable handling of nulls and undeclared fields.
 
@@ -75,11 +75,11 @@ Compris provides a common serializer API for [Serde](https://serde.rs/) (with th
 
 This API additionally supports ["serialization modes"](https://docs.rs/compris/latest/compris/ser/struct.SerializationMode.html) that allow some control over serialization behavior. For example, `FloatSerializationMode::AsI64IfWhole` will try to convert floats to integers if they are whole numbers. This would happen *only* for serialization, on-the-fly, and does not modify your in-memory data.
 
-Serialization modes are useful for optimizing or fixing your data for limited (or broken) consumers, but they can also work around the limitations of YAML and JSON. In particular, Compris introduces an "XJSON" serialization mode, which allows JSON to support all of CPS via standard "hints". Compris can also parse and deserialize XJSON. Read more about XJSON [here](https://github.com/tliron/rust-compris/blob/main/CPS.md#xjson).
+Serialization modes are useful for optimizing or fixing your data for limited (or broken) consumers, but they can also work around the limitations of YAML and JSON. In particular, Compris introduces an "XJSON" serialization mode, which allows JSON to support all of CPS via standard "hints". Compris can also parse and deserialize XJSON. Read more about XJSON [here](https://github.com/tliron/compris/blob/main/CPS.md#xjson).
 
 This general-purpose serialization API can be used with any Rust type that supports Serde's `Serialize` trait, not only Compris normal types. It is thus useful if your program needs to serialize to a range of different formats and you would rather use a single crate with a single API.
 
-[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/serialize.rs).
+[Example](https://github.com/tliron/compris/blob/main/crates/library/examples/serialize.rs).
 
 Serde Deserialization
 ---------------------
@@ -90,7 +90,7 @@ However, there is a twist, as this is internally done in two phases. Compris *fi
 
 For example, if you want to feed a `Deserialize` type with data, but don't want to have to through a representation format and a parser, then you can model the data using Compris normal types. The "resolve" feature (see above) can do this, too, and should generally be more efficient than going through Serde, but if you're using types that already support Serde `Deserialize` then this will "just work".
 
-[Example](https://github.com/tliron/rust-compris/blob/main/crates/library/examples/deserialize.rs).
+[Example](https://github.com/tliron/compris/blob/main/crates/library/examples/deserialize.rs).
 
 CLI Tool
 --------
@@ -122,7 +122,7 @@ License
 
 Like much of the Rust ecosystem, licensed under your choice of either of
 
-* [Apache License, Version 2.0](https://github.com/tliron/rust-compris/blob/main/LICENSE-APACHE)
-* [MIT license](https://github.com/tliron/rust-compris/blob/main/LICENSE-MIT)
+* [Apache License, Version 2.0](https://github.com/tliron/compris/blob/main/LICENSE-APACHE)
+* [MIT license](https://github.com/tliron/compris/blob/main/LICENSE-MIT)
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.

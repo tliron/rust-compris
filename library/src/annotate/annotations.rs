@@ -1,9 +1,15 @@
 use super::{super::path::*, label::*, span::*};
 
 use {
-    kutil::{cli::debug::*, std::zerocopy::*},
+    kutil::{cli::depict::*, std::immutable::*},
     std::{fmt, io},
 };
+
+/// Depict annotations prefix.
+pub const DEPICT_ANNOTATIONS_PREFIX: char = '@';
+
+/// Depict annotations separator.
+pub const DEPICT_ANNOTATIONS_SEPARATOR: char = ':';
 
 //
 // Annotations
@@ -26,19 +32,23 @@ pub struct Annotations {
 }
 
 impl Annotations {
-    /// Whether [Debuggable] will have output.
-    pub fn has_debug(&self, format: DebugFormat) -> bool {
+    /// True if any field is [Some].
+    pub fn has_some(&self) -> bool {
+        self.source.is_some() || self.span.is_some() || self.path.is_some() || self.label.is_some()
+    }
+
+    /// Whether [Depict] will have output.
+    pub fn has_depiction(&self, format: DepictionFormat) -> bool {
         match format {
-            DebugFormat::Verbose => {
+            DepictionFormat::Compact => {
                 self.source.is_some()
-                    || self.path.is_some()
                     || match &self.span {
                         Some(span) => span.has_debug(),
                         None => false,
                     }
             }
 
-            DebugFormat::Reduced => {
+            DepictionFormat::Optimized => {
                 self.path.is_some()
                     || match &self.span {
                         Some(span) => span.has_debug(),
@@ -46,8 +56,9 @@ impl Annotations {
                     }
             }
 
-            DebugFormat::Compact => {
+            DepictionFormat::Verbose => {
                 self.source.is_some()
+                    || self.path.is_some()
                     || match &self.span {
                         Some(span) => span.has_debug(),
                         None => false,
@@ -99,14 +110,37 @@ impl Annotations {
     }
 }
 
-impl Debuggable for Annotations {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl Depict for Annotations {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
-        match context.format {
+        match context.get_format() {
+            // source + span (no path)
+            DepictionFormat::Compact => {
+                context.separate(writer)?;
+                context.theme.write_delimiter(writer, DEPICT_ANNOTATIONS_PREFIX)?;
+
+                let mut separate = false;
+                if let Some(source) = &self.source {
+                    context.theme.write_meta(writer, source)?;
+                    separate = true;
+                }
+
+                if let Some(span) = &self.span
+                    && span.has_debug()
+                {
+                    if separate {
+                        context.theme.write_delimiter(writer, DEPICT_ANNOTATIONS_SEPARATOR)?;
+                    }
+                    span.depict(writer, context)?;
+                }
+
+                Ok(())
+            }
+
             // source + span + path
-            DebugFormat::Verbose => {
+            DepictionFormat::Verbose => {
                 context.separate(writer)?;
 
                 let mut separate = false;
@@ -121,8 +155,8 @@ impl Debuggable for Annotations {
                     if separate {
                         write!(writer, " ")?;
                     }
-                    context.theme.write_delimiter(writer, "@")?;
-                    span.write_debug_for(writer, context)?;
+                    context.theme.write_delimiter(writer, DEPICT_ANNOTATIONS_PREFIX)?;
+                    span.depict(writer, context)?;
                     separate = true;
                 }
 
@@ -130,19 +164,19 @@ impl Debuggable for Annotations {
                     if separate {
                         write!(writer, " ")?;
                     }
-                    path.write_debug_for(writer, context)?;
+                    path.depict(writer, context)?;
                 }
 
                 Ok(())
             }
 
             // path + span (no source)
-            DebugFormat::Reduced => {
+            DepictionFormat::Optimized => {
                 context.separate(writer)?;
 
                 let mut separate = false;
                 if let Some(path) = &self.path {
-                    path.write_debug_for(writer, context)?;
+                    path.depict(writer, context)?;
                     separate = true;
                 }
 
@@ -152,31 +186,8 @@ impl Debuggable for Annotations {
                     if separate {
                         write!(writer, " ")?;
                     }
-                    context.theme.write_delimiter(writer, "@")?;
-                    span.write_debug_for(writer, context)?;
-                }
-
-                Ok(())
-            }
-
-            // source + span (no path)
-            DebugFormat::Compact => {
-                context.separate(writer)?;
-                context.theme.write_delimiter(writer, "@")?;
-
-                let mut separate = false;
-                if let Some(source) = &self.source {
-                    context.theme.write_meta(writer, source)?;
-                    separate = true;
-                }
-
-                if let Some(span) = &self.span
-                    && span.has_debug()
-                {
-                    if separate {
-                        context.theme.write_delimiter(writer, ":")?;
-                    }
-                    span.write_debug_for(writer, context)?;
+                    context.theme.write_delimiter(writer, DEPICT_ANNOTATIONS_PREFIX)?;
+                    span.depict(writer, context)?;
                 }
 
                 Ok(())
@@ -197,7 +208,7 @@ impl fmt::Display for Annotations {
             if separate {
                 write!(formatter, " ")?;
             }
-            write!(formatter, "@{}", span)?;
+            write!(formatter, "{}{}", DEPICT_ANNOTATIONS_PREFIX, span)?;
             separate = true;
         }
 

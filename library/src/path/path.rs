@@ -1,7 +1,7 @@
 use super::{super::normal::*, node::*, representation::*, segment::*};
 
 use {
-    kutil::{cli::debug::*, std::iter::*},
+    kutil::{cli::depict::*, std::iter::*},
     std::{
         fmt::{self, Write},
         io, ptr,
@@ -109,18 +109,18 @@ impl<'own, AnnotatedT> Path<'own, AnnotatedT> {
     }
 }
 
-impl<'own, AnnotatedT> Debuggable for Path<'own, AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<'own, AnnotatedT> Depict for Path<'own, AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         for (node, first) in IterateWithFirst::new(&self.nodes) {
             if let Some(segment) = &node.segment {
                 if !first && matches!(segment, PathSegment::MapKey(_)) {
-                    context.theme.write_delimiter(writer, ".")?;
+                    context.theme.write_delimiter(writer, '.')?;
                 }
 
-                segment.write_debug_for(writer, context)?;
+                segment.depict(writer, context)?;
             }
         }
 

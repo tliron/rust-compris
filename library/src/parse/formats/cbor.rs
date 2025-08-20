@@ -5,7 +5,6 @@ use super::super::{
 };
 
 use {
-    base64::{prelude::*, read::*},
     borc::{basic::streaming::*, errors::*},
     std::io,
     tracing::trace,
@@ -22,7 +21,7 @@ impl Parser {
     {
         let mut value_builder = VariantBuilder::new(self.source.clone());
         if self.base64 {
-            let reader = DecoderReader::new(reader, &BASE64_STANDARD);
+            let reader = Self::base64_reader(reader);
             let mut decoder = Decoder::new(reader);
             read_next_cbor(&mut decoder, &mut value_builder, None)?;
         } else {

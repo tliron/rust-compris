@@ -1,10 +1,10 @@
 use {
-    super::{super::annotate::*, debug::*, map::*, variant::*},
+    super::{super::annotate::*, depict::*, map::*, variant::*},
     crate::impl_normal,
 };
 
 use {
-    kutil::{cli::debug::*, std::iter::*},
+    kutil::{cli::depict::*, std::iter::*},
     std::{
         fmt::{self, Write},
         io, slice, vec,
@@ -96,8 +96,8 @@ impl<AnnotatedT> List<AnnotatedT> {
     {
         let vector: Vec<_> = self.inner.into_iter().map(|item| item.into_annotated()).collect();
         let new_list = List::new(vector);
-        if AnnotatedT::has_annotations()
-            && NewAnnotationsT::has_annotations()
+        if AnnotatedT::can_have_annotations()
+            && NewAnnotationsT::can_have_annotations()
             && let Some(annotations) = self.annotated.get_annotations()
         {
             new_list.with_annotations(annotations.clone())
@@ -106,18 +106,18 @@ impl<AnnotatedT> List<AnnotatedT> {
         }
     }
 
-    /// [Debuggable] with [Annotations].
-    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableList<'_, AnnotatedT> {
-        AnnotatedDebuggableList::new(self, mode)
+    /// [Depict] with [Annotations].
+    pub fn annotated_depict(&self, mode: AnnotatedDepictionMode) -> AnnotatedDepictList<'_, AnnotatedT> {
+        AnnotatedDepictList::new(self, mode)
     }
 }
 
-impl<AnnotatedT> Debuggable for List<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for List<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
-        utils::write_debug_as_list(self.inner.iter(), None, writer, context)
+        utils::depict_list(self.inner.iter(), None, writer, context)
     }
 }
 

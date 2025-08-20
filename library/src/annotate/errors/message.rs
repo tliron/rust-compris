@@ -1,7 +1,7 @@
-use crate::impl_dyn_annotated_error;
+use super::super::impl_dyn_annotated_error;
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{error::*, fmt, io},
 };
 
@@ -31,8 +31,8 @@ impl<AnnotatedT> AnnotatedMessageError<AnnotatedT> {
 
 impl_dyn_annotated_error!(AnnotatedMessageError);
 
-impl<AnnotatedT> Debuggable for AnnotatedMessageError<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, _context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for AnnotatedMessageError<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, _context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

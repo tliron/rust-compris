@@ -16,7 +16,7 @@ impl StructGenerator {
                     for #struct_name #type_generics
                     #where_clause
                 {
-                    fn has_annotations() -> bool {
+                    fn can_have_annotations() -> bool {
                         // We cannot test for this, so must assume true
                         true
                     }
@@ -31,10 +31,6 @@ impl StructGenerator {
                         ::std::option::Option<&mut ::compris::annotate::Annotations>
                     {
                         self.#annotations_field_name.get_mut("")
-                    }
-
-                    fn set_annotations(&mut self, annotations: ::compris::annotate::Annotations) {
-                        self.#annotations_field_name.insert("".into(), annotations);
                     }
                 }
 

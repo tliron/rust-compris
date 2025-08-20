@@ -2,8 +2,8 @@ use super::{super::normal::*, path::*, segment::*};
 
 use {
     kutil::{
-        cli::debug::*,
-        std::{iter::*, zerocopy::*},
+        cli::depict::*,
+        std::{iter::*, immutable::*},
     },
     std::{
         fmt::{self, Write},
@@ -61,17 +61,17 @@ impl PathRepresentation {
     }
 }
 
-impl Debuggable for PathRepresentation {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl Depict for PathRepresentation {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         for (segment, first) in IterateWithFirst::new(&self.segments) {
             if !first && matches!(segment, PathSegment::MapKey(_)) {
-                context.theme.write_delimiter(writer, ".")?;
+                context.theme.write_delimiter(writer, '.')?;
             }
 
-            segment.write_debug_for(writer, context)?;
+            segment.depict(writer, context)?;
         }
 
         Ok(())

@@ -6,13 +6,9 @@ use super::{
 };
 
 use {
-    kutil::std::zerocopy::*,
+    kutil::std::immutable::*,
     serde::*,
-    std::{
-        fs::*,
-        io::{BufWriter, Write, stdout},
-        path,
-    },
+    std::{fs::*, io, path},
 };
 
 const STRINGIFY_BUFFER_CAPACITY: usize = 1024;
@@ -70,7 +66,7 @@ impl Serializer {
     /// Serializes the provided value to the writer according to [Serializer::format](Serializer).
     pub fn write<WriteT, SerializableT>(&self, value: &SerializableT, writer: &mut WriteT) -> Result<(), SerializeError>
     where
-        WriteT: Write,
+        WriteT: io::Write,
         SerializableT: Serialize,
     {
         match self.format {
@@ -108,7 +104,7 @@ impl Serializer {
         writer: &mut WriteT,
     ) -> Result<(), SerializeError>
     where
-        WriteT: Write,
+        WriteT: io::Write,
         AnnotatedT: Annotated + Clone + Default,
     {
         let value = value.modal(mode, self);
@@ -121,7 +117,7 @@ impl Serializer {
         SerializableT: Serialize,
         PathT: AsRef<path::Path>,
     {
-        self.write(value, &mut BufWriter::new(File::create(path)?))
+        self.write(value, &mut io::BufWriter::new(File::create(path)?))
     }
 
     /// Serializes the provided value to the file according to [Serializer::format](Serializer).
@@ -138,12 +134,12 @@ impl Serializer {
         self.write_to_file(&value, path)
     }
 
-    /// Serializes the provided value to [stdout] according to [Serializer::format](Serializer).
+    /// Serializes the provided value to [stdout](io::stdout) according to [Serializer::format](Serializer).
     pub fn print<SerializableT>(&self, value: &SerializableT) -> Result<(), SerializeError>
     where
         SerializableT: Serialize,
     {
-        self.write(value, &mut stdout())
+        self.write(value, &mut io::stdout())
     }
 
     /// Serializes the provided value to [stdout] according to [Serializer::format](Serializer).
@@ -196,18 +192,18 @@ impl Serializer {
     #[allow(dead_code)]
     pub(crate) fn write_newline<WriteT>(writer: &mut WriteT) -> Result<(), SerializeError>
     where
-        WriteT: Write,
+        WriteT: io::Write,
     {
-        writer.write("\n".as_bytes())?;
+        writer.write(b"\n")?;
         Ok(())
     }
 
     #[allow(dead_code)]
-    pub(crate) fn base64_writer<'own, WriteT>(
-        writer: &'own mut WriteT,
-    ) -> base64::write::EncoderWriter<'own, base64::engine::GeneralPurpose, &'own mut WriteT>
+    pub(crate) fn base64_writer<WriteT>(
+        writer: &mut WriteT,
+    ) -> base64::write::EncoderWriter<'_, base64::engine::GeneralPurpose, &mut WriteT>
     where
-        WriteT: Write,
+        WriteT: io::Write,
     {
         base64::write::EncoderWriter::new(writer, &base64::engine::general_purpose::STANDARD)
     }

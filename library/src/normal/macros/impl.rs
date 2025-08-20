@@ -1,8 +1,8 @@
 /// Helper macro for implementing normal types.
 #[macro_export]
 macro_rules! impl_normal (
-    ( $(#[$meta:meta])* $type:ident ( $inner:ty ) $(,)? ) => {
-        $(#[$meta])*
+    ( $( #[$meta:meta] )* $type:ident ( $inner:ty ) $(,)? ) => {
+        $( #[$meta] )*
         #[derive(::std::clone::Clone, ::std::fmt::Debug, ::std::default::Default)]
         pub struct $type<AnnotatedT> {
             /// Inner.
@@ -84,8 +84,8 @@ macro_rules! impl_normal_basic (
                 NewAnnotationsT: Annotated + Default,
             {
                 let new_self = $type::new(self.inner);
-                if AnnotatedT::has_annotations()
-                    && NewAnnotationsT::has_annotations()
+                if AnnotatedT::can_have_annotations()
+                    && NewAnnotationsT::can_have_annotations()
                     && let Some(annotations) = self.annotated.get_annotations()
                 {
                     new_self.with_annotations(annotations.clone())

@@ -12,7 +12,7 @@ impl StructGenerator {
         // Self annotations as empty-string field
         if let Some(annotations_field_name) = &self.annotations_field {
             segments.push(quote! {
-                if #annotated_parameter::has_annotations()
+                if #annotated_parameter::can_have_annotations()
                     && let ::std::option::Option::Some(annotations) = self.get_annotations()
                 {
                     resolved.#annotations_field_name.insert(

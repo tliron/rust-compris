@@ -1,10 +1,7 @@
-use {
-    super::super::super::{annotate::*, normal::*},
-    crate::impl_annotated,
-};
+use super::super::super::{annotate::*, normal::*};
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{fmt, io},
     thiserror::*,
 };
@@ -38,8 +35,8 @@ impl<AnnotatedT> InvalidKeyError<AnnotatedT> {
 
 impl_annotated!(InvalidKeyError, key);
 
-impl<AnnotatedT> Debuggable for InvalidKeyError<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for InvalidKeyError<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

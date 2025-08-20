@@ -12,5 +12,6 @@ mod variant;
 
 #[allow(unused_imports)]
 pub use {
-    annotate::*, from_str::*, iterate::*, native::*, net::*, option::*, parse_str::*, path::*, try_from::*, variant::*,
+    crate::impl_resolve_from_str, annotate::*, from_str::*, iterate::*, native::*, net::*, option::*, parse_str::*,
+    path::*, try_from::*, variant::*,
 };

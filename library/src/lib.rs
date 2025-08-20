@@ -33,7 +33,6 @@ J'ai compris!
 */
 
 mod format;
-mod macros;
 
 /// Annotate any type.
 pub mod annotate;

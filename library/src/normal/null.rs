@@ -1,7 +1,7 @@
-use {super::super::annotate::*, crate::impl_annotated};
+use super::super::annotate::*;
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{cmp::*, fmt, hash::*, io},
 };
 
@@ -30,8 +30,8 @@ impl<AnnotatedT> Null<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        if AnnotatedT::has_annotations()
-            && NewAnnotationsT::has_annotations()
+        if AnnotatedT::can_have_annotations()
+            && NewAnnotationsT::can_have_annotations()
             && let Some(annotations) = self.annotated.get_annotations()
         {
             Null::default().with_annotations(annotations.clone())
@@ -43,8 +43,8 @@ impl<AnnotatedT> Null<AnnotatedT> {
 
 impl_annotated!(Null);
 
-impl<AnnotatedT> Debuggable for Null<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Null<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

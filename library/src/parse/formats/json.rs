@@ -68,7 +68,7 @@ where
     JsonReaderT: JsonReader,
     AnnotatedT: Annotated + Clone + Default,
 {
-    let get_span = if AnnotatedT::has_annotations() {
+    let get_span = if AnnotatedT::can_have_annotations() {
         |reader: &mut JsonReaderT| -> Option<Span> { get_json_span(reader) }
     } else {
         |_reader: &mut JsonReaderT| -> Option<Span> { None }

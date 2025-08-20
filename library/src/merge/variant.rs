@@ -3,7 +3,7 @@ use super::{super::normal::*, error::*, mode::*};
 use {kutil::std::error::*, std::fmt};
 
 impl<AnnotatedT> Variant<AnnotatedT> {
-    /// Merge another [Variant] into this Variant]. Return true if any change happened.
+    /// Merge another [Variant] into this [Variant]. Return true if any change happened.
     ///
     /// This function only affects lists and maps.
     ///

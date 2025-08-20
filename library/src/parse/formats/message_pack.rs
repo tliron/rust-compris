@@ -8,7 +8,6 @@ use super::super::{
 };
 
 use {
-    base64::{prelude::*, read::*},
     rmp::{decode::*, *},
     std::io,
     tracing::trace,
@@ -25,7 +24,7 @@ impl Parser {
     {
         let mut value_builder = VariantBuilder::new(self.source.clone());
         if self.base64 {
-            let mut reader = DecoderReader::new(reader, &BASE64_STANDARD);
+            let mut reader = Self::base64_reader(reader);
             read_next_message_pack(&mut reader, &mut value_builder)?;
         } else {
             read_next_message_pack(reader, &mut value_builder)?;

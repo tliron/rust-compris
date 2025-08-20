@@ -1,6 +1,6 @@
 use super::super::dyn_annotated::*;
 
-use {kutil::cli::debug::*, std::error::*};
+use {kutil::cli::depict::*, std::error::*};
 
 //
 // DynAnnotatedError
@@ -9,7 +9,7 @@ use {kutil::cli::debug::*, std::error::*};
 /// A [DynAnnotated] [Error].
 pub trait DynAnnotatedError
 where
-    Self: DynAnnotated + DynDebuggable + Error,
+    Self: DynAnnotated + DynDepict + Error,
 {
 }
 

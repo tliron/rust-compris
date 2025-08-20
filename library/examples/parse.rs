@@ -2,7 +2,7 @@ mod utils;
 
 use {
     compris::{parse::*, *},
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
 };
 
 pub fn main() {
@@ -20,7 +20,9 @@ pub fn main() {
         with_annotations!(Parser::new(Format::YAML).with_source("yaml".into()).parse_from_string(yaml).expect("parse"));
 
     utils::heading("from YAML", true);
-    variant.annotated_debuggable().print_debug_with_format(DebugFormat::Verbose);
+    variant
+        .annotated_depict()
+        .print_depiction(&DEFAULT_DEPICTION_CONTEXT.child().with_format(DepictionFormat::Verbose));
 
     let xjson = r#"[
   {
@@ -44,5 +46,7 @@ pub fn main() {
     );
 
     utils::heading("from XJSON", false);
-    variant.annotated_debuggable().print_debug_with_format(DebugFormat::Verbose);
+    variant
+        .annotated_depict()
+        .print_depiction(&DEFAULT_DEPICTION_CONTEXT.child().with_format(DepictionFormat::Verbose));
 }

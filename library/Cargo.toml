@@ -23,6 +23,7 @@ keywords = ["cps"]
 [dependencies]
 anstream = "0.6.20"
 base64 = "0.22.1"
+base64-simd = "0.8.0"
 borc = { optional = true, version = "0.6.0" }
 compris-macros = { optional = true, version = "=0.0.4" }
 duplicate = "2.0.0"

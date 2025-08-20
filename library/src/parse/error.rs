@@ -1,7 +1,7 @@
 use super::super::*;
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{io, num::*, string},
     thiserror::*,
 };
@@ -11,7 +11,7 @@ use {
 //
 
 /// Compris parse error.
-#[derive(Debug, Debuggable, Error)]
+#[derive(Debug, Depict, Error)]
 pub enum ParseError {
     /// Unsupported format.
     #[error("unsupported format: {0:?}")]
@@ -63,5 +63,5 @@ pub enum ParseError {
 
     /// Base64.
     #[error("Base64: {0}")]
-    Base64(#[from] base64::DecodeError),
+    Base64(#[from] base64_simd::Error),
 }

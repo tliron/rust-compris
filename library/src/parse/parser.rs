@@ -142,4 +142,14 @@ impl Parser {
     {
         self.parse(&mut string.as_bytes())
     }
+
+    #[allow(dead_code)]
+    pub(crate) fn base64_reader<ReadT>(
+        reader: &mut ReadT,
+    ) -> base64::read::DecoderReader<'_, base64::engine::GeneralPurpose, &mut ReadT>
+    where
+        ReadT: io::Read,
+    {
+        base64::read::DecoderReader::new(reader, &base64::prelude::BASE64_STANDARD)
+    }
 }

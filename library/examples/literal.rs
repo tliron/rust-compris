@@ -1,9 +1,6 @@
 mod utils;
 
-use {
-    compris::{normal::*, *},
-    kutil::cli::debug::*,
-};
+use {compris::normal::*, kutil::cli::depict::*};
 
 pub fn main() {
     // Use "normal!" with a single bare primitive expression
@@ -14,7 +11,7 @@ pub fn main() {
     // See examples/debug.rs
 
     utils::heading("literal value", true);
-    variant.print_debug();
+    variant.print_default_depiction();
 
     // Use "normal_list!" with a sequence of bare primitive expressions
     // (Use "()" for a literal null)
@@ -22,19 +19,19 @@ pub fn main() {
     let variant = without_annotations!(normal_list!["hello", 3 * 8, 6.2, true, ()]);
 
     utils::heading("literal list", false);
-    variant.print_debug();
+    variant.print_default_depiction();
 
     // Use "normal_map!" for maps via a sequence of key-value pairs
 
     let variant = without_annotations!(normal_map![("key", 5i32), (6u8, "value")]);
 
     utils::heading("literal map", false);
-    variant.print_debug();
+    variant.print_default_depiction();
 
     // You can nest as well as mix bare primitive expressions with normal types
 
     let variant = without_annotations!(normal_map![
-        ("key", normal_list![4, 5, Integer::new(6)]),
+        ("key", normal_list![4, 5, Integer::from(6)]),
         (
             // This is the key (it's complex)
             normal_map![("complex_key1", "complex_value1"), ("complex_key2", "complex_value2")],
@@ -44,5 +41,5 @@ pub fn main() {
     ]);
 
     utils::heading("literal nested", false);
-    variant.print_debug();
+    variant.print_default_depiction();
 }

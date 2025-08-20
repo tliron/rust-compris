@@ -1,7 +1,7 @@
 use {
     super::{
         super::{annotate::*, kv::*},
-        debug::*,
+        depict::*,
         errors::*,
         list::*,
         variant::*,
@@ -10,11 +10,12 @@ use {
 };
 
 use {
-    kutil::{cli::debug::*, std::iter::*},
+    kutil::{cli::depict::*, std::iter::*},
     std::{
         collections::*,
         fmt::{self, Write},
         io,
+        mem::*,
     },
 };
 
@@ -30,15 +31,6 @@ impl_normal! {
 }
 
 impl<AnnotatedT> Map<AnnotatedT> {
-    /// Constructor.
-    pub fn new_from<IterableT>(iterable: IterableT) -> Self
-    where
-        AnnotatedT: Default,
-        IterableT: IntoIterator<Item = (Variant<AnnotatedT>, Variant<AnnotatedT>)>,
-    {
-        Self::new(BTreeMap::from_iter(iterable))
-    }
-
     /// Get.
     pub fn into_get<KeyT>(&self, key: KeyT) -> Option<&Variant<AnnotatedT>>
     where
@@ -76,21 +68,12 @@ impl<AnnotatedT> Map<AnnotatedT> {
 
     /// Removes all entries from the map and returns them as a vector of key-value tuples.
     pub fn into_vector(&mut self) -> Vec<(Variant<AnnotatedT>, Variant<AnnotatedT>)> {
-        let mut vector = Vec::with_capacity(self.inner.len());
-        while let Some(entry) = self.inner.pop_first() {
-            vector.push(entry);
-        }
-        vector
+        take(&mut self.inner).into_iter().collect()
     }
 
     /// Removes all [Annotations] recursively.
     pub fn without_annotations(self) -> Map<WithoutAnnotations> {
-        let new_map: BTreeMap<_, _> = self
-            .inner
-            .into_iter()
-            .map(|(key, value)| (key.without_annotations(), value.without_annotations()))
-            .collect();
-        new_map.into()
+        self.inner.into_iter().map(|(key, value)| (key.without_annotations(), value.without_annotations())).collect()
     }
 
     /// Into different [Annotated] implementation.
@@ -99,11 +82,10 @@ impl<AnnotatedT> Map<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        let vector: Vec<_> =
+        let new_map: Map<NewAnnotationsT> =
             self.into_vector().into_iter().map(|(key, value)| (key.into_annotated(), value.into_annotated())).collect();
-        let new_map = Map::from_iter(vector);
-        if AnnotatedT::has_annotations()
-            && NewAnnotationsT::has_annotations()
+        if AnnotatedT::can_have_annotations()
+            && NewAnnotationsT::can_have_annotations()
             && let Some(annotations) = self.annotated.get_annotations()
         {
             new_map.with_annotations(annotations.clone())
@@ -112,25 +94,25 @@ impl<AnnotatedT> Map<AnnotatedT> {
         }
     }
 
-    /// [Debuggable] with [Annotations].
-    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableMap<'_, AnnotatedT> {
-        AnnotatedDebuggableMap::new(self, mode)
+    /// [Depict] with [Annotations].
+    pub fn annotated_depict(&self, mode: AnnotatedDepictionMode) -> AnnotatedDepictMap<'_, AnnotatedT> {
+        AnnotatedDepictMap::new(self, mode)
     }
 }
 
-impl<AnnotatedT> Debuggable for Map<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Map<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         // Upgrade reduced to verbose if there are collection keys
-        let override_format = if (context.format == DebugFormat::Reduced) && self.has_a_collection_key() {
-            Some(DebugFormat::Verbose)
+        let override_format = if (context.get_format() == DepictionFormat::Optimized) && self.has_a_collection_key() {
+            Some(DepictionFormat::Verbose)
         } else {
             None
         };
 
-        utils::write_debug_as_map(self.inner.iter(), override_format, writer, context)
+        utils::depict_map(self.inner.iter(), override_format, writer, context)
     }
 }
 
@@ -180,15 +162,6 @@ impl<'own, AnnotatedT> IntoIterator for &'own mut Map<AnnotatedT> {
 
 // Conversions
 
-impl<AnnotatedT> From<BTreeMap<Variant<AnnotatedT>, Variant<AnnotatedT>>> for Map<AnnotatedT>
-where
-    AnnotatedT: Default,
-{
-    fn from(map: BTreeMap<Variant<AnnotatedT>, Variant<AnnotatedT>>) -> Self {
-        Self::new(map)
-    }
-}
-
 impl<const SIZE: usize, AnnotatedT> From<[(Variant<AnnotatedT>, Variant<AnnotatedT>); SIZE]> for Map<AnnotatedT>
 where
     AnnotatedT: Default,
@@ -222,16 +195,9 @@ where
     fn try_from(list: List<AnnotatedT>) -> Result<Self, Self::Error> {
         let mut map = Self::default();
 
-        // Repeat until we get a non-error
         let mut iterator = KeyValuePairIteratorForVariantIterator::new_for(&list);
-        loop {
-            match iterator.next().map_err(|(error, _value)| error)? {
-                Some((key, value)) => {
-                    map.inner.insert(key.clone(), value.clone());
-                }
-
-                None => break,
-            }
+        while let Some((key, value)) = iterator.next().map_err(|(error, _value)| error)? {
+            map.inner.insert(key.clone(), value.clone());
         }
 
         Ok(map)

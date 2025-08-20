@@ -1,10 +1,10 @@
 use {
-    super::{super::annotate::*, debug::*, map::*, variant::*},
+    super::{super::annotate::*, depict::*, map::*, variant::*},
     crate::impl_normal,
 };
 
 use {
-    kutil::{cli::debug::*, std::iter::*},
+    kutil::{cli::depict::*, std::iter::*},
     std::{
         fmt::{self, Write},
         io, slice, vec,
@@ -24,36 +24,22 @@ impl_normal! {
 
 impl<AnnotatedT> List<AnnotatedT> {
     /// Constructor.
-    pub fn new_from<IterableT>(iterable: IterableT) -> Self
-    where
-        AnnotatedT: Default,
-        IterableT: IntoIterator<Item = Variant<AnnotatedT>>,
-    {
-        Self::new(Vec::from_iter(iterable))
-    }
-
-    /// Constructor.
-    pub fn new_from_clone<'own, IterableT>(iterable: IterableT) -> Self
-    where
-        AnnotatedT: 'own + Clone + Default,
-        IterableT: IntoIterator<Item = &'own Variant<AnnotatedT>>,
-    {
-        let mut list = Self::default();
-        for item in iterable {
-            list.inner.push(item.clone());
-        }
-        list
-    }
-
-    /// Constructor.
     pub fn new_with_capacity(capacity: usize) -> Self
     where
         AnnotatedT: Default,
     {
-        Self::new(Vec::with_capacity(capacity))
+        Self::from(Vec::with_capacity(capacity))
     }
 
-    /// Push a clone of the value only if the list doesn't contain it.
+    /// Push.
+    pub fn into_push<ItemT>(&mut self, item: ItemT)
+    where
+        ItemT: Into<Variant<AnnotatedT>>,
+    {
+        self.inner.push(item.into());
+    }
+
+    /// Push a clone of the item only if the list doesn't contain it.
     /// Return true if successful.
     ///
     /// Useful for treating the list like a set (though it's an inefficient one).
@@ -76,7 +62,7 @@ impl<AnnotatedT> List<AnnotatedT> {
         match self.inner.len() {
             2 => {
                 let mut iterator = self.inner.iter();
-                Some((iterator.next().expect("non-empty"), iterator.next().expect("non-empty")))
+                Some((iterator.next().expect("first"), iterator.next().expect("second")))
             }
             _ => None,
         }
@@ -84,8 +70,7 @@ impl<AnnotatedT> List<AnnotatedT> {
 
     /// Removes all [Annotations] recursively.
     pub fn without_annotations(self) -> List<WithoutAnnotations> {
-        let new_list: Vec<_> = self.inner.into_iter().map(|item| item.without_annotations()).collect();
-        new_list.into()
+        self.inner.into_iter().map(|item| item.without_annotations()).collect()
     }
 
     /// Into different [Annotated] implementation.
@@ -94,10 +79,9 @@ impl<AnnotatedT> List<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        let vector: Vec<_> = self.inner.into_iter().map(|item| item.into_annotated()).collect();
-        let new_list = List::new(vector);
-        if AnnotatedT::has_annotations()
-            && NewAnnotationsT::has_annotations()
+        let new_list: List<NewAnnotationsT> = self.inner.into_iter().map(|item| item.into_annotated()).collect();
+        if AnnotatedT::can_have_annotations()
+            && NewAnnotationsT::can_have_annotations()
             && let Some(annotations) = self.annotated.get_annotations()
         {
             new_list.with_annotations(annotations.clone())
@@ -106,18 +90,18 @@ impl<AnnotatedT> List<AnnotatedT> {
         }
     }
 
-    /// [Debuggable] with [Annotations].
-    pub fn annotated_debuggable(&self, mode: AnnotatedDebuggableMode) -> AnnotatedDebuggableList<'_, AnnotatedT> {
-        AnnotatedDebuggableList::new(self, mode)
+    /// [Depict] with [Annotations].
+    pub fn annotated_depict(&self, mode: AnnotatedDepictionMode) -> AnnotatedDepictList<'_, AnnotatedT> {
+        AnnotatedDepictList::new(self, mode)
     }
 }
 
-impl<AnnotatedT> Debuggable for List<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for List<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
-        utils::write_debug_as_list(self.inner.iter(), None, writer, context)
+        utils::depict_list(self.inner.iter(), None, writer, context)
     }
 }
 
@@ -165,15 +149,6 @@ impl<'own, AnnotatedT> IntoIterator for &'own mut List<AnnotatedT> {
 
 // Conversions
 
-impl<AnnotatedT> From<Vec<Variant<AnnotatedT>>> for List<AnnotatedT>
-where
-    AnnotatedT: Default,
-{
-    fn from(vector: Vec<Variant<AnnotatedT>>) -> Self {
-        Self::new(vector)
-    }
-}
-
 impl<AnnotatedT> FromIterator<Variant<AnnotatedT>> for List<AnnotatedT>
 where
     AnnotatedT: Default,
@@ -192,11 +167,6 @@ where
 {
     /// List where all items are themselves lists of length 2 (key-value pairs).
     fn from(map: Map<AnnotatedT>) -> Self {
-        let mut list = Self::default();
-        for (key, value) in map {
-            let entry = Self::new(vec![key.clone(), value.clone()]);
-            list.inner.push(entry.into());
-        }
-        list
+        map.into_iter().map(|(key, value)| vec![key.clone(), value.clone()].into()).collect()
     }
 }

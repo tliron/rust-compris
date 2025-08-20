@@ -9,7 +9,7 @@ use super::super::{
 };
 
 use {
-    kutil::{io::reader::*, std::zerocopy::*},
+    kutil::{io::reader::*, std::immutable::*},
     saphyr_parser::{Event, Parser as SaphyrParser, Span as SaphyrSpan, *},
     std::{borrow::*, io},
 };
@@ -77,8 +77,8 @@ where
             value_builder: VariantBuilder::new(source.clone()),
             last_span: None,
             error: None,
-            span: if AnnotatedT::has_annotations() { |span| Some(span.into()) } else { |_| None },
-            collection_span: if AnnotatedT::has_annotations() {
+            span: if AnnotatedT::can_have_annotations() { |span| Some(span.into()) } else { |_| None },
+            collection_span: if AnnotatedT::can_have_annotations() {
                 |yaml_receiver, span| Some(yaml_receiver.last_span.as_ref().unwrap_or_else(|| span).into())
             } else {
                 |_, _| None
@@ -123,12 +123,12 @@ where
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10212-boolean
                 "bool" => {
-                    return Ok(Boolean::new(self.parse_yaml_bool(&value, &span)?).with_span((self.span)(span)).into());
+                    return Ok(Boolean::from(self.parse_yaml_bool(&value, &span)?).with_span((self.span)(span)).into());
                 }
 
                 // JSON schema, https://yaml.org/spec/1.2.2/#10213-integer
                 "int" => {
-                    return Ok(Integer::new(Self::parse_yaml_integer(&value, &span)?)
+                    return Ok(Integer::from(Self::parse_yaml_integer(&value, &span)?)
                         .with_span((self.span)(span))
                         .into());
                 }
@@ -167,13 +167,13 @@ where
         if self.parse_yaml_null(&value, span).is_ok() {
             Ok(Null::default().with_span((self.span)(span)).into())
         } else if let Ok(boolean) = self.parse_yaml_bool(&value, &span) {
-            Ok(Boolean::new(boolean).with_span((self.span)(span)).into())
+            Ok(Boolean::from(boolean).with_span((self.span)(span)).into())
         } else if let Some(unsigned_integer) =
             if self.try_unsigned_integers { Self::parse_yaml_unsigned_integer(&value) } else { None }
         {
-            Ok(UnsignedInteger::new(unsigned_integer).with_span((self.span)(span)).into())
+            Ok(UnsignedInteger::from(unsigned_integer).with_span((self.span)(span)).into())
         } else if let Ok(integer) = Self::parse_yaml_integer(&value, &span) {
-            Ok(Integer::new(integer).with_span((self.span)(span)).into())
+            Ok(Integer::from(integer).with_span((self.span)(span)).into())
         } else if let Ok(float) = Self::parse_yaml_float(&value, span) {
             Ok(Float::from(float).with_span((self.span)(span)).into())
         } else {
@@ -329,7 +329,7 @@ where
             _ => {}
         }
 
-        if AnnotatedT::has_annotations() {
+        if AnnotatedT::can_have_annotations() {
             self.last_span = Some(span);
         }
     }

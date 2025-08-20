@@ -1,7 +1,7 @@
 mod annotate;
 mod annotated;
 mod annotations;
-mod debug;
+mod depict;
 mod dyn_annotated;
 mod errors;
 mod label;
@@ -14,6 +14,17 @@ mod without;
 
 #[allow(unused_imports)]
 pub use {
-    annotate::*, annotated::*, annotations::*, debug::*, dyn_annotated::*, errors::*, label::*, location::*, span::*,
-    r#struct::*, with::*, without::*,
+    crate::{impl_annotated, impl_dyn_annotated_error},
+    annotate::*,
+    annotated::*,
+    annotations::*,
+    depict::*,
+    dyn_annotated::*,
+    errors::*,
+    label::*,
+    location::*,
+    span::*,
+    r#struct::*,
+    with::*,
+    without::*,
 };

@@ -13,7 +13,7 @@ impl StructGenerator {
         let handle_annotations = if let Some(annotations_field_name) = &self.annotations_field {
             let quoted_field_name = field.name.to_string().to_token_stream();
             quote! {
-                if #annotated_parameter::has_annotations()
+                if #annotated_parameter::can_have_annotations()
                     && let ::std::option::Option::Some(annotations) = ::compris::annotate::Annotated::get_annotations(value)
                 {
                     resolved.#annotations_field_name.insert(

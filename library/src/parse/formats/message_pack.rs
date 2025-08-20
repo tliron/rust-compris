@@ -8,7 +8,6 @@ use super::super::{
 };
 
 use {
-    base64::{prelude::*, read::*},
     rmp::{decode::*, *},
     std::io,
     tracing::trace,
@@ -25,7 +24,7 @@ impl Parser {
     {
         let mut value_builder = VariantBuilder::new(self.source.clone());
         if self.base64 {
-            let mut reader = DecoderReader::new(reader, &BASE64_STANDARD);
+            let mut reader = Self::base64_reader(reader);
             read_next_message_pack(&mut reader, &mut value_builder)?;
         } else {
             read_next_message_pack(reader, &mut value_builder)?;
@@ -48,66 +47,21 @@ where
     trace!("{:?}", marker);
     match marker {
         Marker::Reserved => {}
-
-        Marker::Null => {
-            value_builder.add(Null::default(), None);
-        }
-
-        Marker::True => {
-            value_builder.add(Boolean::new(true), None);
-        }
-
-        Marker::False => {
-            value_builder.add(Boolean::new(false), None);
-        }
-
-        Marker::FixNeg(integer) => {
-            value_builder.add(Integer::new(integer as i64), None);
-        }
-
-        Marker::I8 => {
-            value_builder.add(Integer::new(read_i8(reader)? as i64), None);
-        }
-
-        Marker::I16 => {
-            value_builder.add(Integer::new(read_i16(reader)? as i64), None);
-        }
-
-        Marker::I32 => {
-            value_builder.add(Integer::new(read_i32(reader)? as i64), None);
-        }
-
-        Marker::I64 => {
-            value_builder.add(Integer::new(read_i64(reader)?), None);
-        }
-
-        Marker::FixPos(integer) => {
-            value_builder.add(UnsignedInteger::new(integer as u64), None);
-        }
-
-        Marker::U8 => {
-            value_builder.add(UnsignedInteger::new(read_u8(reader)? as u64), None);
-        }
-
-        Marker::U16 => {
-            value_builder.add(UnsignedInteger::new(read_u16(reader)? as u64), None);
-        }
-
-        Marker::U32 => {
-            value_builder.add(UnsignedInteger::new(read_u32(reader)? as u64), None);
-        }
-
-        Marker::U64 => {
-            value_builder.add(UnsignedInteger::new(read_u64(reader)?), None);
-        }
-
-        Marker::F32 => {
-            value_builder.add(Float::from(read_f32(reader)?), None);
-        }
-
-        Marker::F64 => {
-            value_builder.add(Float::from(read_f64(reader)?), None);
-        }
+        Marker::Null => value_builder.add(Null::default(), None),
+        Marker::True => value_builder.add(Boolean::from(true), None),
+        Marker::False => value_builder.add(Boolean::from(false), None),
+        Marker::FixNeg(integer) => value_builder.add(Integer::from(integer as i64), None),
+        Marker::I8 => value_builder.add(Integer::from(read_i8(reader)? as i64), None),
+        Marker::I16 => value_builder.add(Integer::from(read_i16(reader)? as i64), None),
+        Marker::I32 => value_builder.add(Integer::from(read_i32(reader)? as i64), None),
+        Marker::I64 => value_builder.add(Integer::from(read_i64(reader)?), None),
+        Marker::FixPos(integer) => value_builder.add(UnsignedInteger::from(integer as u64), None),
+        Marker::U8 => value_builder.add(UnsignedInteger::from(read_u8(reader)? as u64), None),
+        Marker::U16 => value_builder.add(UnsignedInteger::from(read_u16(reader)? as u64), None),
+        Marker::U32 => value_builder.add(UnsignedInteger::from(read_u32(reader)? as u64), None),
+        Marker::U64 => value_builder.add(UnsignedInteger::from(read_u64(reader)?), None),
+        Marker::F32 => value_builder.add(Float::from(read_f32(reader)?), None),
+        Marker::F64 => value_builder.add(Float::from(read_f64(reader)?), None),
 
         Marker::Bin8 => {
             let length = read_u8(reader)? as usize;
@@ -124,9 +78,7 @@ where
             read_message_pack_bytes(reader, value_builder, length)?;
         }
 
-        Marker::FixStr(length) => {
-            read_message_pack_string(reader, value_builder, length as usize)?;
-        }
+        Marker::FixStr(length) => read_message_pack_string(reader, value_builder, length as usize)?,
 
         Marker::Str8 => {
             let length = read_u8(reader)? as usize;
@@ -186,9 +138,7 @@ where
             read_message_pack_ext(reader, value_builder, length, label)?;
         }
 
-        Marker::FixArray(length) => {
-            read_message_pack_array(reader, value_builder, length as usize)?;
-        }
+        Marker::FixArray(length) => read_message_pack_array(reader, value_builder, length as usize)?,
 
         Marker::Array16 => {
             let length = read_u16(reader)? as usize;
@@ -200,9 +150,7 @@ where
             read_message_pack_array(reader, value_builder, length)?;
         }
 
-        Marker::FixMap(length) => {
-            read_message_pack_map(reader, value_builder, length as usize)?;
-        }
+        Marker::FixMap(length) => read_message_pack_map(reader, value_builder, length as usize)?,
 
         Marker::Map16 => {
             let length = read_u16(reader)? as usize;

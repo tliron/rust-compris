@@ -39,7 +39,7 @@ where
                     // Avoid endless recursion!
                     serializer.serialize_i64(integer)
                 } else {
-                    Integer::<AnnotatedT>::new(integer).with_annotations_from(self).serialize_modal(serializer, mode)
+                    Integer::<AnnotatedT>::from(integer).with_annotations_from(self).serialize_modal(serializer, mode)
                 }
             }
 
@@ -51,7 +51,7 @@ where
                                 // Avoid endless recursion!
                                 serializer.serialize_i64(integer)
                             } else {
-                                Integer::<AnnotatedT>::new(integer)
+                                Integer::<AnnotatedT>::from(integer)
                                     .with_annotations_from(self)
                                     .serialize_modal(serializer, mode)
                             }

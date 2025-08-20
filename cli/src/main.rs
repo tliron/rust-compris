@@ -23,7 +23,7 @@ Compris is pronounced "com-PREE". The name comes from shortening CompositePrimit
 ComPriS.
 
 For more information and usage examples see the
-[home page](https://github.com/tliron/rust-compris).
+[home page](https://github.com/tliron/compris).
 
 J'ai compris!
 */

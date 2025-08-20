@@ -4,49 +4,49 @@ use super::{
     missing_required_key::*,
 };
 
-use {kutil::cli::debug::*, std::fmt, thiserror::*};
+use {kutil::cli::depict::*, std::fmt, thiserror::*};
 
 //
 // ResolveError
 //
 
 /// [Resolve](super::super::resolve::Resolve) error.
-#[derive(Debug, Debuggable, Error)]
-#[debuggable(variant = false)]
+#[derive(Debug, Depict, Error)]
+#[depict(variant = false)]
 pub enum ResolveError<AnnotatedT> {
     /// Missing.
     #[error("missing")]
-    #[debuggable(as(debuggable))]
+    #[depict(as(depict))]
     Missing,
 
     /// Incompatible value type.
     #[error("incompatible value type: {0}")]
-    #[debuggable(as(debuggable))]
+    #[depict(as(depict))]
     IncompatibleVariantType(#[from] IncompatibleVariantTypeError<AnnotatedT>),
 
     /// Missing required key.
     #[error("missing required key: {0}")]
-    #[debuggable(as(debuggable))]
+    #[depict(as(depict))]
     MissingRequiredKey(#[from] MissingRequiredKeyError<AnnotatedT>),
 
     /// Invalid key.
     #[error("invalid key: {0}")]
-    #[debuggable(as(debuggable))]
+    #[depict(as(depict))]
     InvalidKey(#[from] InvalidKeyError<AnnotatedT>),
 
     /// Conversion.
     #[error("conversion: {0}")]
-    #[debuggable(as(debuggable))]
+    #[depict(as(depict))]
     Conversion(#[from] ConversionError<AnnotatedT>),
 
     /// Malformed.
     #[error("malformed: {0}")]
-    #[debuggable(as(debuggable))]
+    #[depict(as(depict))]
     Malformed(#[from] MalformedError<AnnotatedT>),
 
     /// Other.
     #[error("{0}")]
-    #[debuggable(as(dyn_debuggable))]
+    #[depict(as(dyn_depict))]
     Other(CapturedAnnotatedError),
 }
 
@@ -77,8 +77,8 @@ impl<AnnotatedT> Annotated for ResolveError<AnnotatedT>
 where
     AnnotatedT: Annotated,
 {
-    fn has_annotations() -> bool {
-        AnnotatedT::has_annotations()
+    fn can_have_annotations() -> bool {
+        AnnotatedT::can_have_annotations()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
@@ -102,20 +102,6 @@ where
             Self::Conversion(conversion) => conversion.get_annotations_mut(),
             Self::Malformed(malformed) => malformed.get_annotations_mut(),
             Self::Other(other) => other.dyn_get_annotations_mut(),
-        }
-    }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        match self {
-            Self::Missing => {}
-            Self::IncompatibleVariantType(incompatible_value_type) => {
-                incompatible_value_type.set_annotations(annotations)
-            }
-            Self::MissingRequiredKey(missing_required_key) => missing_required_key.set_annotations(annotations),
-            Self::InvalidKey(invalid_key) => invalid_key.set_annotations(annotations),
-            Self::Conversion(conversion) => conversion.set_annotations(annotations),
-            Self::Malformed(malformed) => malformed.set_annotations(annotations),
-            Self::Other(other) => other.dyn_set_annotations(annotations),
         }
     }
 }

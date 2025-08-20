@@ -1,7 +1,7 @@
 use super::{annotated::*, annotations::*};
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{cmp::*, fmt, hash::*, io},
 };
 
@@ -36,8 +36,8 @@ impl<InnerT, AnnotatedT> Annotated for Annotate<InnerT, AnnotatedT>
 where
     AnnotatedT: Annotated,
 {
-    fn has_annotations() -> bool {
-        AnnotatedT::has_annotations()
+    fn can_have_annotations() -> bool {
+        AnnotatedT::can_have_annotations()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
@@ -47,23 +47,19 @@ where
     fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
         self.annotated.get_annotations_mut()
     }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        self.annotated.set_annotations(annotations);
-    }
 }
 
 // Delegated
 
-impl<InnerT, AnnotatedT> Debuggable for Annotate<InnerT, AnnotatedT>
+impl<InnerT, AnnotatedT> Depict for Annotate<InnerT, AnnotatedT>
 where
-    InnerT: Debuggable,
+    InnerT: Depict,
 {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
-        self.inner.write_debug_for(writer, context)
+        self.inner.depict(writer, context)
     }
 }
 

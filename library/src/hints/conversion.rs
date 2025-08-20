@@ -18,17 +18,17 @@ impl<AnnotatedT> Variant<AnnotatedT> {
                 let text = value.validate_hinted_text(&hints.integer)?;
                 let integer: i64 = text.inner.parse()?;
                 tracing::trace!("hinted {}: {}", hints.integer, integer);
-                return Ok(Some(Integer::new(integer).with_annotations_from(text).into()));
+                return Ok(Some(Integer::from(integer).with_annotations_from(text).into()));
             } else if hint.inner == hints.unsigned_integer {
                 let text = value.validate_hinted_text(&hints.unsigned_integer)?;
                 let unsigned_integer: u64 = text.inner.parse()?;
                 tracing::trace!("hinted {}: {}", hints.unsigned_integer, unsigned_integer);
-                return Ok(Some(UnsignedInteger::new(unsigned_integer).with_annotations_from(text).into()));
+                return Ok(Some(UnsignedInteger::from(unsigned_integer).with_annotations_from(text).into()));
             } else if hint.inner == hints.bytes {
                 let text = value.validate_hinted_text(&hints.bytes)?;
-                let bytes = Blob::new_from_base64(&text.inner)?;
-                tracing::trace!("hinted {}: {} bytes", hints.bytes, bytes.inner.len());
-                return Ok(Some(bytes.with_annotations_from(text).into()));
+                let blob = Blob::new_from_base64(&text.inner)?;
+                tracing::trace!("hinted {}: {} bytes", hints.bytes, blob.inner.len());
+                return Ok(Some(blob.with_annotations_from(text).into()));
             } else if hint.inner == hints.map {
                 let list = value.validate_hinted_list(&hints.map)?;
                 let mut new_map = Map::default();

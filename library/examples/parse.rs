@@ -2,7 +2,7 @@ mod utils;
 
 use {
     compris::{parse::*, *},
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
 };
 
 pub fn main() {
@@ -17,10 +17,12 @@ pub fn main() {
     // Parse into normal types
 
     let variant =
-        with_annotations!(Parser::new(Format::YAML).with_source("yaml".into()).parse_from_string(yaml).expect("parse"));
+        with_annotations!(Parser::new(Format::YAML).with_source("yaml".into()).parse_string(yaml).expect("parse"));
 
     utils::heading("from YAML", true);
-    variant.annotated_debuggable().print_debug_with_format(DebugFormat::Verbose);
+    variant
+        .annotated_depict()
+        .print_depiction(&DEFAULT_DEPICTION_CONTEXT.child().with_format(DepictionFormat::Verbose));
 
     let xjson = r#"[
   {
@@ -40,9 +42,11 @@ pub fn main() {
     // This reader will interpret the XJSON hints and create the correct normal types
 
     let variant = with_annotations!(
-        parse::Parser::new(Format::XJSON).with_source("xjson".into()).parse_from_string(xjson).expect("parse")
+        parse::Parser::new(Format::XJSON).with_source("xjson".into()).parse_string(xjson).expect("parse")
     );
 
     utils::heading("from XJSON", false);
-    variant.annotated_debuggable().print_debug_with_format(DebugFormat::Verbose);
+    variant
+        .annotated_depict()
+        .print_depiction(&DEFAULT_DEPICTION_CONTEXT.child().with_format(DepictionFormat::Verbose));
 }

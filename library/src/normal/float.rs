@@ -5,7 +5,7 @@ use {
 
 use {
     duplicate::*,
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     ordered_float::*,
     std::{fmt, io},
 };
@@ -25,13 +25,14 @@ impl_normal! {
 
 impl_normal_basic!(Float);
 
-impl<AnnotatedT> Debuggable for Float<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Float<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        if context.format == DebugFormat::Compact {
+
+        if context.get_format() == DepictionFormat::Compact {
             context.theme.write_number(writer, self.inner)
         } else {
             write!(writer, "{} {}", context.theme.number(self.inner), context.theme.meta("f64"))
@@ -57,16 +58,8 @@ where
     AnnotatedT: Default,
 {
     fn from(float: ToNormalT) -> Self {
-        Self::new((float as f64).into())
-    }
-}
-
-impl<AnnotatedT> From<OrderedFloat<f64>> for Float<AnnotatedT>
-where
-    AnnotatedT: Default,
-{
-    fn from(float: OrderedFloat<f64>) -> Self {
-        Self::new(float)
+        let float: OrderedFloat<_> = (float as f64).into();
+        Self::from(float)
     }
 }
 

@@ -3,7 +3,7 @@ mod utils;
 use {
     anstream::println,
     compris::{annotate::*, parse::*, resolve::*, *},
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
 };
 
 // Note that #[derive(Resolve)] requires an implementation of the Default trait,
@@ -83,14 +83,14 @@ pub fn main() {
 }]"#;
 
     let variant =
-        with_annotations!(Parser::new(Format::JSON).with_try_integers(true).parse_from_string(json).expect("parse"));
+        with_annotations!(Parser::new(Format::JSON).with_try_integers(true).parse_string(json).expect("parse"));
 
     // Note that we can resolve directly into Vecs (and HashMaps, too)
 
     let result: Result<Vec<User>, _> = variant.resolve();
 
     utils::heading("fail-fast error", false);
-    result.err().expect("error").annotated_debuggable().print_debug();
+    result.err().expect("error").annotated_depiction().print_default_depiction();
 
     // Instead of failing fast, we can call "resolve_with_errors" to accumulate all the errors *without* failing
     // Note that we might still get a partially-resolved result even when there are accumulated errors,
@@ -105,7 +105,7 @@ pub fn main() {
 
     if !errors.is_empty() {
         println!();
-        errors.annotated_debuggables(Some("accumulated errors".into())).print_debug();
+        errors.annotated_depictions(Some("accumulated errors".into())).print_default_depiction();
     }
 
     // Continue to examples/resolve_advanced.rs to learn more

@@ -54,8 +54,7 @@ pub fn main() {
     "role": {"moderator": "lobby"}
 }"#;
 
-    let user: User =
-        Parser::new(Format::JSON).deserialize_from_string::<_, WithoutAnnotations>(json).expect("deserialize");
+    let user: User = Parser::new(Format::JSON).deserialize_string::<_, WithoutAnnotations>(json).expect("deserialize");
 
     utils::heading("from JSON", false);
     println!("{:#?}", user);

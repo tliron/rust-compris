@@ -3,7 +3,7 @@ use super::{cli::*, errors::*};
 use {
     clap::*,
     compris::{annotate::*, normal::*, ser::*, *},
-    kutil::cli::{debug::*, run::*},
+    kutil::cli::{depict::*, run::*},
     read_url::*,
     std::{
         fs::*,
@@ -101,7 +101,7 @@ impl CLI {
                 .with_allow_legacy_words(self.input_legacy)
                 .with_allow_legacy_types(self.input_legacy)
                 .with_base64(self.input_base64)
-                .parse(&mut reader)?,
+                .parse_reader(&mut reader)?,
             input_format,
         ))
     }
@@ -190,7 +190,7 @@ impl CLI {
             }
 
             None => {
-                content.write_debug(&mut writer)?;
+                content.write_default_depiction(&mut writer)?;
             }
         }
 

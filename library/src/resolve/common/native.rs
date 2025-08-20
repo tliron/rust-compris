@@ -6,7 +6,7 @@ use super::super::{
 
 use {
     duplicate::*,
-    kutil::std::{error::*, zerocopy::*},
+    kutil::std::{error::*, immutable::*},
 };
 
 // Note that Strings will be cloned, so using ByteString is more efficient

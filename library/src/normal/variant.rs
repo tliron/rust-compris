@@ -2,7 +2,7 @@ use super::{
     super::{annotate::*, kv::*, path::*},
     blob::*,
     boolean::*,
-    debug::*,
+    depict::*,
     float::*,
     integer::*,
     iterator::*,
@@ -13,7 +13,7 @@ use super::{
     unsigned_integer::*,
 };
 
-use {kutil::std::zerocopy::*, std::mem::*};
+use {kutil::std::immutable::*, std::mem::*};
 
 //
 // Variant
@@ -274,7 +274,7 @@ impl<AnnotatedT> Variant<AnnotatedT> {
     where
         AnnotatedT: Annotated + Default,
     {
-        if AnnotatedT::has_annotations() {
+        if AnnotatedT::can_have_annotations() {
             let path = self.get_annotations().and_then(|annotations| annotations.path.clone()).unwrap_or_default();
             self.fully_annotate(source, &path);
         }
@@ -330,8 +330,8 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         }
     }
 
-    /// [Debuggable](kutil::cli::debug::Debuggable) with [Annotations].
-    pub fn annotated_debuggable(&self) -> AnnotatedDebuggableVariant<'_, AnnotatedT> {
-        AnnotatedDebuggableVariant::new(self, AnnotatedDebuggableMode::Inline)
+    /// [Depict](kutil::cli::depict::Depict) with [Annotations].
+    pub fn annotated_depict(&self) -> AnnotatedDepictVariant<'_, AnnotatedT> {
+        AnnotatedDepictVariant::new(self, AnnotatedDepictionMode::Inline)
     }
 }

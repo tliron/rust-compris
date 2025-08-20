@@ -1,7 +1,7 @@
 use super::{super::annotate::*, variant::*};
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{cmp::*, fmt, hash::*, io},
 };
 
@@ -9,8 +9,8 @@ impl<AnnotatedT> Annotated for Variant<AnnotatedT>
 where
     AnnotatedT: Annotated,
 {
-    fn has_annotations() -> bool {
-        AnnotatedT::has_annotations()
+    fn can_have_annotations() -> bool {
+        AnnotatedT::can_have_annotations()
     }
 
     fn get_annotations(&self) -> Option<&Annotations> {
@@ -42,103 +42,47 @@ where
             Self::Map(map) => map.get_annotations_mut(),
         }
     }
-
-    fn set_annotations(&mut self, annotations: Annotations) {
-        match self {
-            Self::Undefined => {}
-            Self::Null(null) => null.set_annotations(annotations),
-            Self::Integer(integer) => integer.set_annotations(annotations),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.set_annotations(annotations),
-            Self::Float(float) => float.set_annotations(annotations),
-            Self::Boolean(boolean) => boolean.set_annotations(annotations),
-            Self::Text(text) => text.set_annotations(annotations),
-            Self::Blob(blob) => blob.set_annotations(annotations),
-            Self::List(list) => list.set_annotations(annotations),
-            Self::Map(map) => map.set_annotations(annotations),
-        }
-    }
 }
 
-impl<AnnotatedT> Debuggable for Variant<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Variant<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         match self {
             Self::Undefined => {
                 context.separate(writer)?;
-                context.theme.write_symbol(writer, "Nothing")
+                context.theme.write_symbol(writer, "Undefined")
             }
-            Self::Null(null) => null.write_debug_for(writer, context),
-            Self::Integer(integer) => integer.write_debug_for(writer, context),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.write_debug_for(writer, context),
-            Self::Float(float) => float.write_debug_for(writer, context),
-            Self::Boolean(boolean) => boolean.write_debug_for(writer, context),
-            Self::Text(text) => text.write_debug_for(writer, context),
-            Self::Blob(blob) => blob.write_debug_for(writer, context),
-            Self::List(list) => list.write_debug_for(writer, context),
-            Self::Map(map) => map.write_debug_for(writer, context),
+            Self::Null(null) => null.depict(writer, context),
+            Self::Integer(integer) => integer.depict(writer, context),
+            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.depict(writer, context),
+            Self::Float(float) => float.depict(writer, context),
+            Self::Boolean(boolean) => boolean.depict(writer, context),
+            Self::Text(text) => text.depict(writer, context),
+            Self::Blob(blob) => blob.depict(writer, context),
+            Self::List(list) => list.depict(writer, context),
+            Self::Map(map) => map.depict(writer, context),
         }
     }
 }
 
 impl<AnnotatedT> PartialEq for Variant<AnnotatedT> {
     fn eq(&self, other: &Self) -> bool {
-        match self {
-            Self::Undefined => return matches!(other, Self::Undefined),
-
-            Self::Null(_) => return matches!(other, Self::Null(_)),
-
-            Self::Integer(integer) => {
-                if let Self::Integer(other_integer) = other {
-                    return integer == other_integer;
-                }
+        match (self, other) {
+            (Self::Undefined, Self::Undefined) | (Self::Null(_), Self::Null(_)) => true,
+            (Self::Integer(integer), Self::Integer(other_integer)) => integer == other_integer,
+            (Self::UnsignedInteger(unsigned_integer), Self::UnsignedInteger(other_unsigned_integer)) => {
+                unsigned_integer == other_unsigned_integer
             }
-
-            Self::UnsignedInteger(unsigned_integer) => {
-                if let Self::UnsignedInteger(other_unsigned_integer) = other {
-                    return unsigned_integer == other_unsigned_integer;
-                }
-            }
-
-            Self::Float(float) => {
-                if let Self::Float(other_float) = other {
-                    return float == other_float;
-                }
-            }
-
-            Self::Boolean(boolean) => {
-                if let Self::Boolean(other_boolean) = other {
-                    return boolean == other_boolean;
-                }
-            }
-
-            Self::Text(text) => {
-                if let Self::Text(other_text) = other {
-                    return text == other_text;
-                }
-            }
-
-            Self::Blob(blob) => {
-                if let Self::Blob(other_blob) = other {
-                    return blob == other_blob;
-                }
-            }
-
-            Self::List(list) => {
-                if let Self::List(other_list) = other {
-                    return list == other_list;
-                }
-            }
-
-            Self::Map(map) => {
-                if let Self::Map(other_map) = other {
-                    return map == other_map;
-                }
-            }
+            (Self::Float(float), Self::Float(other_float)) => float == other_float,
+            (Self::Boolean(boolean), Self::Boolean(other_boolean)) => boolean == other_boolean,
+            (Self::Text(text), Self::Text(other_text)) => text == other_text,
+            (Self::Blob(blob), Self::Blob(other_blob)) => blob == other_blob,
+            (Self::List(list), Self::List(other_list)) => list == other_list,
+            (Self::Map(map), Self::Map(other_map)) => map == other_map,
+            _ => false,
         }
-
-        false
     }
 }
 
@@ -146,144 +90,85 @@ impl<AnnotatedT> Eq for Variant<AnnotatedT> {}
 
 impl<AnnotatedT> PartialOrd for Variant<AnnotatedT> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self {
-            Self::Undefined => {
-                if matches!(other, Self::Undefined) {
-                    return Some(Ordering::Equal);
-                }
+        match (self, other) {
+            (Self::Undefined, Self::Undefined) | (Self::Null(_), Self::Null(_)) => Some(Ordering::Equal),
+            (Self::Integer(integer), Self::Integer(other_integer)) => integer.partial_cmp(other_integer),
+            (Self::UnsignedInteger(unsigned_integer), Self::UnsignedInteger(other_unsigned_integer)) => {
+                unsigned_integer.partial_cmp(other_unsigned_integer)
             }
-
-            Self::Null(_) => {
-                if matches!(other, Self::Null(_)) {
-                    return Some(Ordering::Equal);
-                }
-            }
-
-            Self::Integer(integer) => {
-                if let Self::Integer(other_integer) = other {
-                    return integer.partial_cmp(other_integer);
-                }
-            }
-
-            Self::UnsignedInteger(unsigned_integer) => {
-                if let Self::UnsignedInteger(other_unsigned_integer) = other {
-                    return unsigned_integer.partial_cmp(other_unsigned_integer);
-                }
-            }
-
-            Self::Float(float) => {
-                if let Self::Float(other_float) = other {
-                    return float.partial_cmp(other_float);
-                }
-            }
-
-            Self::Boolean(boolean) => {
-                if let Self::Boolean(other_boolean) = other {
-                    return boolean.partial_cmp(other_boolean);
-                }
-            }
-
-            Self::Text(text) => {
-                if let Self::Text(other_text) = other {
-                    return text.partial_cmp(other_text);
-                }
-            }
-
-            Self::Blob(blob) => {
-                if let Self::Blob(other_blob) = other {
-                    return blob.partial_cmp(other_blob);
-                }
-            }
-
-            Self::List(list) => {
-                if let Self::List(other_list) = other {
-                    return list.partial_cmp(other_list);
-                }
-            }
-
-            Self::Map(map) => {
-                if let Self::Map(other_map) = other {
-                    return map.partial_cmp(other_map);
-                }
-            }
+            (Self::Float(float), Self::Float(other_float)) => float.partial_cmp(other_float),
+            (Self::Boolean(boolean), Self::Boolean(other_boolean)) => boolean.partial_cmp(other_boolean),
+            (Self::Text(text), Self::Text(other_text)) => text.partial_cmp(other_text),
+            (Self::Blob(blob), Self::Blob(other_blob)) => blob.partial_cmp(other_blob),
+            (Self::List(list), Self::List(other_list)) => list.partial_cmp(other_list),
+            (Self::Map(map), Self::Map(other_map)) => map.partial_cmp(other_map),
+            _ => None,
         }
-
-        None
     }
 }
 
 impl<AnnotatedT> Ord for Variant<AnnotatedT> {
     fn cmp(&self, other: &Self) -> Ordering {
-        match self {
-            Self::Undefined => todo!(),
+        match (self, other) {
+            (Self::Undefined, Self::Undefined) | (Self::Null(_), Self::Null(_)) => Ordering::Equal,
+            (Self::Integer(integer), Self::Integer(other_integer)) => integer.cmp(other_integer),
+            (Self::UnsignedInteger(unsigned_integer), Self::UnsignedInteger(other_unsigned_integer)) => {
+                unsigned_integer.cmp(other_unsigned_integer)
+            }
+            (Self::Float(float), Self::Float(other_float)) => float.cmp(other_float),
+            (Self::Boolean(boolean), Self::Boolean(other_boolean)) => boolean.cmp(other_boolean),
+            (Self::Text(text), Self::Text(other_text)) => text.cmp(other_text),
+            (Self::Blob(blob), Self::Blob(other_blob)) => blob.cmp(other_blob),
+            (Self::List(list), Self::List(other_list)) => list.cmp(other_list),
+            (Self::Map(map), Self::Map(other_map)) => map.cmp(other_map),
 
-            Self::Null(_) => match other {
-                Self::Null(_) => Ordering::Equal,
-                _ => Ordering::Less,
-            },
+            (Self::Undefined, _) => Ordering::Less,
 
-            Self::Integer(integer) => match other {
-                Self::Null(_) => Ordering::Greater,
-                Self::Integer(other_integer) => integer.cmp(other_integer),
-                _ => Ordering::Less,
-            },
+            (Self::Null(_), Self::Undefined) => Ordering::Greater,
+            (Self::Null(_), _) => Ordering::Less,
 
-            Self::UnsignedInteger(unsigned_integer) => match other {
-                Self::Null(_) | Self::Integer(_) => Ordering::Greater,
-                Self::UnsignedInteger(other_unsigned_integer) => unsigned_integer.cmp(other_unsigned_integer),
-                _ => Ordering::Less,
-            },
+            (Self::Integer(_), Self::Undefined | Self::Null(_)) => Ordering::Greater,
+            (Self::Integer(_), _) => Ordering::Less,
 
-            Self::Float(float) => match other {
-                Self::Null(_) | Self::Integer(_) | Self::UnsignedInteger(_) => Ordering::Greater,
-                Self::Float(other_float) => float.cmp(other_float),
-                _ => Ordering::Less,
-            },
+            (Self::UnsignedInteger(_), Self::Undefined | Self::Null(_) | Self::Integer(_)) => Ordering::Greater,
+            (Self::UnsignedInteger(_), _) => Ordering::Less,
 
-            Self::Boolean(boolean) => match other {
-                Self::Null(_) | Self::Integer(_) | Self::UnsignedInteger(_) | Self::Float(_) => Ordering::Greater,
-                Self::Boolean(other_boolean) => boolean.cmp(other_boolean),
-                _ => Ordering::Less,
-            },
+            (Self::Float(_), Self::Undefined | Self::Null(_) | Self::Integer(_) | Self::UnsignedInteger(_)) => {
+                Ordering::Greater
+            }
+            (Self::Float(_), _) => Ordering::Less,
 
-            Self::Text(text) => match other {
-                Self::Null(_) | Self::Integer(_) | Self::UnsignedInteger(_) | Self::Float(_) | Self::Boolean(_) => {
-                    Ordering::Greater
-                }
+            (
+                Self::Boolean(_),
+                Self::Undefined | Self::Null(_) | Self::Integer(_) | Self::UnsignedInteger(_) | Self::Float(_),
+            ) => Ordering::Greater,
+            (Self::Boolean(_), _) => Ordering::Less,
 
-                Self::Text(other_text) => text.cmp(other_text),
+            (
+                Self::Text(_),
+                Self::Undefined
+                | Self::Null(_)
+                | Self::Integer(_)
+                | Self::UnsignedInteger(_)
+                | Self::Float(_)
+                | Self::Boolean(_),
+            ) => Ordering::Greater,
+            (Self::Text(_), _) => Ordering::Less,
 
-                _ => Ordering::Less,
-            },
-
-            Self::Blob(blob) => match other {
-                Self::Null(_)
+            (
+                Self::Blob(_),
+                Self::Undefined
+                | Self::Null(_)
                 | Self::Integer(_)
                 | Self::UnsignedInteger(_)
                 | Self::Float(_)
                 | Self::Boolean(_)
-                | Self::Text(_) => Ordering::Greater,
+                | Self::Text(_),
+            ) => Ordering::Greater,
+            (Self::Blob(_), _) => Ordering::Less,
 
-                Self::Blob(other_blob) => blob.cmp(other_blob),
-
-                _ => Ordering::Less,
-            },
-
-            Self::List(nested_list) => match other {
-                Self::Null(_)
-                | Self::Integer(_)
-                | Self::UnsignedInteger(_)
-                | Self::Float(_)
-                | Self::Boolean(_)
-                | Self::Text(_)
-                | Self::Blob(_) => Ordering::Greater,
-
-                Self::List(other_nested_list) => nested_list.cmp(other_nested_list),
-
-                _ => Ordering::Less,
-            },
-
-            Self::Map(nested_map) => match other {
+            (
+                Self::List(_),
                 Self::Undefined
                 | Self::Null(_)
                 | Self::Integer(_)
@@ -291,11 +176,11 @@ impl<AnnotatedT> Ord for Variant<AnnotatedT> {
                 | Self::Float(_)
                 | Self::Boolean(_)
                 | Self::Text(_)
-                | Self::Blob(_)
-                | Self::List(_) => Ordering::Greater,
+                | Self::Blob(_),
+            ) => Ordering::Greater,
+            (Self::List(_), _) => Ordering::Less,
 
-                Self::Map(other_nested_map) => nested_map.cmp(other_nested_map),
-            },
+            (Self::Map(_), _) => Ordering::Less,
         }
     }
 }
@@ -306,16 +191,53 @@ impl<AnnotatedT> Hash for Variant<AnnotatedT> {
         HasherT: Hasher,
     {
         match self {
-            Self::Undefined => {}
-            Self::Null(null) => null.hash(state),
-            Self::Integer(integer) => integer.hash(state),
-            Self::UnsignedInteger(unsigned_integer) => unsigned_integer.hash(state),
-            Self::Float(float) => float.hash(state),
-            Self::Boolean(boolean) => boolean.hash(state),
-            Self::Text(text) => text.hash(state),
-            Self::Blob(blob) => blob.hash(state),
-            Self::List(list) => list.hash(state),
-            Self::Map(map) => map.hash(state),
+            Self::Undefined => {
+                state.write_u8(1);
+            }
+
+            Self::Null(_) => {
+                state.write_u8(2);
+            }
+
+            Self::Integer(integer) => {
+                state.write_u8(3);
+                integer.hash(state);
+            }
+
+            Self::UnsignedInteger(unsigned_integer) => {
+                state.write_u8(4);
+                unsigned_integer.hash(state);
+            }
+
+            Self::Float(float) => {
+                state.write_u8(5);
+                float.hash(state);
+            }
+
+            Self::Boolean(boolean) => {
+                state.write_u8(6);
+                boolean.hash(state);
+            }
+
+            Self::Text(text) => {
+                state.write_u8(7);
+                text.hash(state);
+            }
+
+            Self::Blob(blob) => {
+                state.write_u8(8);
+                blob.hash(state);
+            }
+
+            Self::List(list) => {
+                state.write_u8(9);
+                list.hash(state);
+            }
+
+            Self::Map(map) => {
+                state.write_u8(10);
+                map.hash(state);
+            }
         }
     }
 }

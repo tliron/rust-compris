@@ -68,7 +68,7 @@ where
     JsonReaderT: JsonReader,
     AnnotatedT: Annotated + Clone + Default,
 {
-    let get_span = if AnnotatedT::has_annotations() {
+    let get_span = if AnnotatedT::can_have_annotations() {
         |reader: &mut JsonReaderT| -> Option<Span> { get_json_span(reader) }
     } else {
         |_reader: &mut JsonReaderT| -> Option<Span> { None }
@@ -88,9 +88,9 @@ where
                 let span = get_span(reader);
                 let number = reader.next_number_as_str()?;
                 if let Some(number) = if try_unsigned_integers { number.parse::<u64>().ok() } else { None } {
-                    value_builder.add(UnsignedInteger::new(number).with_span(span), None);
+                    value_builder.add(UnsignedInteger::from(number).with_span(span), None);
                 } else if let Some(number) = if try_integers { number.parse::<i64>().ok() } else { None } {
-                    value_builder.add(Integer::new(number).with_span(span), None);
+                    value_builder.add(Integer::from(number).with_span(span), None);
                 } else {
                     value_builder.add(Float::from(number.parse::<f64>()?).with_span(span), None);
                 }
@@ -103,7 +103,7 @@ where
 
         ValueType::Boolean => {
             let span = get_span(reader);
-            value_builder.add(Boolean::new(reader.next_bool()?).with_span(span), None);
+            value_builder.add(Boolean::from(reader.next_bool()?).with_span(span), None);
         }
 
         ValueType::String => {

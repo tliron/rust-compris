@@ -5,7 +5,7 @@ use {
 
 use {
     duplicate::*,
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{fmt, io},
 };
 
@@ -22,13 +22,14 @@ impl_normal! {
 
 impl_normal_basic!(UnsignedInteger);
 
-impl<AnnotatedT> Debuggable for UnsignedInteger<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for UnsignedInteger<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
         context.separate(writer)?;
-        if context.format == DebugFormat::Compact {
+
+        if context.get_format() == DepictionFormat::Compact {
             context.theme.write_number(writer, self.inner)
         } else {
             write!(writer, "{} {}", context.theme.number(self.inner), context.theme.meta("u64"))
@@ -46,7 +47,6 @@ impl<AnnotatedT> fmt::Display for UnsignedInteger<AnnotatedT> {
 
 #[duplicate_item(
   ToNormalT;
-  [u64];
   [u32];
   [u16];
   [u8];
@@ -57,7 +57,7 @@ where
     AnnotatedT: Default,
 {
     fn from(unsigned_integer: ToNormalT) -> Self {
-        Self::new(unsigned_integer as u64)
+        Self::from(unsigned_integer as u64)
     }
 }
 

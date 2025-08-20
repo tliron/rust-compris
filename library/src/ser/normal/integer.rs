@@ -40,7 +40,7 @@ where
                         // Avoid endless recursion!
                         serializer.serialize_u64(unsigned_integer)
                     } else {
-                        UnsignedInteger::<AnnotatedT>::new(unsigned_integer)
+                        UnsignedInteger::<AnnotatedT>::from(unsigned_integer)
                             .with_annotations_from(self)
                             .serialize_modal(serializer, mode)
                     }

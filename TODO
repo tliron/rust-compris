@@ -1,0 +1,20 @@
+resolve self instead of &self?
+
+YAML ser
+========
+
+Currently using serde_yml
+Unsound and broken for complex keys :(
+
+What about Saphyr serde?
+
+Colorize JSON
+=============
+
+https://github.com/Marcono1234/struson/issues/105
+
+SIMD
+====
+
+https://docs.rs/uuid-simd/latest/uuid_simd/
+https://docs.rs/simd-json/latest/simd_json/

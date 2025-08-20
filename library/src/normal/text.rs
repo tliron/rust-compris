@@ -5,7 +5,7 @@ use {
 
 use {
     duplicate::*,
-    kutil::{cli::debug::*, std::zerocopy::*},
+    kutil::{cli::depict::*, std::immutable::*},
     std::{borrow::*, fmt, io},
 };
 
@@ -33,8 +33,8 @@ impl<AnnotatedT> Text<AnnotatedT> {
     }
 }
 
-impl<AnnotatedT> Debuggable for Text<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Text<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -59,7 +59,6 @@ impl<AnnotatedT> AsRef<str> for Text<AnnotatedT> {
 
 #[duplicate_item(
   ToNormalT;
-  [ByteString];
   [String];
   [&str];
 )]
@@ -68,7 +67,8 @@ where
     AnnotatedT: Default,
 {
     fn from(string: ToNormalT) -> Self {
-        Self::new(string.into())
+        let string: ByteString = string.into();
+        Self::from(string)
     }
 }
 
@@ -86,7 +86,7 @@ where
 
 impl<AnnotatedT> From<Text<AnnotatedT>> for String {
     fn from(text: Text<AnnotatedT>) -> Self {
-        text.into()
+        text.inner.into()
     }
 }
 

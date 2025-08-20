@@ -1,8 +1,8 @@
 /// Helper macro for implementing normal types.
 #[macro_export]
 macro_rules! impl_normal (
-    ( $(#[$meta:meta])* $type:ident ( $inner:ty ) $(,)? ) => {
-        $(#[$meta])*
+    ( $( #[$meta:meta] )* $type:ident ( $inner:ty ) $(,)? ) => {
+        $( #[$meta] )*
         #[derive(::std::clone::Clone, ::std::fmt::Debug, ::std::default::Default)]
         pub struct $type<AnnotatedT> {
             /// Inner.
@@ -10,16 +10,6 @@ macro_rules! impl_normal (
 
             /// Annotated.
             pub annotated: AnnotatedT,
-        }
-
-        impl<AnnotatedT> $type<AnnotatedT> {
-            /// Constructor.
-            pub fn new(inner: $inner) -> Self
-            where
-                AnnotatedT: ::std::default::Default,
-            {
-                Self { inner, annotated: Default::default() }
-            }
         }
 
         $crate::impl_annotated!($type);
@@ -53,6 +43,15 @@ macro_rules! impl_normal (
             }
         }
 
+        impl<AnnotatedT> From<$inner> for $type<AnnotatedT>
+        where
+            AnnotatedT: ::std::default::Default,
+        {
+            fn from(inner: $inner) -> Self {
+                Self { inner, annotated: Default::default() }
+            }
+        }
+
         impl<AnnotatedT> Into<$inner> for $type<AnnotatedT> {
             fn into(self) -> $inner {
                 self.inner
@@ -74,7 +73,7 @@ macro_rules! impl_normal_basic (
         impl<AnnotatedT> $type<AnnotatedT> {
             /// Remove all [Annotations].
             pub fn without_annotations(self) -> $type<WithoutAnnotations> {
-                $type::new(self.inner)
+                $type::from(self.inner)
             }
 
             /// Into different [Annotated] implementation.
@@ -83,9 +82,9 @@ macro_rules! impl_normal_basic (
                 AnnotatedT: Annotated,
                 NewAnnotationsT: Annotated + Default,
             {
-                let new_self = $type::new(self.inner);
-                if AnnotatedT::has_annotations()
-                    && NewAnnotationsT::has_annotations()
+                let new_self = $type::from(self.inner);
+                if AnnotatedT::can_have_annotations()
+                    && NewAnnotationsT::can_have_annotations()
                     && let Some(annotations) = self.annotated.get_annotations()
                 {
                     new_self.with_annotations(annotations.clone())

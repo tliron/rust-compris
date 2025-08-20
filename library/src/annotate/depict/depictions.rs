@@ -1,16 +1,16 @@
-use super::{super::annotated::*, debuggable::*, mode::*};
+use super::{super::annotated::*, depiction::*, mode::*};
 
 use {
-    kutil::{cli::debug::*, std::iter::*},
+    kutil::{cli::depict::*, std::iter::*},
     std::{cmp::*, collections::*, error::*, io},
 };
 
 //
-// AnnotatedDebuggables
+// AnnotatedDepictions
 //
 
-/// A [Debuggable] implementation for an [Iterator] of [Annotated] [Debuggable].
-pub struct AnnotatedDebuggables<'own, InnerT, ItemT>
+/// A [Depict] wrapper for an [Iterator] of [Annotated] [Depict].
+pub struct AnnotatedDepictions<'own, InnerT, ItemT>
 where
     &'own InnerT: IntoIterator<Item = &'own ItemT>,
     ItemT: 'own,
@@ -19,29 +19,29 @@ where
     pub inner: &'own InnerT,
 
     /// Mode.
-    pub mode: AnnotatedDebuggableMode,
+    pub mode: AnnotatedDepictionMode,
 
     /// Optional heading.
     pub heading: Option<String>,
 }
 
-impl<'own, InnerT, ItemT> AnnotatedDebuggables<'own, InnerT, ItemT>
+impl<'own, InnerT, ItemT> AnnotatedDepictions<'own, InnerT, ItemT>
 where
     &'own InnerT: IntoIterator<Item = &'own ItemT>,
     ItemT: 'own,
 {
     /// Constructor.
-    pub fn new(inner: &'own InnerT, mode: AnnotatedDebuggableMode, heading: Option<String>) -> Self {
+    pub fn new(inner: &'own InnerT, mode: AnnotatedDepictionMode, heading: Option<String>) -> Self {
         Self { inner, mode, heading }
     }
 }
 
-impl<'own, InnerT, ItemT> Debuggable for AnnotatedDebuggables<'own, InnerT, ItemT>
+impl<'own, InnerT, ItemT> Depict for AnnotatedDepictions<'own, InnerT, ItemT>
 where
     &'own InnerT: IntoIterator<Item = &'own ItemT>,
-    ItemT: 'own + Annotated + Debuggable,
+    ItemT: 'own + Annotated + Depict,
 {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -85,9 +85,9 @@ where
             }
 
             for item in list {
-                context.indent_into(writer, utils::DEBUG_INTO_LIST_ITEM)?;
+                context.indent_into(writer, utils::DEPICT_INTO_LIST_ITEM)?;
                 let child_context = context.clone().with_separator(true).increase_indentation();
-                AnnotatedDebuggable::new(item, self.mode).write_debug_for(writer, &child_context)?;
+                AnnotatedDepiction::new(item, self.mode).depict(writer, &child_context)?;
             }
         }
 
@@ -96,27 +96,27 @@ where
 }
 
 //
-// ToAnnotatedDebuggables
+// ToAnnotatedDepictions
 //
 
-/// To [AnnotatedDebuggables].
-pub trait ToAnnotatedDebuggables<'own, ItemT>
+/// To [AnnotatedDepictions].
+pub trait ToAnnotatedDepictions<'own, ItemT>
 where
     Self: 'own + Sized,
     &'own Self: IntoIterator<Item = &'own ItemT>,
     ItemT: 'own,
 {
-    /// To [AnnotatedDebuggables].
-    fn annotated_debuggables(&'own self, heading: Option<String>) -> AnnotatedDebuggables<'own, Self, ItemT>;
+    /// To [AnnotatedDepictions].
+    fn annotated_depictions(&'own self, heading: Option<String>) -> AnnotatedDepictions<'own, Self, ItemT>;
 }
 
-impl<'own, ErrorIterableT, ErrorT> ToAnnotatedDebuggables<'own, ErrorT> for ErrorIterableT
+impl<'own, ErrorIterableT, ErrorT> ToAnnotatedDepictions<'own, ErrorT> for ErrorIterableT
 where
     ErrorIterableT: 'own,
     &'own ErrorIterableT: IntoIterator<Item = &'own ErrorT>,
     ErrorT: 'own + Error,
 {
-    fn annotated_debuggables(&'own self, heading: Option<String>) -> AnnotatedDebuggables<'own, Self, ErrorT> {
-        AnnotatedDebuggables::new(self, AnnotatedDebuggableMode::Multiline, heading)
+    fn annotated_depictions(&'own self, heading: Option<String>) -> AnnotatedDepictions<'own, Self, ErrorT> {
+        AnnotatedDepictions::new(self, AnnotatedDepictionMode::Multiline, heading)
     }
 }

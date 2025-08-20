@@ -1,10 +1,7 @@
-use {
-    super::super::{super::annotate::*, variant::*},
-    crate::impl_annotated,
-};
+use super::super::{super::annotate::*, variant::*};
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{fmt, io},
     thiserror::*,
 };
@@ -41,8 +38,8 @@ impl<AnnotatedT> CastingError<AnnotatedT> {
 
 impl_annotated!(CastingError, variant);
 
-impl<AnnotatedT> Debuggable for CastingError<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for CastingError<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

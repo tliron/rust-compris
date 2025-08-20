@@ -3,13 +3,13 @@ mod utils;
 use {
     anstream::{print, println},
     compris::{annotate::*, normal::*, parse::*, resolve::*, *},
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{collections::*, fmt},
 };
 
 // See first: examples/resolve_basic.rs
 
-#[derive(Debuggable, Default, Resolve)]
+#[derive(Depict, Default, Resolve)]
 // By default #[derive(Resolve)] will add a generic parameter for annotations
 // But if we want to define and use it in our type then we must specify it via #[resolve(annotated_parameter=...)]
 // We're also adding our own generic parameter here, ExtraT, just to show that it is possible to do so :)
@@ -21,28 +21,28 @@ where
     ExtraT: Default + fmt::Debug,
 {
     #[resolve(required)]
-    #[debuggable(as(display), style(string))]
+    #[depict(as(display), style(string))]
     name: String,
 
     // Here we use the "Annotate" wrapper to keep the original annotations
-    // And also add a Debuggable tag to display them
+    // And also add a Depict tag to display them
     // (See the use of #[resolve(annotations)] below for an alternative solution)
     #[resolve]
-    #[debuggable(as(display), style(number), tag(tag::span))]
+    #[depict(as(display), style(number), tag(tag::span))]
     credit: Annotate<i32, AnnotatedT>,
 
     #[resolve(required, key = "enabled")]
-    #[debuggable(style(symbol))]
+    #[depict(style(symbol))]
     is_enabled: bool,
 
     #[resolve(null = Some("NO GROUP".into()))]
-    #[debuggable(option, as(display), style(string))]
+    #[depict(option, as(display), style(string))]
     group: Option<String>,
 
     // Here we use the generic annotations parameter we defined and specified
     // (Variant resolves into itself)
     #[resolve]
-    #[debuggable(option, as(debuggable))]
+    #[depict(option, as(depict))]
     metadata: Option<Variant<AnnotatedT>>,
 
     // By default unknown keys cause errors
@@ -52,17 +52,17 @@ where
     // Both key and value will be resolved upon insertion
     // You can use other "resolve" attributes on this field, too, like "null", "ignore_null", etc.
     #[resolve(other_keys, null = -100)]
-    #[debuggable(iter(kv), key_style(string), key_as(display), style(number))]
+    #[depict(iter(kv), key_style(string), key_as(display), style(number))]
     other: HashMap<String, i64>,
 
     // Our generic field
-    #[debuggable(skip)]
+    #[depict(skip)]
     extra: ExtraT,
 
     // And for our final trick: you can collate all field annotations to a field
     // This will also generate implementations of `Annotated` and `AnnotatedFields` for this struct
     #[resolve(annotations)]
-    #[debuggable(skip)]
+    #[depict(skip)]
     annotations: StructAnnotations,
 }
 
@@ -84,7 +84,7 @@ pub fn main() {
         Parser::new(Format::JSON)
             .with_source("json".into())
             .with_try_integers(true)
-            .parse_from_string(json)
+            .parse_string(json)
             .expect("parse")
     );
 
@@ -94,12 +94,12 @@ pub fn main() {
 
     utils::heading("partially resolved", true);
     for user in &users {
-        user.print_debug();
+        user.print_default_depiction();
     }
 
     if !errors.is_empty() {
         println!();
-        errors.annotated_debuggables(Some("accumulated errors".into())).print_debug();
+        errors.annotated_depictions(Some("accumulated errors".into())).print_default_depiction();
     }
 
     utils::heading("annotations", false);
@@ -114,7 +114,7 @@ pub fn main() {
             if !field_name.is_empty() {
                 print!("{}: ", field_name);
             }
-            annotation.print_debug();
+            annotation.print_default_depiction();
         }
     }
 }

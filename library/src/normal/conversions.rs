@@ -5,7 +5,7 @@ use super::{
 
 use {
     duplicate::*,
-    kutil::std::zerocopy::*,
+    kutil::std::immutable::*,
     ordered_float::OrderedFloat,
     std::{borrow::*, collections::*},
 };
@@ -254,13 +254,14 @@ where
 
     fn try_from(value: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
         match value {
-            Variant::Integer(integer) => num_traits::cast::<_, NumberT>(integer.inner)
+            Variant::Integer(integer) => {
+                num_traits::cast(integer.inner).ok_or_else(|| CastingError::new(value.clone(), name.into()).into())
+            }
+
+            Variant::UnsignedInteger(unsigned_integer) => num_traits::cast(unsigned_integer.inner)
                 .ok_or_else(|| CastingError::new(value.clone(), name.into()).into()),
 
-            Variant::UnsignedInteger(unsigned_integer) => num_traits::cast::<_, NumberT>(unsigned_integer.inner)
-                .ok_or_else(|| CastingError::new(value.clone(), name.into()).into()),
-
-            Variant::Float(float) => num_traits::cast::<f64, NumberT>(float.inner.into())
+            Variant::Float(float) => num_traits::cast::<f64, _>(float.inner.into())
                 .ok_or_else(|| CastingError::new(value.clone(), name.into()).into()),
 
             _ => Err(IncompatibleVariantTypeError::new(value, &["integer", "unsigned integer", "float"]).into()),

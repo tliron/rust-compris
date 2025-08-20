@@ -5,7 +5,6 @@ use super::super::{
 };
 
 use {
-    base64::{prelude::*, read::*},
     borc::{basic::streaming::*, errors::*},
     std::io,
     tracing::trace,
@@ -22,7 +21,7 @@ impl Parser {
     {
         let mut value_builder = VariantBuilder::new(self.source.clone());
         if self.base64 {
-            let reader = DecoderReader::new(reader, &BASE64_STANDARD);
+            let reader = Self::base64_reader(reader);
             let mut decoder = Decoder::new(reader);
             read_next_cbor(&mut decoder, &mut value_builder, None)?;
         } else {
@@ -62,12 +61,12 @@ where
         }
 
         Event::Unsigned(unsigned_integer) => {
-            value_builder.add(UnsignedInteger::new(unsigned_integer).with_label(label), None);
+            value_builder.add(UnsignedInteger::from(unsigned_integer).with_label(label), None);
         }
 
         Event::Signed(integer) => {
             let integer = Event::interpret_signed_checked(integer).ok_or_else(|| DecodeError::Malformed)?;
-            value_builder.add(Integer::new(integer).with_label(label), None);
+            value_builder.add(Integer::from(integer).with_label(label), None);
         }
 
         Event::Float(float) => {
@@ -75,7 +74,7 @@ where
         }
 
         Event::Bool(boolean) => {
-            value_builder.add(Boolean::new(boolean).with_label(label), None);
+            value_builder.add(Boolean::from(boolean).with_label(label), None);
         }
 
         Event::TextString(string) => {

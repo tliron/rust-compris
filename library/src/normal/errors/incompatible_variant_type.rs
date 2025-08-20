@@ -1,10 +1,7 @@
-use {
-    super::super::{super::annotate::*, variant::*},
-    crate::impl_annotated,
-};
+use super::super::{super::annotate::*, variant::*};
 
 use {
-    kutil::{cli::debug::*, std::string::*},
+    kutil::{cli::depict::*, std::string::*},
     std::{fmt, io},
     thiserror::*,
 };
@@ -57,8 +54,8 @@ impl<AnnotatedT> IncompatibleVariantTypeError<AnnotatedT> {
 
 impl_annotated!(IncompatibleVariantTypeError);
 
-impl<AnnotatedT> Debuggable for IncompatibleVariantTypeError<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for IncompatibleVariantTypeError<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

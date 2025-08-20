@@ -1,7 +1,7 @@
-use {super::super::super::annotate::*, crate::impl_annotated};
+use super::super::super::annotate::*;
 
 use {
-    kutil::cli::debug::*,
+    kutil::cli::depict::*,
     std::{fmt, io},
     thiserror::*,
 };
@@ -45,8 +45,8 @@ impl<AnnotatedT> MalformedError<AnnotatedT> {
 
 impl_annotated!(MalformedError);
 
-impl<AnnotatedT> Debuggable for MalformedError<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for MalformedError<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {

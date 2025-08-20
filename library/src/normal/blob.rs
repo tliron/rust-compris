@@ -4,9 +4,8 @@ use {
 };
 
 use {
-    base64::{prelude::*, *},
     duplicate::*,
-    kutil::{cli::debug::*, std::zerocopy::*},
+    kutil::{cli::depict::*, std::immutable::*},
     std::{borrow::*, fmt, io},
 };
 
@@ -27,18 +26,18 @@ impl_normal_basic!(Blob);
 
 impl<AnnotatedT> Blob<AnnotatedT> {
     /// Constructor.
-    pub fn new_from_base64<BytesT>(base64: BytesT) -> Result<Self, DecodeError>
+    pub fn new_from_base64<BytesT>(base64: BytesT) -> Result<Self, base64_simd::Error>
     where
         AnnotatedT: Default,
         BytesT: AsRef<[u8]>,
     {
-        let bytes = BASE64_STANDARD.decode(base64)?;
+        let bytes = base64_simd::STANDARD.decode_to_vec(base64)?;
         Ok(Self::from(bytes))
     }
 
     /// To Base64.
     pub fn to_base64(&self) -> String {
-        BASE64_STANDARD.encode(&self.inner)
+        base64_simd::STANDARD.encode_to_string(&self.inner)
     }
 
     /// As slice.
@@ -47,8 +46,8 @@ impl<AnnotatedT> Blob<AnnotatedT> {
     }
 }
 
-impl<AnnotatedT> Debuggable for Blob<AnnotatedT> {
-    fn write_debug_for<WriteT>(&self, writer: &mut WriteT, context: &DebugContext) -> io::Result<()>
+impl<AnnotatedT> Depict for Blob<AnnotatedT> {
+    fn depict<WriteT>(&self, writer: &mut WriteT, context: &DepictionContext) -> io::Result<()>
     where
         WriteT: io::Write,
     {
@@ -73,7 +72,6 @@ impl<AnnotatedT> AsRef<[u8]> for Blob<AnnotatedT> {
 
 #[duplicate_item(
   ToNormalT;
-  [Bytes];
   [Vec<u8>];
   [&'static [u8]];
 )]
@@ -82,7 +80,8 @@ where
     AnnotatedT: Default,
 {
     fn from(bytes: ToNormalT) -> Self {
-        Blob::new(bytes.into())
+        let bytes: Bytes = bytes.into();
+        Blob::from(bytes)
     }
 }
 

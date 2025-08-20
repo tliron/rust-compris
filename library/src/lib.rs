@@ -27,18 +27,17 @@ Compris is pronounced "com-PREE". The name comes from shortening CompositePrimit
 ComPriS.
 
 For more information and usage examples see the
-[home page](https://github.com/tliron/rust-compris).
+[home page](https://github.com/tliron/compris).
 
 J'ai compris!
 */
 
 mod format;
-mod macros;
 
 /// Annotate any type.
 pub mod annotate;
 
-/// General-purpose serde deserialization. Also supports normal types.
+/// General-purpose serde deserialization using normal types as the intermediary.
 #[cfg(feature = "serde")]
 pub mod de;
 
@@ -63,7 +62,7 @@ pub mod path;
 /// Resolve normal types into other types.
 pub mod resolve;
 
-/// General-purpose serde serialization plus support for normal types.
+/// General-purpose serde serialization with enhanced support for normal types.
 #[cfg(feature = "serde")]
 pub mod ser;
 

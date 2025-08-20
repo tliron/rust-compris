@@ -11,7 +11,7 @@ use std::hash::*;
 pub struct WithoutAnnotations;
 
 impl Annotated for WithoutAnnotations {
-    fn has_annotations() -> bool {
+    fn can_have_annotations() -> bool {
         false
     }
 
@@ -22,6 +22,4 @@ impl Annotated for WithoutAnnotations {
     fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
         None
     }
-
-    fn set_annotations(&mut self, _annotations: Annotations) {}
 }

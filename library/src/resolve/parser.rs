@@ -19,12 +19,12 @@ impl Parser {
         ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
         Variant<AnnotatedT>: Resolve<ResolvedT, AnnotatedT>,
     {
-        let variant = self.parse(reader).expect("parse");
+        let variant = self.parse_reader(reader).expect("parse");
         variant.resolve_with_errors(errors)
     }
 
     /// Resolve the parsed [Variant] into another type.
-    pub fn resolve_from_string<ResolvedT, AnnotatedT, ErrorRecipientT>(
+    pub fn resolve_string<ResolvedT, AnnotatedT, ErrorRecipientT>(
         &self,
         string: &str,
         errors: &mut ErrorRecipientT,
@@ -34,7 +34,7 @@ impl Parser {
         ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
         Variant<AnnotatedT>: Resolve<ResolvedT, AnnotatedT>,
     {
-        let variant = self.parse_from_string(string).expect("parse");
+        let variant = self.parse_string(string).expect("parse");
         variant.resolve_with_errors(errors)
     }
 
@@ -58,14 +58,11 @@ impl Parser {
     /// error.
     ///
     /// Uses [FailFastErrorRecipient].
-    pub fn resolve_from_string_fail_fast<ResolvedT, AnnotatedT>(
-        &self,
-        string: &str,
-    ) -> ResolveResult<ResolvedT, AnnotatedT>
+    pub fn resolve_string_fail_fast<ResolvedT, AnnotatedT>(&self, string: &str) -> ResolveResult<ResolvedT, AnnotatedT>
     where
         AnnotatedT: Annotated + Clone + Default,
         Variant<AnnotatedT>: Resolve<ResolvedT, AnnotatedT>,
     {
-        self.resolve_from_string(string, &mut FailFastErrorRecipient)
+        self.resolve_string(string, &mut FailFastErrorRecipient)
     }
 }

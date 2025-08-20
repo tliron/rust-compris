@@ -1,6 +1,6 @@
 use super::{super::path::*, annotations::*, label::*, span::*, r#struct::*};
 
-use kutil::std::zerocopy::*;
+use kutil::std::immutable::*;
 
 //
 // Annotated
@@ -11,10 +11,10 @@ pub trait Annotated
 where
     Self: Sized,
 {
-    /// Whether we have [Annotations].
+    /// Whether we can have [Annotations].
     ///
     /// When false, the other trait functions are guaranteed to be no-ops.
-    fn has_annotations() -> bool;
+    fn can_have_annotations() -> bool;
 
     /// Get [Annotations].
     fn get_annotations(&self) -> Option<&Annotations>;
@@ -22,12 +22,25 @@ where
     /// Get [Annotations] as mutable.
     fn get_annotations_mut(&mut self) -> Option<&mut Annotations>;
 
-    /// Sets the [Annotations].
-    fn set_annotations(&mut self, annotations: Annotations);
+    /// Whether we have [Annotations].
+    fn has_annotations(&self) -> bool {
+        if Self::can_have_annotations()
+            && let Some(annotations) = self.get_annotations()
+        {
+            annotations.has_some()
+        } else {
+            false
+        }
+    }
 
-    /// Set [Annotations].
+    /// Set  [Annotations].
     fn with_annotations(mut self, annotations: Annotations) -> Self {
-        self.set_annotations(annotations);
+        if Self::can_have_annotations()
+            && let Some(self_annotations) = self.get_annotations_mut()
+        {
+            *self_annotations = annotations;
+        }
+
         self
     }
 
@@ -36,10 +49,11 @@ where
     where
         AnnotatedT: Annotated,
     {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = source.get_annotations()
+            && let Some(self_annotations) = self.get_annotations_mut()
         {
-            self.set_annotations(annotations.clone());
+            *self_annotations = annotations.clone();
         }
 
         self
@@ -50,10 +64,11 @@ where
     where
         AnnotatedFieldsT: AnnotatedStruct,
     {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = source.get_field_annotations(name)
+            && let Some(self_annotations) = self.get_annotations_mut()
         {
-            self.set_annotations(annotations.clone());
+            *self_annotations = annotations.clone();
         }
 
         self
@@ -61,7 +76,7 @@ where
 
     /// Set source.
     fn with_source(mut self, source: &Option<ByteString>) -> Self {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = self.get_annotations_mut()
         {
             annotations.source = source.clone();
@@ -72,7 +87,7 @@ where
 
     /// Set [Path].
     fn with_path(mut self, path: Option<PathRepresentation>) -> Self {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = self.get_annotations_mut()
         {
             annotations.path = path;
@@ -83,7 +98,7 @@ where
 
     /// Push list index to [Path].
     fn with_path_list_index(mut self, index: usize) -> Self {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = self.get_annotations_mut()
             && let Some(path) = &mut annotations.path
         {
@@ -95,7 +110,7 @@ where
 
     /// Push map key to [Path].
     fn with_path_map_key(mut self, key: ByteString) -> Self {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = self.get_annotations_mut()
             && let Some(path) = &mut annotations.path
         {
@@ -107,7 +122,7 @@ where
 
     /// Set [Span].
     fn with_span(mut self, span: Option<Span>) -> Self {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = self.get_annotations_mut()
         {
             annotations.span = span;
@@ -118,7 +133,7 @@ where
 
     /// Set [Label]
     fn with_label(mut self, label: Option<Label>) -> Self {
-        if Self::has_annotations()
+        if Self::can_have_annotations()
             && let Some(annotations) = self.get_annotations_mut()
         {
             annotations.label = label;

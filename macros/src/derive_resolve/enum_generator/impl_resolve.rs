@@ -31,58 +31,64 @@ impl EnumGenerator {
                 for ::compris::normal::Variant<#annotated_parameter>
                 #where_clause
             {
-                fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) ->
+                fn resolve_with_errors<ErrorRecipientT>(self, errors: &mut ErrorRecipientT) ->
                     ::compris::resolve::ResolveResult<#enum_name #type_generics, #annotated_parameter>
                     where ErrorRecipientT:
                         ::kutil::std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
                 {
+                    let maybe_annotations = ::compris::annotate::Annotated::maybe_annotations(&self);
+                    let type_name = self.type_name();
+
                     #handle_single_variant
 
                     ::compris::resolve::ResolveResult::Ok(
-                        match self.to_key_value_pair() {
-                            Some((key, value)) => match key {
+                        match self.into_key_value_pair() {
+                            ::std::option::Option::Some((key, value)) => match key {
                                 Self::Text(text) => match text.as_str() {
                                     #(#segments)*
 
                                     key => {
-                                        errors.give_error(
+                                        ::kutil::std::error::ErrorRecipient::give_error(
+                                            errors,
                                             ::compris::annotate::Annotated::with_annotations_from(
                                                 ::compris::normal::MalformedError::new(
                                                     #quoted_enum_name.into(),
                                                     format!("key is not {}: {}", #human_readable_key_list, key),
                                                 ).into(),
-                                                self
+                                                &maybe_annotations
                                             ),
                                         )?;
-                                        None
+                                        ::std::option::Option::None
                                     }
                                 }
 
                                 _ => {
-                                    errors.give_error(
+                                    ::kutil::std::error::ErrorRecipient::give_error(
+                                        errors,
                                         ::compris::annotate::Annotated::with_annotations_from(
                                             ::compris::normal::IncompatibleVariantTypeError::new(
-                                                self,
-                                                &["text"]
+                                                type_name.into(),
+                                                vec!["text".into()]
                                             ).into(),
-                                            self,
+                                            &maybe_annotations,
                                         ),
                                     )?;
-                                    None
+                                    ::std::option::Option::None
                                 }
                             }
 
-                            None => {
-                                errors.give_error(
+                            ::std::option::Option::None => {
+                                ::kutil::std::error::ErrorRecipient::give_error(
+                                    errors,
                                     ::compris::annotate::Annotated::with_annotations_from(
                                         ::compris::normal::MalformedError::new(
                                             "map".into(),
                                             "is not a single-key map".into(),
                                         ).into(),
-                                        self
+                                        &maybe_annotations
                                     ),
                                 )?;
-                                None
+                                ::std::option::Option::None
                             }
                         }
                     )

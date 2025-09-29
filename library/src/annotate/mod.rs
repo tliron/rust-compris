@@ -7,6 +7,7 @@ mod errors;
 mod label;
 mod location;
 mod macros;
+mod maybe;
 mod span;
 mod r#struct;
 mod with;
@@ -23,6 +24,7 @@ pub use {
     errors::*,
     label::*,
     location::*,
+    maybe::*,
     span::*,
     r#struct::*,
     with::*,

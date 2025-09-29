@@ -5,7 +5,7 @@ use super::super::super::{
     resolve::*,
 };
 
-use {kutil::std::error::*, std::slice};
+use {kutil::std::error::*, std::vec};
 
 //
 // ResolvingVariantIterator
@@ -16,19 +16,17 @@ use {kutil::std::error::*, std::slice};
 /// Can be used directly on a [List].
 ///
 /// Useful for implementing [Resolve] for list-like collections, such as [Vec].
-pub struct ResolvingVariantIterator<'own, InnerT, AnnotatedT>
+pub struct ResolvingVariantIterator<InnerT, AnnotatedT>
 where
-    AnnotatedT: 'own,
-    InnerT: Iterator<Item = &'own Variant<AnnotatedT>>,
+    InnerT: Iterator<Item = Variant<AnnotatedT>>,
 {
     /// Inner.
     pub inner: InnerT,
 }
 
-impl<'own, InnerT, AnnotatedT> ResolvingVariantIterator<'own, InnerT, AnnotatedT>
+impl<'own, InnerT, AnnotatedT> ResolvingVariantIterator<InnerT, AnnotatedT>
 where
-    InnerT: Iterator<Item = &'own Variant<AnnotatedT>>,
-    AnnotatedT: 'own,
+    InnerT: Iterator<Item = Variant<AnnotatedT>>,
 {
     /// Constructor.
     pub fn new(inner: InnerT) -> Self {
@@ -44,10 +42,10 @@ where
     }
 }
 
-impl<'own, AnnotatedT> ResolvingVariantIterator<'own, slice::Iter<'own, Variant<AnnotatedT>>, AnnotatedT> {
+impl<'own, AnnotatedT> ResolvingVariantIterator<vec::IntoIter<Variant<AnnotatedT>>, AnnotatedT> {
     /// Constructor.
     pub fn new_from<ErrorRecipientT>(
-        variant: &'own Variant<AnnotatedT>,
+        variant: Variant<AnnotatedT>,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<Self, AnnotatedT>
     where
@@ -57,7 +55,7 @@ impl<'own, AnnotatedT> ResolvingVariantIterator<'own, slice::Iter<'own, Variant<
         match variant {
             Variant::List(list) => return Ok(Some(Self::new_for(list))),
 
-            _ => errors.give(IncompatibleVariantTypeError::new(variant, &["list"]))?,
+            _ => errors.give(IncompatibleVariantTypeError::new_from(&variant, &["list"]))?,
         }
 
         Ok(None)
@@ -65,10 +63,10 @@ impl<'own, AnnotatedT> ResolvingVariantIterator<'own, slice::Iter<'own, Variant<
 }
 
 impl<'own, ResolvedT, InnerT, AnnotatedT> ResolvingIterator<ResolvedT, AnnotatedT>
-    for ResolvingVariantIterator<'own, InnerT, AnnotatedT>
+    for ResolvingVariantIterator<InnerT, AnnotatedT>
 where
     Variant<AnnotatedT>: Resolve<ResolvedT, AnnotatedT>,
-    InnerT: Iterator<Item = &'own Variant<AnnotatedT>>,
+    InnerT: Iterator<Item = Variant<AnnotatedT>>,
 {
     fn resolve_next<ErrorRecipientT>(&mut self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, AnnotatedT>
     where

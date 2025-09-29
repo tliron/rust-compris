@@ -26,7 +26,7 @@ where
 
     // Here we use the "Annotate" wrapper to keep the original annotations
     // And also add a Depict tag to display them
-    // (See the use of #[resolve(annotations)] below for an alternative solution)
+    // (See the use of #[resolve(annotations)] below for an alternative/additional solution)
     #[resolve]
     #[depict(as(display), style(number), tag(tag::span))]
     credit: Annotate<i32, AnnotatedT>,
@@ -81,11 +81,7 @@ pub fn main() {
 }]"#;
 
     let variant = with_annotations!(
-        Parser::new(Format::JSON)
-            .with_source("json".into())
-            .with_try_integers(true)
-            .parse_string(json)
-            .expect("parse")
+        Parser::new(Format::JSON).with_source("json".into()).with_try_integers(true).parse_string(json).expect("parse")
     );
 
     let mut errors = ResolveErrors::default();

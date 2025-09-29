@@ -4,7 +4,7 @@ use super::super::{
     mode::*,
 };
 
-use serde::ser::*;
+use {num_traits::cast, serde::ser::*};
 
 impl<AnnotatedT> Serialize for Integer<AnnotatedT> {
     fn serialize<SerializerT>(&self, serializer: SerializerT) -> Result<SerializerT::Ok, SerializerT::Error>
@@ -48,8 +48,8 @@ where
             }
 
             IntegerSerializationMode::AsF64 => {
-                let float = num_traits::cast(self.inner)
-                    .ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.inner)))?;
+                let float =
+                    cast(self.inner).ok_or_else(|| Error::custom(format!("cannot cast to f64: {}", self.inner)))?;
                 if mode.float.might_be_integer() {
                     // Avoid endless recursion!
                     serializer.serialize_f64(float)

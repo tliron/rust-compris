@@ -10,7 +10,7 @@ where
     Variant<AnnotatedT>: Resolve<OptionalT, AnnotatedT>,
 {
     fn resolve_with_errors<ErrorRecipientT>(
-        &self,
+        self,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<Option<OptionalT>, AnnotatedT>
     where

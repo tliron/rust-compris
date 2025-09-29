@@ -15,10 +15,7 @@ where
     Variant<AnnotatedT>: Resolve<ItemT, AnnotatedT>,
     AnnotatedT: Annotated + Clone + Default,
 {
-    fn resolve_with_errors<'own, ErrorRecipientT>(
-        &'own self,
-        errors: &mut ErrorRecipientT,
-    ) -> ResolveResult<Vec<ItemT>, AnnotatedT>
+    fn resolve_with_errors<ErrorRecipientT>(self, errors: &mut ErrorRecipientT) -> ResolveResult<Vec<ItemT>, AnnotatedT>
     where
         ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {

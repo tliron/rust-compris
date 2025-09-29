@@ -14,7 +14,8 @@ impl StructGenerator {
             let quoted_field_name = field.name.to_string().to_token_stream();
             quote! {
                 if #annotated_parameter::can_have_annotations()
-                    && let ::std::option::Option::Some(annotations) = ::compris::annotate::Annotated::get_annotations(value)
+                    && let ::std::option::Option::Some(annotations) =
+                    ::compris::annotate::Annotated::annotations(&value)
                 {
                     resolved.#annotations_field_name.insert(
                         #quoted_field_name.into(),
@@ -31,10 +32,11 @@ impl StructGenerator {
         let handle_required = if field.attribute.required {
             quote! {
                 else {
-                    errors.give_error(
+                    ::kutil::std::error::ErrorRecipient::give_error(
+                        errors,
                         ::compris::annotate::Annotated::with_annotations_from(
                             ::compris::resolve::MissingRequiredKeyError::new(key.into()).into(),
-                            self,
+                            &maybe_annotations,
                         )
                     )?;
                 }
@@ -47,10 +49,12 @@ impl StructGenerator {
 
         quote! {
             let key = #key;
-            if let ::std::option::Option::Some(value) = self.into_get(key) {
+            if let ::std::option::Option::Some(value) = map.into_remove(key) {
                 #handle_annotations
                 #handle_null
-                if let ::std::option::Option::Some(value) = ::compris::resolve::Resolve::resolve_with_errors(value, errors)? {
+                if let ::std::option::Option::Some(value) =
+                    ::compris::resolve::Resolve::resolve_with_errors(value, errors)?
+                {
                     resolved.#field_name = value;
                 }
             }

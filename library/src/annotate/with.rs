@@ -18,11 +18,11 @@ impl Annotated for WithAnnotations {
         true
     }
 
-    fn get_annotations(&self) -> Option<&Annotations> {
+    fn annotations(&self) -> Option<&Annotations> {
         Some(&self.annotations)
     }
 
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
+    fn annotations_mut(&mut self) -> Option<&mut Annotations> {
         Some(&mut self.annotations)
     }
 }

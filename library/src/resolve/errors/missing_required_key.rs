@@ -29,7 +29,7 @@ impl<AnnotatedT> MissingRequiredKeyError<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        MissingRequiredKeyError { key: self.key.into_annotated() }
+        MissingRequiredKeyError::new(self.key.into_annotated())
     }
 }
 

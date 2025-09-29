@@ -49,7 +49,7 @@ pub enum DeserializeError {
 impl DeserializeError {
     /// Incompatible type.
     pub fn incompatible_type<AnnotatedT>(variant: &Variant<AnnotatedT>) -> DeserializeError {
-        Self::IncompatibleType(variant.get_type_name())
+        Self::IncompatibleType(variant.type_name())
     }
 
     /// Incompatible variant.
@@ -59,9 +59,9 @@ impl DeserializeError {
 }
 
 impl de::Error for DeserializeError {
-    fn custom<DisplayableT>(message: DisplayableT) -> Self
+    fn custom<DisplayT>(message: DisplayT) -> Self
     where
-        DisplayableT: fmt::Display,
+        DisplayT: fmt::Display,
     {
         DeserializeError::Custom(message.to_string())
     }

@@ -18,11 +18,11 @@ impl<KeyT, ValueT, BuildHasherT, AnnotatedT> Resolve<HashMap<KeyT, ValueT, Build
 where
     KeyT: Hash + Eq,
     Variant<AnnotatedT>: Resolve<KeyT, AnnotatedT> + Resolve<ValueT, AnnotatedT>,
-    AnnotatedT: Annotated + Clone + Default,
+    AnnotatedT: 'static + Annotated + Clone + Default,
     BuildHasherT: BuildHasher + Default,
 {
-    fn resolve_with_errors<'own, ErrorRecipientT>(
-        &'own self,
+    fn resolve_with_errors<ErrorRecipientT>(
+        self,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<HashMap<KeyT, ValueT, BuildHasherT>, AnnotatedT>
     where

@@ -18,17 +18,9 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         AnnotatedT: Clone,
         ErrorRecipientT: ErrorRecipient<MergeError<'own, AnnotatedT>>,
     {
-        match self {
-            Self::List(list) => match other {
-                Self::List(other_list) => list.merge_with_errors(other_list, merge_mode, errors),
-                _ => Ok(false),
-            },
-
-            Self::Map(map) => match other {
-                Self::Map(other_map) => map.merge_with_errors(other_map, merge_mode, errors),
-                _ => Ok(false),
-            },
-
+        match (self, other) {
+            (Self::List(list), Self::List(other_list)) => list.merge_with_errors(other_list, merge_mode, errors),
+            (Self::Map(map), Self::Map(other_map)) => map.merge_with_errors(other_map, merge_mode, errors),
             _ => Ok(false),
         }
     }

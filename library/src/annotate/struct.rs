@@ -18,10 +18,10 @@ pub trait AnnotatedStruct {
     /// A field's [Annotations].
     ///
     /// An empty name is used to refer to annotations for the struct itself.
-    fn get_field_annotations(&self, name: &str) -> Option<&Annotations>;
+    fn field_annotations(&self, name: &str) -> Option<&Annotations>;
 
     /// The struct's [Annotations].
-    fn get_struct_annotations(&self) -> Option<&Annotations> {
-        self.get_field_annotations("")
+    fn struct_annotations(&self) -> Option<&Annotations> {
+        self.field_annotations("")
     }
 }

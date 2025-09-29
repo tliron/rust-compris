@@ -19,8 +19,8 @@ where
     Variant<AnnotatedT>: Resolve<KeyT, AnnotatedT> + Resolve<ValueT, AnnotatedT>,
     AnnotatedT: Annotated + Clone + Default,
 {
-    fn resolve_with_errors<'own, ErrorRecipientT>(
-        &'own self,
+    fn resolve_with_errors<ErrorRecipientT>(
+        self,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<BTreeMap<KeyT, ValueT>, AnnotatedT>
     where

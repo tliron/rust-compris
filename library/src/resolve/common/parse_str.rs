@@ -39,7 +39,7 @@ where
     AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<ErrorRecipientT>(
-        &self,
+        self,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<ResolveParseStr<InnerT, ParseStrT>, AnnotatedT>
     where

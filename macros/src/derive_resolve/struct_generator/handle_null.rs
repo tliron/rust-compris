@@ -7,7 +7,7 @@ impl StructGenerator {
     pub fn generate_handle_null(field: &Field, insert: bool) -> TokenStream {
         if field.attribute.ignore_null {
             quote! {
-                if let ::compris::normal::Variant::Null(_) = value {} else
+                if value.is_null() {} else
             }
         } else {
             match &field.attribute.null {
@@ -16,15 +16,15 @@ impl StructGenerator {
 
                     if insert {
                         quote! {
-                            if let ::compris::normal::Variant::Null(_) = value
-                                && let Some(key) = ::compris::resolve::Resolve::resolve_with_errors(key, errors)?
-                            {
-                                resolved.#field_name.insert(key, #null);
+                            if value.is_null() {
+                                if let Some(key) = ::compris::resolve::Resolve::resolve_with_errors(key, errors)? {
+                                    resolved.#field_name.insert(key, #null);
+                                }
                             } else
                         }
                     } else {
                         quote! {
-                            if let ::compris::normal::Variant::Null(_) = value {
+                            if value.is_null() {
                                 resolved.#field_name = #null;
                             } else
                         }

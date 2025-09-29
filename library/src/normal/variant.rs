@@ -56,7 +56,7 @@ pub enum Variant<AnnotatedT> {
 
 impl<AnnotatedT> Variant<AnnotatedT> {
     /// The variant's type name.
-    pub fn get_type_name(&self) -> &'static str {
+    pub fn type_name(&self) -> &'static str {
         match self {
             Self::Undefined => "Undefined",
             Self::Null(_) => "Null",
@@ -98,14 +98,12 @@ impl<AnnotatedT> Variant<AnnotatedT> {
     /// If this is a [List], the argument is treated as an index and must be an
     /// [Variant::UnsignedInteger] or an [Variant::Integer].
     pub fn get(&self, key: &Self) -> Option<&Self> {
-        match self {
-            Self::Map(map) => map.inner.get(key),
-
-            Self::List(list) => match key {
-                Self::UnsignedInteger(unsigned_integer) => list.inner.get(unsigned_integer.inner as usize),
-                Self::Integer(integer) => list.inner.get(integer.inner as usize),
-                _ => None,
-            },
+        match (self, key) {
+            (Self::Map(map), key) => map.inner.get(key),
+            (Self::List(list), Self::UnsignedInteger(unsigned_integer)) => {
+                list.inner.get(unsigned_integer.inner as usize)
+            }
+            (Self::List(list), Self::Integer(integer)) => list.inner.get(integer.inner as usize),
 
             _ => None,
         }
@@ -118,14 +116,28 @@ impl<AnnotatedT> Variant<AnnotatedT> {
     /// If this is a [List], the argument is treated as an index and must be an [UnsignedInteger]
     /// or an [Integer].
     pub fn get_mut(&mut self, key: &Self) -> Option<&mut Self> {
-        match self {
-            Variant::Map(map) => map.inner.get_mut(key),
+        match (self, key) {
+            (Self::Map(map), key) => map.inner.get_mut(key),
+            (Self::List(list), Self::UnsignedInteger(unsigned_integer)) => {
+                list.inner.get_mut(unsigned_integer.inner as usize)
+            }
+            (Self::List(list), Self::Integer(integer)) => list.inner.get_mut(integer.inner as usize),
 
-            Self::List(list) => match key {
-                Variant::UnsignedInteger(unsigned_integer) => list.inner.get_mut(unsigned_integer.inner as usize),
-                Variant::Integer(integer) => list.inner.get_mut(integer.inner as usize),
-                _ => None,
-            },
+            _ => None,
+        }
+    }
+
+    /// Removes a reference to a nested variant.
+    ///
+    /// If this is a [Map], the argument is treated as a key.
+    ///
+    /// If this is a [List], the argument is treated as an index and must be an
+    /// [Variant::UnsignedInteger] or an [Variant::Integer].
+    pub fn remove(&mut self, key: &Self) -> Option<Self> {
+        match (self, key) {
+            (Self::Map(map), key) => map.inner.remove(key),
+            (Self::List(list), Self::UnsignedInteger(unsigned_integer)) => list.remove(unsigned_integer.inner as usize),
+            (Self::List(list), Self::Integer(integer)) => list.remove(integer.inner as usize),
 
             _ => None,
         }
@@ -155,6 +167,19 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         KeyT: Into<Self>,
     {
         self.get_mut(&key.into())
+    }
+
+    /// Removes a reference to a nested variant.
+    ///
+    /// If this is a [Map], the argument is treated as a key.
+    ///
+    /// If this is a [List], the argument is treated as an index and must be an
+    /// [Variant::UnsignedInteger] or an [Variant::Integer].
+    pub fn into_remove<KeyT>(&mut self, key: KeyT) -> Option<Self>
+    where
+        KeyT: Into<Self>,
+    {
+        self.remove(&key.into())
     }
 
     /// Traverse the variant by calling [Variant::get] repeatedly.
@@ -203,6 +228,16 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         }
     }
 
+    /// If the variant is a [List] with length of 2, returns it as a tuple.
+    ///
+    /// Useful when using the list as a key-value pair for a map.
+    pub fn into_pair(self) -> Option<(Self, Self)> {
+        match self {
+            Self::List(list) => list.into_pair(),
+            _ => None,
+        }
+    }
+
     /// If the variant is a [Map] with *only* one key, returns the key-value tuple.
     pub fn to_key_value_pair(&self) -> Option<(&Self, &Self)> {
         match self {
@@ -211,9 +246,39 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         }
     }
 
+    /// If the variant is a [Map] with *only* one key, returns the key-value tuple.
+    pub fn into_key_value_pair(self) -> Option<(Self, Self)> {
+        match self {
+            Self::Map(map) => map.into_key_value_pair(),
+            _ => None,
+        }
+    }
+
     /// If the variant is a [List], iterates its items. Otherwise just iterates itself once.
     pub fn iterator(&self) -> VariantIterator<'_, AnnotatedT> {
         VariantIterator::new(self)
+    }
+
+    /// If the variant is a [List], iterates its items. Otherwise just iterates itself once.
+    pub fn into_iterator(self) -> IntoVariantIterator<AnnotatedT> {
+        IntoVariantIterator::new(self)
+    }
+
+    /// An iterator for key-value pairs.
+    ///
+    /// Can be used on a [Map] or a [List]. The items in a [List] are expected to each be key-value
+    /// pairs ([List] of length 2) with unique keys.
+    ///
+    /// Note that the iterator is a `dyn` in order to support different underlying implementations.
+    pub fn into_key_value_iterator<'own>(self) -> Option<Box<dyn IntoKeyValuePairIterator<AnnotatedT> + 'own>>
+    where
+        AnnotatedT: 'own + Clone + Default,
+    {
+        match self {
+            Self::Map(map) => Some(Box::new(IntoKeyValuePairIteratorForBTreeMap::new_for(map.inner))),
+            Self::List(list) => Some(Box::new(IntoKeyValuePairIteratorForVariantIterator::new_for(list))),
+            _ => None,
+        }
     }
 
     /// An iterator for key-value pairs.
@@ -275,7 +340,7 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         AnnotatedT: Annotated + Default,
     {
         if AnnotatedT::can_have_annotations() {
-            let path = self.get_annotations().and_then(|annotations| annotations.path.clone()).unwrap_or_default();
+            let path = self.annotations().and_then(|annotations| annotations.path.clone()).unwrap_or_default();
             self.fully_annotate(source, &path);
         }
         self
@@ -286,7 +351,7 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         AnnotatedT: Annotated + Default,
     {
         if source.is_some() {
-            if let Some(annotations) = self.get_annotations_mut() {
+            if let Some(annotations) = self.annotations_mut() {
                 annotations.source = source.clone();
             }
         }
@@ -298,7 +363,7 @@ impl<AnnotatedT> Variant<AnnotatedT> {
                     path.push_list_index(index);
                     value.fully_annotate(source, &path);
 
-                    if let Some(annotations) = value.get_annotations_mut() {
+                    if let Some(annotations) = value.annotations_mut() {
                         annotations.path = Some(path);
                     }
                 }
@@ -314,11 +379,11 @@ impl<AnnotatedT> Variant<AnnotatedT> {
                     key.fully_annotate(source, &path);
                     value.fully_annotate(source, &path);
 
-                    if let Some(annotations) = key.get_annotations_mut() {
+                    if let Some(annotations) = key.annotations_mut() {
                         annotations.path = Some(path.clone());
                     }
 
-                    if let Some(annotations) = value.get_annotations_mut() {
+                    if let Some(annotations) = value.annotations_mut() {
                         annotations.path = Some(path);
                     }
                 }

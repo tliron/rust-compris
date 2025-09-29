@@ -11,7 +11,7 @@ use {
 
 /// Resolve a [Variant] into a [FromStr].
 pub fn resolve_from_str<FromStrT, AnnotatedT, ErrorRecipientT>(
-    variant: &Variant<AnnotatedT>,
+    variant: Variant<AnnotatedT>,
     errors: &mut ErrorRecipientT,
 ) -> ResolveResult<FromStrT, AnnotatedT>
 where
@@ -26,15 +26,14 @@ where
 
             Err(error) => {
                 errors.give(
-                    MalformedError::new(tynm::type_name::<FromStrT>(), error.to_string())
-                        .with_annotations_from(variant),
+                    MalformedError::new(tynm::type_name::<FromStrT>(), error.to_string()).with_annotations_from(&text),
                 )?;
                 None
             }
         },
 
         _ => {
-            errors.give(IncompatibleVariantTypeError::new(variant, &["text"]))?;
+            errors.give(IncompatibleVariantTypeError::new_from(&variant, &["text"]))?;
             None
         }
     })
@@ -49,7 +48,7 @@ macro_rules! impl_resolve_from_str {
             AnnotatedT: $crate::annotate::Annotated + ::std::clone::Clone + ::std::default::Default,
         {
             fn resolve_with_errors<ErrorRecipientT>(
-                &self,
+                self,
                 errors: &mut ErrorRecipientT,
             ) -> $crate::resolve::ResolveResult<$type, AnnotatedT>
             where
@@ -87,7 +86,7 @@ where
     AnnotatedT: Annotated + Clone + Default,
 {
     fn resolve_with_errors<ErrorRecipientT>(
-        &self,
+        self,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<ResolveFromStr<InnerT>, AnnotatedT>
     where

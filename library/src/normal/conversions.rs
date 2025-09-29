@@ -6,6 +6,7 @@ use super::{
 use {
     duplicate::*,
     kutil::std::immutable::*,
+    num_traits::cast,
     ordered_float::OrderedFloat,
     std::{borrow::*, collections::*},
 };
@@ -51,7 +52,7 @@ impl<AnnotatedT> From<NormalT<AnnotatedT>> for Variant<AnnotatedT> {
   [Boolean]          [bool];
   [Text]             [ByteString];
   [Text]             [String];
-  [Text]             [&str];
+  [Text]             [&'static str];
   [Text]             [Cow<'_, str>];
   [Blob]             [Bytes];
   [Blob]             [Vec<u8>];
@@ -104,7 +105,7 @@ where
     }
 }
 
-// Variant -> common types
+// Variant -> inner types
 
 #[duplicate_item(
   FromNormalT        name                  ToT;
@@ -125,10 +126,10 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::FromNormalT(normal) => Ok(normal.inner.into()),
-            _ => Err(IncompatibleVariantTypeError::new(&value, &[name]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(&variant, &[name]).into()),
         }
     }
 }
@@ -139,10 +140,10 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::Null(_) => Ok(()),
-            _ => Err(IncompatibleVariantTypeError::new(&value, &["null"]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(&variant, &["null"]).into()),
         }
     }
 }
@@ -153,11 +154,54 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::Blob(blob) => Ok(blob.inner),
             Variant::Text(text) => Ok(text.inner.into_bytes()),
-            _ => Err(IncompatibleVariantTypeError::new(&value, &["blob", "text"]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(&variant, &["blob", "text"]).into()),
+        }
+    }
+}
+
+// Variant -> alternative numbers
+
+#[duplicate_item(
+    NumberT  name;
+    [i128]   ["128-bit integer"];
+    [i32]    ["32-bit integer"];
+    [i16]    ["16-bit integer"];
+    [i8]     ["8-bit integer"];
+    [isize]  ["system integer"];
+    [u128]   ["128-bit unsigned integer"];
+    [u32]    ["32-bit unsigned integer"];
+    [u16]    ["16-bit unsigned integer"];
+    [u8]     ["8-bit unsigned integer"];
+    [usize]  ["system unsigned integer"];
+    [f32]    ["32-bit float"];
+  )]
+impl<AnnotatedT> TryFrom<Variant<AnnotatedT>> for NumberT
+where
+    AnnotatedT: Annotated + Clone + Default,
+{
+    type Error = ConversionError<AnnotatedT>;
+
+    fn try_from(variant: Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match &variant {
+            Variant::Integer(integer) => {
+                cast(integer.inner).ok_or_else(|| CastingError::new(variant, name.into()).into())
+            }
+
+            Variant::UnsignedInteger(unsigned_integer) => {
+                cast(unsigned_integer.inner).ok_or_else(|| CastingError::new(variant, name.into()).into())
+            }
+
+            Variant::Float(float) => {
+                cast::<f64, _>(float.inner.into()).ok_or_else(|| CastingError::new(variant, name.into()).into())
+            }
+
+            _ => {
+                Err(IncompatibleVariantTypeError::new_from(&variant, &["integer", "unsigned integer", "float"]).into())
+            }
         }
     }
 }
@@ -181,10 +225,10 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::FromNormalT(normal) => Ok(normal_value),
-            _ => Err(IncompatibleVariantTypeError::new(value, &[name]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(variant, &[name]).into()),
         }
     }
 }
@@ -195,11 +239,11 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::Blob(blob) => Ok(blob.inner.clone()),
             Variant::Text(text) => Ok(text.inner.clone().into_bytes()),
-            _ => Err(IncompatibleVariantTypeError::new(&value, &["blob", "text"]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(&variant, &["blob", "text"]).into()),
         }
     }
 }
@@ -219,10 +263,10 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: &'own Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: &'own Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::FromNormalT(normal) => Ok(normal.into()),
-            _ => Err(IncompatibleVariantTypeError::new(value, &[name]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(variant, &[name]).into()),
         }
     }
 }
@@ -252,19 +296,21 @@ where
 {
     type Error = ConversionError<AnnotatedT>;
 
-    fn try_from(value: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
-        match value {
+    fn try_from(variant: &Variant<AnnotatedT>) -> Result<Self, Self::Error> {
+        match variant {
             Variant::Integer(integer) => {
-                num_traits::cast(integer.inner).ok_or_else(|| CastingError::new(value.clone(), name.into()).into())
+                cast(integer.inner).ok_or_else(|| CastingError::new(variant.clone(), name.into()).into())
             }
 
-            Variant::UnsignedInteger(unsigned_integer) => num_traits::cast(unsigned_integer.inner)
-                .ok_or_else(|| CastingError::new(value.clone(), name.into()).into()),
+            Variant::UnsignedInteger(unsigned_integer) => {
+                cast(unsigned_integer.inner).ok_or_else(|| CastingError::new(variant.clone(), name.into()).into())
+            }
 
-            Variant::Float(float) => num_traits::cast::<f64, _>(float.inner.into())
-                .ok_or_else(|| CastingError::new(value.clone(), name.into()).into()),
+            Variant::Float(float) => {
+                cast::<f64, _>(float.inner.into()).ok_or_else(|| CastingError::new(variant.clone(), name.into()).into())
+            }
 
-            _ => Err(IncompatibleVariantTypeError::new(value, &["integer", "unsigned integer", "float"]).into()),
+            _ => Err(IncompatibleVariantTypeError::new_from(variant, &["integer", "unsigned integer", "float"]).into()),
         }
     }
 }

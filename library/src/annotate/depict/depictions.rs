@@ -51,7 +51,7 @@ where
 
         let mut table = BTreeMap::<_, Vec<_>>::default();
         for item in self.inner {
-            let source = item.get_annotations().and_then(|annotations| annotations.source.clone());
+            let source = item.annotations().and_then(|annotations| annotations.source.clone());
             match table.get_mut(&source) {
                 Some(list) => list.push(item),
                 None => {
@@ -64,9 +64,9 @@ where
 
         table.values_mut().for_each(|list| {
             list.sort_by(|a, b| {
-                if let Some(a_annotations) = a.get_annotations()
+                if let Some(a_annotations) = a.annotations()
                     && let Some(a_span) = &a_annotations.span
-                    && let Some(b_annotations) = b.get_annotations()
+                    && let Some(b_annotations) = b.annotations()
                     && let Some(b_span) = &b_annotations.span
                 {
                     a_span.start.cmp(&b_span.start)

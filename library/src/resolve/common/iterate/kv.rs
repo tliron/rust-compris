@@ -22,31 +22,30 @@ use kutil::std::error::*;
 /// [HashMap](std::collections::HashMap).
 pub struct ResolvingKeyValuePairIterator<'own, AnnotatedT> {
     /// Inner key-value pair iterator.
-    pub inner: Box<dyn KeyValuePairIterator<AnnotatedT> + 'own>,
+    pub inner: Box<dyn IntoKeyValuePairIterator<AnnotatedT> + 'own>,
 }
 
 impl<'own, AnnotatedT> ResolvingKeyValuePairIterator<'own, AnnotatedT> {
     /// Constructor.
-    pub fn new(inner: Box<dyn KeyValuePairIterator<AnnotatedT> + 'own>) -> Self {
+    pub fn new(inner: Box<dyn IntoKeyValuePairIterator<AnnotatedT> + 'own>) -> Self {
         Self { inner }
     }
 
     /// Constructor.
     pub fn new_from<ErrorRecipientT>(
-        variant: &'own Variant<AnnotatedT>,
+        variant: Variant<AnnotatedT>,
         errors: &mut ErrorRecipientT,
     ) -> ResolveResult<Self, AnnotatedT>
     where
-        AnnotatedT: Annotated + Clone + Default,
+        AnnotatedT: 'own + Annotated + Clone + Default,
         ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
-        match variant.key_value_iterator() {
-            Some(iterator) => Ok(Some(Self::new(iterator))),
-
-            None => {
-                errors.give(IncompatibleVariantTypeError::new(variant, &["map", "list"]))?;
-                Ok(None)
-            }
+        if variant.is_collection() {
+            let iterator = variant.into_key_value_iterator().expect("map or list");
+            Ok(Some(Self::new(iterator)))
+        } else {
+            errors.give(IncompatibleVariantTypeError::new_from(&variant, &["map", "list"]))?;
+            Ok(None)
         }
     }
 }
@@ -75,7 +74,7 @@ where
                     });
                 }
 
-                Err((error, cause)) => errors.give(error.with_annotations_from(cause))?,
+                Err((error, cause)) => errors.give(error.with_annotations_from(&cause))?,
             }
         }
     }

@@ -13,11 +13,11 @@ use {
 /// Incompatible value type.
 #[derive(Debug, Error)]
 pub struct IncompatibleVariantTypeError<AnnotatedT> {
-    /// Expected type names.
-    pub expected_type_names: Vec<String>,
-
     /// Type name.
     pub type_name: String,
+
+    /// Expected type names.
+    pub expected_type_names: Vec<String>,
 
     /// Annotated.
     pub annotated: AnnotatedT,
@@ -25,16 +25,23 @@ pub struct IncompatibleVariantTypeError<AnnotatedT> {
 
 impl<AnnotatedT> IncompatibleVariantTypeError<AnnotatedT> {
     /// Constructor.
-    pub fn new(value: &Variant<AnnotatedT>, expected_type_names: &[&str]) -> Self
+    pub fn new(type_name: String, expected_type_names: Vec<String>) -> Self
+    where
+        AnnotatedT: Default,
+    {
+        Self { type_name, expected_type_names, annotated: Default::default() }
+    }
+
+    /// Constructor.
+    pub fn new_from(variant: &Variant<AnnotatedT>, expected_type_names: &[&str]) -> Self
     where
         AnnotatedT: Annotated + Default + Clone,
     {
-        Self {
-            expected_type_names: expected_type_names.iter().map(|type_name| String::from(*type_name)).collect(),
-            type_name: value.get_type_name().into(),
-            annotated: Default::default(),
-        }
-        .with_annotations_from(value)
+        Self::new(
+            variant.type_name().into(),
+            expected_type_names.iter().map(|type_name| String::from(*type_name)).collect(),
+        )
+        .with_annotations_from(variant)
     }
 
     /// Into different [Annotated] implementation.
@@ -43,12 +50,8 @@ impl<AnnotatedT> IncompatibleVariantTypeError<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        IncompatibleVariantTypeError {
-            expected_type_names: self.expected_type_names,
-            type_name: self.type_name,
-            annotated: Default::default(),
-        }
-        .with_annotations_from(&self.annotated)
+        IncompatibleVariantTypeError::new(self.type_name, self.expected_type_names)
+            .with_annotations_from(&self.annotated)
     }
 }
 

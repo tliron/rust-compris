@@ -4,7 +4,6 @@ use {
 };
 
 use {
-    duplicate::*,
     kutil::{cli::depict::*, std::immutable::*},
     std::{borrow::*, fmt, io},
 };
@@ -57,18 +56,21 @@ impl<AnnotatedT> AsRef<str> for Text<AnnotatedT> {
     }
 }
 
-#[duplicate_item(
-  ToNormalT;
-  [String];
-  [&str];
-)]
-impl<AnnotatedT> From<ToNormalT> for Text<AnnotatedT>
+impl<AnnotatedT> From<String> for Text<AnnotatedT>
 where
     AnnotatedT: Default,
 {
-    fn from(string: ToNormalT) -> Self {
-        let string: ByteString = string.into();
-        Self::from(string)
+    fn from(string: String) -> Self {
+        Self::from(ByteString::from(string))
+    }
+}
+
+impl<AnnotatedT> From<&'static str> for Text<AnnotatedT>
+where
+    AnnotatedT: Default,
+{
+    fn from(string: &'static str) -> Self {
+        Self::from(ByteString::from_static(string))
     }
 }
 
@@ -78,7 +80,7 @@ where
 {
     fn from(string: Cow<'_, str>) -> Self {
         match string {
-            Cow::Borrowed(string) => string.into(),
+            Cow::Borrowed(string) => ByteString::from(string).into(),
             Cow::Owned(string) => string.into(),
         }
     }

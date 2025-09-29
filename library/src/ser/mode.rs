@@ -103,10 +103,7 @@ pub enum IntegerSerializationMode {
 impl IntegerSerializationMode {
     /// Whether integers could potentially be serialized as floats.
     pub fn might_be_float(&self) -> bool {
-        match self {
-            IntegerSerializationMode::AsF64 => true,
-            _ => false,
-        }
+        matches!(self, IntegerSerializationMode::AsF64)
     }
 }
 
@@ -144,10 +141,7 @@ pub enum UnsignedIntegerSerializationMode {
 impl UnsignedIntegerSerializationMode {
     /// Whether unsigned integers could potentially be serialized as integers.
     pub fn might_be_integer(&self) -> bool {
-        match self {
-            UnsignedIntegerSerializationMode::AsI64 => true,
-            _ => false,
-        }
+        matches!(self, UnsignedIntegerSerializationMode::AsI64)
     }
 }
 
@@ -184,10 +178,7 @@ pub enum FloatSerializationMode {
 impl FloatSerializationMode {
     /// Whether floats could potentially be serialized as integers.
     pub fn might_be_integer(&self) -> bool {
-        match self {
-            FloatSerializationMode::AsI64 | FloatSerializationMode::AsI64IfWhole => true,
-            _ => false,
-        }
+        matches!(self, FloatSerializationMode::AsI64 | FloatSerializationMode::AsI64IfWhole)
     }
 }
 

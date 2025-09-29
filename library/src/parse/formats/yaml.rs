@@ -169,7 +169,7 @@ where
         } else if let Ok(boolean) = self.parse_yaml_bool(&value, &span) {
             Ok(Boolean::from(boolean).with_span((self.span)(span)).into())
         } else if let Some(unsigned_integer) =
-            if self.try_unsigned_integers { Self::parse_yaml_unsigned_integer(&value) } else { None }
+            if self.try_unsigned_integers { Self::try_parse_yaml_unsigned_integer(&value) } else { None }
         {
             Ok(UnsignedInteger::from(unsigned_integer).with_span((self.span)(span)).into())
         } else if let Ok(integer) = Self::parse_yaml_integer(&value, &span) {
@@ -230,13 +230,10 @@ where
             }
         }
 
-        match value.parse() {
-            Ok(value) => Ok(value),
-            Err(_) => Err(ScanError::new_str(span.start, "not an integer").into()),
-        }
+        value.parse().map_err(|_| ScanError::new_str(span.start, "not an integer").into())
     }
 
-    fn parse_yaml_unsigned_integer(value: &str) -> Option<u64> {
+    fn try_parse_yaml_unsigned_integer(value: &str) -> Option<u64> {
         if let Some(unsigned_integer) = value.strip_prefix("0x") {
             if let Ok(unsigned_integer) = u64::from_str_radix(unsigned_integer, 16) {
                 return Some(unsigned_integer);
@@ -247,7 +244,6 @@ where
             }
         }
 
-        // TODO: error?
         value.parse().ok()
     }
 
@@ -258,10 +254,7 @@ where
             ".inf" | ".Inf" | ".INF" | "+.inf" | "+.Inf" | "+.INF" => Ok(f64::INFINITY),
             "-.inf" | "-.Inf" | "-.INF" => Ok(f64::NEG_INFINITY),
             ".nan" | "NaN" | ".NAN" => Ok(f64::NAN),
-            _ => match value.parse() {
-                Ok(value) => Ok(value),
-                _ => Err(ScanError::new_str(span.start, "not a float").into()),
-            },
+            _ => value.parse().map_err(|_| ScanError::new_str(span.start, "not a float").into()),
         }
     }
 }

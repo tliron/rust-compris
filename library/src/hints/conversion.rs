@@ -3,6 +3,8 @@ use super::{
     hints::*,
 };
 
+use kutil::std::immutable::*;
+
 impl<AnnotatedT> Variant<AnnotatedT> {
     /// Attempts to convert the [Variant] to a hinted [Variant].
     ///
@@ -91,7 +93,7 @@ impl<AnnotatedT> Variant<AnnotatedT> {
         AnnotatedT: Annotated + Clone + Default,
     {
         let mut new_map = Map::default();
-        new_map.inner.insert(Text::from(new_key).with_annotations_from(key).into(), variant.clone());
+        new_map.inner.insert(Variant::from(ByteString::from(new_key)).with_annotations_from(key), variant.clone());
         new_map.with_annotations_from(self).into()
     }
 }

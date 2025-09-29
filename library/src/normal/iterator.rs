@@ -1,6 +1,6 @@
 use super::variant::*;
 
-use std::slice;
+use std::{mem::*, slice, vec};
 
 //
 // VariantIterator
@@ -13,7 +13,7 @@ pub enum VariantIterator<'own, AnnotatedT> {
     Iterator(slice::Iter<'own, Variant<AnnotatedT>>),
 
     /// Variant.
-    Variant(&'own Variant<AnnotatedT>, bool),
+    Variant(Option<&'own Variant<AnnotatedT>>),
 }
 
 impl<'own, AnnotatedT> VariantIterator<'own, AnnotatedT> {
@@ -21,7 +21,7 @@ impl<'own, AnnotatedT> VariantIterator<'own, AnnotatedT> {
     pub fn new(variant: &'own Variant<AnnotatedT>) -> Self {
         match variant {
             Variant::List(list) => Self::Iterator(list.inner.iter()),
-            _ => Self::Variant(variant, false),
+            _ => Self::Variant(Some(variant)),
         }
     }
 }
@@ -32,15 +32,42 @@ impl<'own, AnnotatedT> Iterator for VariantIterator<'own, AnnotatedT> {
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Iterator(iter) => iter.next(),
+            Self::Variant(variant) => take(variant),
+        }
+    }
+}
 
-            Self::Variant(variant, iterated) => {
-                if *iterated {
-                    None
-                } else {
-                    *iterated = true;
-                    Some(variant)
-                }
-            }
+//
+// IntoVariantIterator
+//
+
+/// If the variant is a [List](super::list::List), iterates its items. Otherwise just iterates
+/// itself once.
+pub enum IntoVariantIterator<AnnotatedT> {
+    /// Iterator.
+    Iterator(vec::IntoIter<Variant<AnnotatedT>>),
+
+    /// Variant.
+    Variant(Option<Variant<AnnotatedT>>),
+}
+
+impl<AnnotatedT> IntoVariantIterator<AnnotatedT> {
+    /// Constructor.
+    pub fn new(variant: Variant<AnnotatedT>) -> Self {
+        match variant {
+            Variant::List(list) => Self::Iterator(list.inner.into_iter()),
+            _ => Self::Variant(Some(variant)),
+        }
+    }
+}
+
+impl<AnnotatedT> Iterator for IntoVariantIterator<AnnotatedT> {
+    type Item = Variant<AnnotatedT>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Iterator(iter) => iter.next(),
+            Self::Variant(variant) => take(variant),
         }
     }
 }

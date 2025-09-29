@@ -48,6 +48,14 @@ impl<AnnotatedT> Map<AnnotatedT> {
         self.inner.insert(key.into(), value.into())
     }
 
+    /// Remove.
+    pub fn into_remove<KeyT>(&mut self, key: KeyT) -> Option<Variant<AnnotatedT>>
+    where
+        KeyT: Into<Variant<AnnotatedT>>,
+    {
+        self.inner.remove(&key.into())
+    }
+
     /// True if any of the map keys is a collection.
     pub fn has_a_collection_key(&self) -> bool {
         for key in self.inner.keys() {
@@ -62,6 +70,14 @@ impl<AnnotatedT> Map<AnnotatedT> {
     pub fn to_key_value_pair(&self) -> Option<(&Variant<AnnotatedT>, &Variant<AnnotatedT>)> {
         match self.inner.len() {
             1 => return self.inner.iter().next(),
+            _ => None,
+        }
+    }
+
+    /// If the map has *only* one key then returns the key-value tuple.
+    pub fn into_key_value_pair(self) -> Option<(Variant<AnnotatedT>, Variant<AnnotatedT>)> {
+        match self.inner.len() {
+            1 => return self.inner.into_iter().next(),
             _ => None,
         }
     }
@@ -86,7 +102,7 @@ impl<AnnotatedT> Map<AnnotatedT> {
             self.into_vector().into_iter().map(|(key, value)| (key.into_annotated(), value.into_annotated())).collect();
         if AnnotatedT::can_have_annotations()
             && NewAnnotationsT::can_have_annotations()
-            && let Some(annotations) = self.annotated.get_annotations()
+            && let Some(annotations) = self.annotated.annotations()
         {
             new_map.with_annotations(annotations.clone())
         } else {

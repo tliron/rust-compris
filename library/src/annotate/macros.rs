@@ -14,12 +14,12 @@ macro_rules! impl_annotated (
                 AnnotatedT::can_have_annotations()
             }
 
-            fn get_annotations(&self) -> ::std::option::Option<&$crate::annotate::Annotations> {
-                self.$field.get_annotations()
+            fn annotations(&self) -> ::std::option::Option<&$crate::annotate::Annotations> {
+                self.$field.annotations()
             }
 
-            fn get_annotations_mut(&mut self) -> ::std::option::Option<&mut $crate::annotate::Annotations> {
-                self.$field.get_annotations_mut()
+            fn annotations_mut(&mut self) -> ::std::option::Option<&mut $crate::annotate::Annotations> {
+                self.$field.annotations_mut()
             }
         }
     }

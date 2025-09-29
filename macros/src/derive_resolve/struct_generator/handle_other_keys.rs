@@ -14,8 +14,8 @@ impl StructGenerator {
                 let handle_null = Self::generate_handle_null(other_keys_field, true);
 
                 quote! {
-                    for (key, value) in &map.inner {
-                        if !declared_keys.contains(key.into()) {
+                    for (key, value) in map.inner {
+                        if !declared_keys.contains(&key) {
                             #handle_null
                             if let Some(key) = ::compris::resolve::Resolve::resolve_with_errors(key, errors)?
                                 && let Some(value) = ::compris::resolve::Resolve::resolve_with_errors(value, errors)?
@@ -28,12 +28,13 @@ impl StructGenerator {
             }
 
             None => quote! {
-                for key in map.inner.keys() {
-                    if !declared_keys.contains(key.into()) {
-                        errors.give_error(
+                for (key, _) in map.inner {
+                    if !declared_keys.contains(&key) {
+                        ::kutil::std::error::ErrorRecipient::give_error(
+                            errors,
                             ::compris::annotate::Annotated::with_annotations_from(
                                 ::compris::resolve::InvalidKeyError::new(key.clone()).into(),
-                                key,
+                                &key,
                             )
                         )?;
                     }
@@ -44,10 +45,8 @@ impl StructGenerator {
         let declared_keys = &self.declared_keys;
 
         quote! {
-            if let ::compris::normal::Variant::Map(map) = self {
-                let declared_keys = ::compris::normal_vec![ #(#declared_keys),* ];
-                #handle_other_keys
-            }
+            let declared_keys = ::compris::normal_vec![ #(#declared_keys),* ];
+            #handle_other_keys
         }
     }
 }

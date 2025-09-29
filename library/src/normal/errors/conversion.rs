@@ -45,17 +45,17 @@ where
         AnnotatedT::can_have_annotations()
     }
 
-    fn get_annotations(&self) -> Option<&Annotations> {
+    fn annotations(&self) -> Option<&Annotations> {
         match self {
-            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.get_annotations(),
-            Self::Casting(casting) => casting.get_annotations(),
+            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.annotations(),
+            Self::Casting(casting) => casting.annotations(),
         }
     }
 
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
+    fn annotations_mut(&mut self) -> Option<&mut Annotations> {
         match self {
-            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.get_annotations_mut(),
-            Self::Casting(casting) => casting.get_annotations_mut(),
+            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.annotations_mut(),
+            Self::Casting(casting) => casting.annotations_mut(),
         }
     }
 }

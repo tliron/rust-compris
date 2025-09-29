@@ -34,15 +34,17 @@ impl<AnnotatedT> Resolve<ResolvedT, AnnotatedT> for Variant<AnnotatedT>
 where
     AnnotatedT: Annotated + Clone + Default,
 {
-    fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, AnnotatedT>
+    fn resolve_with_errors<ErrorRecipientT>(self, errors: &mut ErrorRecipientT) -> ResolveResult<ResolvedT, AnnotatedT>
     where
         ErrorRecipientT: ErrorRecipient<ResolveError<AnnotatedT>>,
     {
+        let maybe_annotations = self.maybe_annotations();
+
         Ok(match self.try_into() {
             Ok(native) => Some(native),
 
             Err(error) => {
-                errors.give(error.with_annotations_from(self))?;
+                errors.give(error.with_annotations_from(&maybe_annotations))?;
                 None
             }
         })

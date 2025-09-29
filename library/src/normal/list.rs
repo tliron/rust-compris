@@ -55,6 +55,11 @@ impl<AnnotatedT> List<AnnotatedT> {
         }
     }
 
+    /// Remove an item from the list.
+    pub fn remove(&mut self, index: usize) -> Option<Variant<AnnotatedT>> {
+        if index < self.inner.len() { Some(self.inner.remove(index)) } else { None }
+    }
+
     /// If the list has a length of 2, returns it as a tuple.
     ///
     /// Useful when using the list as a key-value pair for a map.
@@ -62,6 +67,19 @@ impl<AnnotatedT> List<AnnotatedT> {
         match self.inner.len() {
             2 => {
                 let mut iterator = self.inner.iter();
+                Some((iterator.next().expect("first"), iterator.next().expect("second")))
+            }
+            _ => None,
+        }
+    }
+
+    /// If the list has a length of 2, returns it as a tuple.
+    ///
+    /// Useful when using the list as a key-value pair for a map.
+    pub fn into_pair(self) -> Option<(Variant<AnnotatedT>, Variant<AnnotatedT>)> {
+        match self.inner.len() {
+            2 => {
+                let mut iterator = self.inner.into_iter();
                 Some((iterator.next().expect("first"), iterator.next().expect("second")))
             }
             _ => None,
@@ -82,7 +100,7 @@ impl<AnnotatedT> List<AnnotatedT> {
         let new_list: List<NewAnnotationsT> = self.inner.into_iter().map(|item| item.into_annotated()).collect();
         if AnnotatedT::can_have_annotations()
             && NewAnnotationsT::can_have_annotations()
-            && let Some(annotations) = self.annotated.get_annotations()
+            && let Some(annotations) = self.annotated.annotations()
         {
             new_list.with_annotations(annotations.clone())
         } else {

@@ -60,7 +60,7 @@ pub trait AnnotateErrors<'own, ErrorT, InnerT> {
     where
         StructT: AnnotatedStruct,
     {
-        self.with_annotations(r#struct.get_field_annotations(name))
+        self.with_annotations(r#struct.field_annotations(name))
     }
 }
 

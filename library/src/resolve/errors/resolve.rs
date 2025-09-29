@@ -81,27 +81,27 @@ where
         AnnotatedT::can_have_annotations()
     }
 
-    fn get_annotations(&self) -> Option<&Annotations> {
+    fn annotations(&self) -> Option<&Annotations> {
         match self {
             Self::Missing => None,
-            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.get_annotations(),
-            Self::MissingRequiredKey(missing_required_key) => missing_required_key.get_annotations(),
-            Self::InvalidKey(invalid_key) => invalid_key.get_annotations(),
-            Self::Conversion(conversion) => conversion.get_annotations(),
-            Self::Malformed(malformed) => malformed.get_annotations(),
-            Self::Other(other) => other.dyn_get_annotations(),
+            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.annotations(),
+            Self::MissingRequiredKey(missing_required_key) => missing_required_key.annotations(),
+            Self::InvalidKey(invalid_key) => invalid_key.annotations(),
+            Self::Conversion(conversion) => conversion.annotations(),
+            Self::Malformed(malformed) => malformed.annotations(),
+            Self::Other(other) => other.dyn_annotations(),
         }
     }
 
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
+    fn annotations_mut(&mut self) -> Option<&mut Annotations> {
         match self {
             Self::Missing => None,
-            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.get_annotations_mut(),
-            Self::MissingRequiredKey(missing_required_key) => missing_required_key.get_annotations_mut(),
-            Self::InvalidKey(invalid_key) => invalid_key.get_annotations_mut(),
-            Self::Conversion(conversion) => conversion.get_annotations_mut(),
-            Self::Malformed(malformed) => malformed.get_annotations_mut(),
-            Self::Other(other) => other.dyn_get_annotations_mut(),
+            Self::IncompatibleVariantType(incompatible_value_type) => incompatible_value_type.annotations_mut(),
+            Self::MissingRequiredKey(missing_required_key) => missing_required_key.annotations_mut(),
+            Self::InvalidKey(invalid_key) => invalid_key.annotations_mut(),
+            Self::Conversion(conversion) => conversion.annotations_mut(),
+            Self::Malformed(malformed) => malformed.annotations_mut(),
+            Self::Other(other) => other.dyn_annotations_mut(),
         }
     }
 }

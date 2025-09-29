@@ -22,12 +22,12 @@ pub struct Annotate<InnerT, AnnotatedT> {
     pub annotated: AnnotatedT,
 }
 
-impl<InnerT, AnnotatedT> Annotate<InnerT, AnnotatedT>
-where
-    AnnotatedT: Default,
-{
+impl<InnerT, AnnotatedT> Annotate<InnerT, AnnotatedT> {
     /// Constructor.
-    pub fn new(inner: InnerT) -> Self {
+    pub fn new(inner: InnerT) -> Self
+    where
+        AnnotatedT: Default,
+    {
         Self { inner, annotated: Default::default() }
     }
 }
@@ -40,12 +40,12 @@ where
         AnnotatedT::can_have_annotations()
     }
 
-    fn get_annotations(&self) -> Option<&Annotations> {
-        self.annotated.get_annotations()
+    fn annotations(&self) -> Option<&Annotations> {
+        self.annotated.annotations()
     }
 
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
-        self.annotated.get_annotations_mut()
+    fn annotations_mut(&mut self) -> Option<&mut Annotations> {
+        self.annotated.annotations_mut()
     }
 }
 

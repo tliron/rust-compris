@@ -8,7 +8,7 @@ use super::super::{
     *,
 };
 
-use {std::io, struson::reader::*};
+use {kutil::std::immutable::*, std::io, struson::reader::*};
 
 impl Parser {
     /// Parses JSON into a [Variant].
@@ -108,7 +108,7 @@ where
 
         ValueType::String => {
             let span = get_span(reader);
-            value_builder.add(Text::from(reader.next_str()?).with_span(span), None);
+            value_builder.add(Text::from(ByteString::from(reader.next_str()?)).with_span(span), None);
         }
 
         ValueType::Array => {
@@ -129,7 +129,7 @@ where
             while reader.has_next()? {
                 // Key
                 let span = get_span(reader);
-                value_builder.add(Text::from(reader.next_name()?).with_span(span), None);
+                value_builder.add(Text::from(ByteString::from(reader.next_name()?)).with_span(span), None);
 
                 // Value
                 read_next_json(reader, value_builder, hints, try_integers, try_unsigned_integers)?;

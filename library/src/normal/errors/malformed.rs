@@ -38,8 +38,7 @@ impl<AnnotatedT> MalformedError<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        MalformedError { type_name: self.type_name, reason: self.reason, annotated: Default::default() }
-            .with_annotations_from(&self.annotated)
+        MalformedError::new(self.type_name, self.reason).with_annotations_from(&self.annotated)
     }
 }
 

@@ -32,7 +32,7 @@ impl<AnnotatedT> Null<AnnotatedT> {
     {
         if AnnotatedT::can_have_annotations()
             && NewAnnotationsT::can_have_annotations()
-            && let Some(annotations) = self.annotated.get_annotations()
+            && let Some(annotations) = self.annotated.annotations()
         {
             Null::default().with_annotations(annotations.clone())
         } else {

@@ -29,7 +29,7 @@ impl<AnnotatedT> InvalidKeyError<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        InvalidKeyError { key: self.key.into_annotated() }
+        InvalidKeyError::new(self.key.into_annotated())
     }
 }
 

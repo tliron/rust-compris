@@ -15,11 +15,11 @@ impl Annotated for WithoutAnnotations {
         false
     }
 
-    fn get_annotations(&self) -> Option<&Annotations> {
+    fn annotations(&self) -> Option<&Annotations> {
         None
     }
 
-    fn get_annotations_mut(&mut self) -> Option<&mut Annotations> {
+    fn annotations_mut(&mut self) -> Option<&mut Annotations> {
         None
     }
 }

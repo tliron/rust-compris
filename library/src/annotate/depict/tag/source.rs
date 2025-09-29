@@ -13,7 +13,7 @@ where
     AnnotatedFieldsT: AnnotatedStruct,
     WriteT: io::Write,
 {
-    if let Some(annotations) = annotated_fields.get_field_annotations(field_name)
+    if let Some(annotations) = annotated_fields.field_annotations(field_name)
         && let Some(source) = &annotations.source
     {
         context.separate(writer)?;

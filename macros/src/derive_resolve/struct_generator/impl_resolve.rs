@@ -13,7 +13,8 @@ impl StructGenerator {
         if let Some(annotations_field_name) = &self.annotations_field {
             segments.push(quote! {
                 if #annotated_parameter::can_have_annotations()
-                    && let ::std::option::Option::Some(annotations) = self.get_annotations()
+                    && let ::std::option::Option::Some(annotations) =
+                    ::compris::annotate::Annotated::annotations(&map)
                 {
                     resolved.#annotations_field_name.insert(
                         "".into(),
@@ -23,9 +24,7 @@ impl StructGenerator {
             });
         }
 
-        if let Some(single_field) = &self.single_field {
-            segments.push(self.generate_handle_single_field(single_field));
-        }
+        let single_field = self.generate_handle_single_field();
 
         for (resolve_field, key) in &self.resolve_fields {
             segments.push(self.generate_handle_field(resolve_field, key, &annotated_parameter));
@@ -46,12 +45,20 @@ impl StructGenerator {
                 for ::compris::normal::Variant<#annotated_parameter>
                 #where_clause
             {
-                fn resolve_with_errors<ErrorRecipientT>(&self, errors: &mut ErrorRecipientT) ->
+                fn resolve_with_errors<ErrorRecipientT>(mut self, errors: &mut ErrorRecipientT) ->
                     ::compris::resolve::ResolveResult<#struct_name #type_generics, #annotated_parameter>
                     where ErrorRecipientT:
                         ::kutil::std::error::ErrorRecipient<::compris::resolve::ResolveError<#annotated_parameter>>
                 {
                     let mut resolved: #struct_name #type_generics = ::std::default::Default::default();
+                    let maybe_annotations = ::compris::annotate::Annotated::maybe_annotations(&self);
+
+                    let mut map = match self {
+                        ::compris::normal::Variant::Map(map) => map,
+                        _ => {
+                            #single_field
+                        }
+                    };
 
                     #(#segments)*
 

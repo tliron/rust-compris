@@ -32,7 +32,7 @@ impl<AnnotatedT> CastingError<AnnotatedT> {
         AnnotatedT: Annotated,
         NewAnnotationsT: Annotated + Default,
     {
-        CastingError { variant: self.variant.into_annotated(), type_name: self.type_name }
+        CastingError::new(self.variant.into_annotated(), self.type_name)
     }
 }
 

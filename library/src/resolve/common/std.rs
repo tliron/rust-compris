@@ -1,6 +1,9 @@
 use super::impl_resolve_from_str;
 
-use {duplicate::*, std::net::*};
+use {
+    duplicate::*,
+    std::{net::*, path::*},
+};
 
 #[duplicate_item(
   ResolvedT;
@@ -10,5 +13,6 @@ use {duplicate::*, std::net::*};
   [SocketAddr];
   [SocketAddrV6];
   [SocketAddrV4];
+  [PathBuf];
 )]
 impl_resolve_from_str!(ResolvedT);

@@ -33,7 +33,8 @@ impl EnumGenerator {
 
         where_clause.predicates.push(parse_quote! {
             #annotated_parameter:
-                ::compris::annotate::Annotated
+                'static
+                + ::compris::annotate::Annotated
                 + ::std::clone::Clone
                 + ::std::default::Default
         });

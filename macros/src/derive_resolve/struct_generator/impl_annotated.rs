@@ -21,13 +21,13 @@ impl StructGenerator {
                         true
                     }
 
-                    fn get_annotations(&self) ->
+                    fn annotations(&self) ->
                         ::std::option::Option<&::compris::annotate::Annotations>
                     {
                         self.#annotations_field_name.get("")
                     }
 
-                    fn get_annotations_mut(&mut self) ->
+                    fn annotations_mut(&mut self) ->
                         ::std::option::Option<&mut ::compris::annotate::Annotations>
                     {
                         self.#annotations_field_name.get_mut("")
@@ -40,7 +40,7 @@ impl StructGenerator {
                     for #struct_name #type_generics
                     #where_clause
                 {
-                    fn get_field_annotations(&self, name: &str) -> Option<&Annotations> {
+                    fn field_annotations(&self, name: &str) -> Option<&Annotations> {
                         self.#annotations_field_name.get(name)
                     }
                 }

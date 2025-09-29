@@ -8,9 +8,11 @@ impl EnumGenerator {
         let enum_name = &self.enum_name;
         let variant_name = &variant.name;
 
+        // TODO: is there any way we can avoid cloning self?
+
         quote! {
             if let ::compris::resolve::ResolveResult::Ok(::std::option::Option::Some(resolved)) =
-                ::compris::resolve::Resolve::resolve_with_errors(self, &mut ::kutil::std::error::FailFastErrorRecipient)
+                ::compris::resolve::Resolve::resolve_with_errors(self.clone(), &mut ::kutil::std::error::FailFastErrorRecipient)
             {
                 return ::compris::resolve::ResolveResult::Ok(
                     ::std::option::Option::Some(#enum_name::#variant_name(resolved))

@@ -12,11 +12,9 @@ pub fn run() -> Result<(), MainError> {
 
     match &cli.subcommand {
         None => cli.convert()?,
-        Some(subcommand) => match subcommand {
-            SubCommand::Version(version) => version.run::<CLI>(),
-            SubCommand::Completion(completion) => completion.run::<CLI>(),
-            SubCommand::Manual(manual) => manual.run::<CLI>()?,
-        },
+        Some(SubCommand::Version(version)) => version.run::<CLI>(),
+        Some(SubCommand::Completion(completion)) => completion.run::<CLI>(),
+        Some(SubCommand::Manual(manual)) => manual.run::<CLI>()?,
     }
 
     Ok(())

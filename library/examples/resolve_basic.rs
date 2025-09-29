@@ -87,7 +87,7 @@ pub fn main() {
 
     // Note that we can resolve directly into Vecs (and HashMaps, too)
 
-    let result: Result<Vec<User>, _> = variant.resolve();
+    let result: Result<Vec<User>, _> = variant.clone().resolve();
 
     utils::heading("fail-fast error", false);
     result.err().expect("error").annotated_depiction().print_default_depiction();

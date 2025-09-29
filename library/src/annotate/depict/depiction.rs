@@ -36,7 +36,7 @@ where
     where
         WriteT: io::Write,
     {
-        if let Some(annotations) = self.inner.get_annotations() {
+        if let Some(annotations) = self.inner.annotations() {
             match self.mode {
                 AnnotatedDepictionMode::Inline => {
                     self.inner.depict(writer, context)?;
